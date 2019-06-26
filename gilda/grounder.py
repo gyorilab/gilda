@@ -2,6 +2,7 @@ import pandas
 import logging
 import itertools
 from .term import Term
+from .process import normalize, replace_dashes
 
 
 logger = logging.getLogger(__name__)
