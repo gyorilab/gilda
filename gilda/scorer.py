@@ -1,12 +1,13 @@
-from .process import replace_dashes, replace_whitespace, normalize
+from .process import replace_dashes, replace_whitespace, normalize, \
+    get_capitalization_pattern
 
 
 class Match(object):
-    def __init__(self, query, ref, exact):
+    def __init__(self, query, ref, exact=None, space_mismatch=None):
         self.query = query
         self.ref = ref
         self.exact = exact
-
+        self.space_mismatch = space_mismatch
 
 def generate_match(query, ref, beginning_of_sentence):
     """Return a match data structure based on comparing a query to a ref str.
@@ -43,4 +44,52 @@ def generate_match(query, ref, beginning_of_sentence):
     if not beginning_of_sentence and query == ref:
         return Match(query, ref, exact=True)
 
-    query_pieces = re.split('')
+    query_suffix = query
+    ref_suffix = ref
+    query_pieces = ['']
+    ref_pieces = ['']
+    dash_mismatches = set()
+    while query_suffix and ref_suffix:
+        # Deal with spaces first
+        qs = (query_suffix[0] == ' ')
+        rs = (ref_suffix[0] == ' ')
+        # If both have spaces, we start new pieces and skip the spaces
+        if qs and rs:
+            query_suffix = query_suffix[1:]
+            ref_suffix = ref_suffix[1:]
+            query_pieces.append('')
+            ref_pieces.append('')
+        # This means that there is a space inconsistency which we don't allow
+        # and return immediately
+        elif qs and not rs or rs and not qs:
+            return Match(query, ref, space_mismatch=True)
+
+        # We next deal with dashes
+        qd = (query_suffix[0] == '-')
+        rd = (ref_suffix[0] == '-')
+        # If both are dashes, we skip them
+        if qd and rd:
+            query_suffix = query_suffix[1:]
+            ref_suffix = ref_suffix[1:]
+            query_pieces.append('')
+            ref_pieces.append('')
+        # If there is a mismatch, we introduce new pieces but only skip the one
+        # dash and record the inconsistency
+        elif qd and not rd:
+            dash_mismatches.add('query')
+            query_suffix = query_suffix[1:]
+            query_pieces.append('')
+            ref_pieces.append('')
+        elif not qd and rd:
+            dash_mismatches.add('ref')
+            ref_suffix = ref_suffix[1:]
+            query_pieces.append('')
+            ref_pieces.append('')
+        # Otherwise both strings start with a non space/dash character that we
+        # add to the latest piece
+        else:
+            query_pieces[-1] += query_suffix[0]
+            ref_pieces[-1] += ref_suffix[0]
+            ref_suffix = ref_suffix[1:]
+            query_suffix = query_suffix[1:]
+

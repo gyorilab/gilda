@@ -97,3 +97,19 @@ def split_preserve_tokens(s):
         typically spaces and dashes..
     """
     return re.split(r'(\W)', s)
+
+
+def get_capitalization_pattern(word, beginning_of_sentence=False):
+    """Return the type of capitalization"""
+    if beginning_of_sentence and re.match(r'^\p{Lu}\p{Ll}*$', word):
+        return 'sentence_initial'
+    elif re.match(r'^\p{Lu}$', word):
+        return 'single_capital_letter'
+    elif re.match(r'^\p{Lu}+$', word):
+        return 'all_caps'
+    elif re.match(r'^\p{Ll}+$', word):
+        return 'all_lower'
+    elif re.match(r'^\p{Lu}\p{Ll}+$', word):
+        return 'initial_cap'
+    else:
+        return 'mixed'
