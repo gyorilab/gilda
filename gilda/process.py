@@ -80,3 +80,20 @@ def normalize(s):
     s = remove_dashes(s)
     s = s.lower()
     return s
+
+
+def split_preserve_tokens(s):
+    """Return split words of a string including the non-word tokens.
+
+    Parameters
+    ----------
+    s : str
+        The string to be split.
+
+    Returns
+    -------
+    list of str
+        The list of words in the string including the separator tokens,
+        typically spaces and dashes..
+    """
+    return re.split(r'(\W)', s)
