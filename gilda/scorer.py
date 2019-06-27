@@ -1,3 +1,4 @@
+from copy import deepcopy
 from .process import replace_dashes, replace_whitespace, normalize, \
     get_capitalization_pattern
 
@@ -8,10 +9,12 @@ class Match(object):
                  dash_mismatches=None, cap_combos=None):
         self.query = query
         self.ref = ref
-        self.exact = exact
-        self.space_mismatch = space_mismatch
-        self.dash_mismatches = dash_mismatches
-        self.cap_combos = cap_combos
+        self.exact = exact if exact is not None else False
+        self.space_mismatch = space_mismatch if space_mismatch is not None \
+            else False
+        self.dash_mismatches = dash_mismatches if dash_mismatches is not None \
+            else {}
+        self.cap_combos = cap_combos if cap_combos is not None else []
 
     def __str__(self):
         return 'Match(%s)' % (','.join(['%s=%s' % (k, v) for k, v in
@@ -19,6 +22,16 @@ class Match(object):
 
     def __repr__(self):
         return str(self)
+
+    def to_json(self):
+        return {
+            'query': self.query,
+            'ref': self.ref,
+            'exact': self.exact,
+            'space_mismatch': self.space_mismatch,
+            'dash_mismatches': list(self.dash_mismatches),
+            'cap_combos': self.cap_combos
+        }
 
     def _query_cases(self):
         return {c[0] for c in self.cap_combos}

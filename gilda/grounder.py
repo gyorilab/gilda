@@ -66,12 +66,13 @@ class Grounder(object):
         # and the entity text corresponding to the matched Term. This match
         # is then further scored to account for the nature of the grounding
         # itself.
-        scores = []
-        for entry in entries:
-            match = generate_match(raw_str, entry.text)
-            sc = score(match, entry)
-            scores.append((entry, sc, match))
-        unique_scores = self._merge_equivalent_matches(scores)
+        scored_matches = []
+        for term in entries:
+            match = generate_match(raw_str, term.text)
+            sc = score(match, term)
+            scored_match = ScoredMatch(term, sc, match)
+            scored_matches.append(scored_match)
+        unique_scores = self._merge_equivalent_matches(scored_matches)
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
@@ -94,16 +95,16 @@ class Grounder(object):
         return scored_matches
 
     @staticmethod
-    def _merge_equivalent_matches(scores):
+    def _merge_equivalent_matches(scored_matches):
         unique_entries = []
         # Characterize an entry by its grounding
-        entry_dbid = lambda x: (x[0].db, x[0].id)
+        term_dbid = lambda x: (x.term.db, x.term.id)
         # Sort and group scores by grounding
-        scores.sort(key=entry_dbid)
-        entry_groups = itertools.groupby(scores, key=entry_dbid)
+        scored_matches.sort(key=term_dbid)
+        entry_groups = itertools.groupby(scored_matches, key=term_dbid)
         # Now look at each group and find the highest scoring match
         for _, entry_group in entry_groups:
-            entries = sorted(list(entry_group), key=lambda x: x[1],
+            entries = sorted(list(entry_group), key=lambda x: x.score,
                              reverse=True)
             unique_entries.append(entries[0])
         # Return the list of unique entries
@@ -137,7 +138,7 @@ class ScoredMatch(object):
         return {
             'term': self.term.to_json(),
             'score': self.score,
-            'match': self.match
+            'match': self.match.to_json()
         }
 
     def multiply(self, value):

@@ -1,7 +1,7 @@
 import os
 import argparse
 from flask import Flask, abort, Response, request, jsonify
-from indra.tools.grounding import Grounder
+from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
 
 app = Flask(__name__)
