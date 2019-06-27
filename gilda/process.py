@@ -102,9 +102,9 @@ def split_preserve_tokens(s):
 def get_capitalization_pattern(word, beginning_of_sentence=False):
     """Return the type of capitalization"""
     if beginning_of_sentence and re.match(r'^\p{Lu}\p{Ll}*$', word):
-        return 'sentence_initial'
+        return 'sentence_initial_cap'
     elif re.match(r'^\p{Lu}$', word):
-        return 'single_capital_letter'
+        return 'single_cap_letter'
     elif re.match(r'^\p{Lu}+$', word):
         return 'all_caps'
     elif re.match(r'^\p{Ll}+$', word):

@@ -17,6 +17,67 @@ class Match(object):
         return 'Match(%s)' % (','.join(['%s=%s' % (k, v) for k, v in
                                         self.__dict__.items()]))
 
+    def _query_cases(self):
+        return {c[0] for c in self.cap_combos}
+
+    def _ref_cases(self):
+        return {c[1] for c in self.cap_combos}
+
+    def score_short_abbr(self):
+        if len(self.ref) <= 3 and \
+                (('all_caps', 'all_lower') in self.cap_combos or
+                 ('all_lower', 'all_caps') in self.cap_combos):
+            return 0
+        else:
+            return 1
+
+    def score_mixed(self):
+        if ('mixed', 'mixed') in self.cap_combos:
+            return 0
+        elif ('mixed' in self._query_cases()) or \
+                ('mixed' in self._ref_cases()):
+            return 1
+        else:
+            return 2
+
+    def score_exact(self):
+        return 1 if self.exact is True else 0
+
+    def score_acic(self):
+        if self.exact is True and not self.cap_combos:
+            return 2
+        elif set(self.cap_combos) == {('sentence_initial', 'all_lower')}:
+            return 2
+        if self.exact is True and set(self.cap_combos) <= \
+                {('all_caps', 'sentence_initial_cap'),
+                 ('sentence_initial_cap', 'all_caps')}:
+            return 1
+        else:
+            return 0
+
+    def score_combo(self):
+        qc = self._query_cases()
+        rc = self._ref_cases()
+        query_combo = 4 - len(qc)
+        ref_combo = 4 - len(rc)
+        if 'single_cap_letter' in qc and \
+                ('all_caps' in qc or 'initial_cap' in qc):
+            query_combo += 1
+        if 'single_cap_letter' in rc and \
+                ('all_caps' in rc or 'initial_cap' in rc):
+            ref_combo += 1
+        if 'sentence_initial_cap' in qc and \
+                (len(qc) == 1 and
+                 ('sentence_initial_cap', 'all_lower') in self.cap_combos) \
+                or \
+                 {'single_cap_letter', 'initial_cap', 'all_lower'} & qc:
+            query_combo += 1
+        combo = max(query_combo, ref_combo)
+        return combo
+
+    def score_dash(self):
+        return 2 - len(self.dash_mismatches)
+
 
 def generate_match(query, ref, beginning_of_sentence):
     """Return a match data structure based on comparing a query to a ref str.
@@ -34,8 +95,8 @@ def generate_match(query, ref, beginning_of_sentence):
 
     Returns
     -------
-    dict
-        A dictionary characterizing the match between the two strings.
+    Match
+        A Match object characterizing the match between the two strings.
     """
     # First of all, this function assumes that both the query and the ref have
     # been normalized and so if that is not the case, we raise an error
@@ -121,3 +182,9 @@ def generate_match(query, ref, beginning_of_sentence):
                 combinations.append((qcp, rcp))
     return Match(query, ref, dash_mismatches=dash_mismatches,
                  exact=exact, cap_combos=combinations)
+
+
+def score_match_variant(match):
+
+
+
