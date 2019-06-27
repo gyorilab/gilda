@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Grounder(object):
+    """Class to look up and ground query texts in a terms file."""
     def __init__(self, terms_file):
         self.entries = load_terms_file(terms_file)
 

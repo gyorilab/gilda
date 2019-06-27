@@ -79,7 +79,7 @@ class Match(object):
         return 2 - len(self.dash_mismatches)
 
 
-def generate_match(query, ref, beginning_of_sentence):
+def generate_match(query, ref, beginning_of_sentence=False):
     """Return a match data structure based on comparing a query to a ref str.
 
     Parameters
@@ -202,12 +202,12 @@ def score_string_match(match):
         A match score between 0 and 1.
     """
     terms = [
-        (match.get_short_abbr, 2),
-        (match.get_mixed, 3),
-        (match.get_exact, 2),
-        (match.get_acic, 3),
-        (match.get_combo, 5),
-        (match.get_dash, 3)
+        (match.score_short_abbr, 2),
+        (match.score_mixed, 3),
+        (match.score_exact, 2),
+        (match.score_acic, 3),
+        (match.score_combo, 5),
+        (match.score_dash, 3)
     ]
     score = 0
     norm = 1
