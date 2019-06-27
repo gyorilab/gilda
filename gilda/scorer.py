@@ -184,7 +184,38 @@ def generate_match(query, ref, beginning_of_sentence):
                  exact=exact, cap_combos=combinations)
 
 
-def score_match_variant(match):
+def score_string_match(match):
+    """Return a score between 0 and 1 for the goodness of a match.
+
+    This score is purely based on the relationship of the two strings and
+    does not take the status of the reference into account.
+
+    Parameters
+    ----------
+    match : gilda.scorer.Match
+        The Match object characterizing the relationship of the query and
+        reference strings.
+
+    Returns
+    -------
+    float
+        A match score between 0 and 1.
+    """
+    terms = [
+        (match.get_short_abbr, 2),
+        (match.get_mixed, 3),
+        (match.get_exact, 2),
+        (match.get_acic, 3),
+        (match.get_combo, 5),
+        (match.get_dash, 3)
+    ]
+    score = 0
+    norm = 1
+    for fun, coeff in terms:
+        score = coeff * score + fun()
+        norm *= coeff
+    score /= (norm -1)
+    return score
 
 
 
