@@ -1,13 +1,21 @@
+"""This is a script that can be run to generate a new grounding_terms.tsv file.
+It uses several resource files and database clients from INDRA and requires it
+to be available locally."""
+
 import re
 import os
 import pandas
 import logging
+import indra
 from indra.util import write_unicode_csv
 from indra.tools.grounding import Term, normalize
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
 from .resources import resource_dir
 
+
+indra_module_path = indra.__path__[0]
+resources = os.path.join(indra_module_path, 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
 
@@ -185,6 +193,6 @@ def get_all_terms():
 
 if __name__ == '__main__':
     terms = get_all_terms()
-    fname = os.path.join(resources, 'grounding_terms.tsv')
+    fname = os.path.join(resource_dir, 'grounding_terms.tsv')
     logger.info('Dumping into %s' % fname)
     write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
