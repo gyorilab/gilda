@@ -1,11 +1,10 @@
 import os
 from gilda.grounder import Grounder
+from gilda.resources import get_grounding_terms
 from . import appreq
 
 
-fname = os.path.join(os.path.dirname(__file__), os.pardir, 'resources',
-                     'grounding_terms.tsv')
-gr = Grounder(fname)
+gr = Grounder(get_grounding_terms())
 
 
 def test_grounder():
