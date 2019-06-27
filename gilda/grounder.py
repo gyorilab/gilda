@@ -1,6 +1,8 @@
 import pandas
 import logging
 import itertools
+from adeft import available_shortforms as available_adeft_models
+from adeft.disambiguate import load_disambiguator
 from .term import Term
 from .process import normalize, replace_dashes
 from .scorer import generate_match, score
@@ -13,6 +15,7 @@ class Grounder(object):
     """Class to look up and ground query texts in a terms file."""
     def __init__(self, terms_file):
         self.entries = load_terms_file(terms_file)
+        self.disambiguators = load_adeft_models()
 
     def lookup(self, raw_str):
         """Return matching Terms for a given raw string.
@@ -71,6 +74,25 @@ class Grounder(object):
         unique_scores = self._merge_equivalent_matches(scores)
         return unique_scores
 
+    def disambiguate(self, raw_str, scored_matches, context):
+        if raw_str not in self.disambiguators:
+            return scored_matches
+
+        try:
+            res = self.disambiguators[raw_str].disambiguate([context])
+            grounding_dict = res[0][2]
+            for grounding, score in grounding_dict.items():
+                if grounding == 'ungrounded':
+                    continue
+                db, id = grounding.split(':', maxsplit=1)
+                for match in scored_matches:
+                    if match.term.db == db and match.term.id == id:
+                        match.multiply(score)
+        except Exception as e:
+            logger.exception(e)
+
+        return scored_matches
+
     @staticmethod
     def _merge_equivalent_matches(scores):
         unique_entries = []
@@ -86,6 +108,40 @@ class Grounder(object):
             unique_entries.append(entries[0])
         # Return the list of unique entries
         return unique_entries
+
+
+class ScoredMatch(object):
+    """Class representing a scored match to a grounding term.
+
+    Attributes
+    -----------
+    term : gilda.grounder.Term
+        The Term that the scored match is for.
+    score : float
+        The score associated with the match.
+    match : gilda.scorer.Match
+        The Match object characterizing the match to the Term.
+    """
+    def __init__(self, term, score, match):
+        self.term = term
+        self.score = score
+        self.match = match
+
+    def __str__(self):
+        return 'ScoredMatch(%s,%s,%s)' % (self.term, self.score, self.match)
+
+    def __repr__(self):
+        return str(self)
+
+    def to_json(self):
+        return {
+            'term': self.term.to_json(),
+            'score': self.score,
+            'match': self.match
+        }
+
+    def multiply(self, value):
+        self.score = self.score * value
 
 
 def load_terms_file(terms_file):
@@ -115,3 +171,10 @@ def load_terms_file(terms_file):
         else:
             entries[row[0]] = [entry]
     return entries
+
+
+def load_adeft_models():
+    adeft_disambiguators = {}
+    for shortform in available_adeft_models:
+        adeft_disambiguators[shortform] = load_disambiguator(shortform)
+    return adeft_disambiguators
