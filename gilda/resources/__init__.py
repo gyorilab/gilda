@@ -4,6 +4,8 @@ import logging
 import botocore
 from gilda import __version__
 
+logger = logging.getLogger(__name__)
+
 home_dir = os.path.expanduser('~')
 resource_dir = os.path.join(home_dir, '.gilda', __version__)
 

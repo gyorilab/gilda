@@ -8,6 +8,7 @@ before_install:
   - pip install nose coverage python-coveralls
 install:
   - pip install .[test]
+  - pip install indra
 script:
   - nosetests gilda -v --with-coverage --cover-inclusive --cover-package=protmapper
 after_success:
