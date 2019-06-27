@@ -25,6 +25,7 @@ setup(name='gilda',
       ],
       packages=find_packages(),
       install_requires=['regex', 'pandas'],
-      extras_require={'test': ['nose', 'coverage']},
+      extras_require={'test': ['nose', 'coverage'],
+                      'app': ['flask']},
       keywords=['nlp', 'biology']
       )
