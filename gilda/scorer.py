@@ -218,4 +218,18 @@ def score_string_match(match):
     return score
 
 
+def score_status(term):
+    scores = {
+        'assertion': 4,
+        'name': 3,
+        'synonym': 2,
+        'previous': 1,
+    }
+    return scores[term.status]
 
+
+def score(match, term):
+    string_match_score = score_string_match(match)
+    status_score = score_status(term)
+    score = ((0 * 5 + status_score) * 2 + string_match_score) / 9
+    return score
