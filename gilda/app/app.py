@@ -1,4 +1,3 @@
-import os
 import argparse
 from flask import Flask, abort, Response, request, jsonify
 from gilda.grounder import Grounder

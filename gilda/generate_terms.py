@@ -8,9 +8,10 @@ import pandas
 import logging
 import indra
 from indra.util import write_unicode_csv
-from indra.tools.grounding import Term, normalize
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
+from .term import Term
+from .process import normalize
 from .resources import resource_dir
 
 
