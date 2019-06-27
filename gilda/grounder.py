@@ -3,6 +3,7 @@ import logging
 import itertools
 from .term import Term
 from .process import normalize, replace_dashes
+from .scorer import generate_match, score
 
 
 logger = logging.getLogger(__name__)
@@ -64,8 +65,7 @@ class Grounder(object):
         scores = []
         for entry in entries:
             match = generate_match(raw_str, entry.text)
-            match['status'] = entry.status
-            score = score_grounded_match(match, entry.db)
+            score = score(match, entry)
             scores.append((entry, score, match))
         unique_scores = self._merge_equivalent_matches(scores)
         return unique_scores
