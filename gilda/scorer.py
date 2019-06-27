@@ -3,11 +3,20 @@ from .process import replace_dashes, replace_whitespace, normalize, \
 
 
 class Match(object):
-    def __init__(self, query, ref, exact=None, space_mismatch=None):
+    """Class representing a match between a query and a reference string"""
+    def __init__(self, query, ref, exact=None, space_mismatch=None,
+                 dash_mismatches=None, cap_combos=None):
         self.query = query
         self.ref = ref
         self.exact = exact
         self.space_mismatch = space_mismatch
+        self.dash_mismatches = dash_mismatches
+        self.cap_combos = cap_combos
+
+    def __str__(self):
+        return 'Match(%s)' % (','.join(['%s=%s' % (k, v) for k, v in
+                                        self.__dict__.items()]))
+
 
 def generate_match(query, ref, beginning_of_sentence):
     """Return a match data structure based on comparing a query to a ref str.
@@ -93,3 +102,22 @@ def generate_match(query, ref, beginning_of_sentence):
             ref_suffix = ref_suffix[1:]
             query_suffix = query_suffix[1:]
 
+    # Now that we have the final pieces in place, we can count the matches and
+    # capitalization relationships
+    combinations = []
+    first = True
+    exact = False
+    for qp, rp in zip(query_pieces, ref_pieces):
+        first_bos = first and beginning_of_sentence
+        first = False
+        if qp == rp and not first_bos:
+            exact = True
+        else:
+            qcp = get_capitalization_pattern(qp, first_bos)
+            rcp = get_capitalization_pattern(rp, False)
+            if qcp == rcp and qp == rp:
+                exact = True
+            else:
+                combinations.append((qcp, rcp))
+    return Match(query, ref, dash_mismatches=dash_mismatches,
+                 exact=exact, cap_combos=combinations)
