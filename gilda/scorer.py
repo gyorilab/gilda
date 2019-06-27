@@ -217,7 +217,7 @@ def score_string_match(match):
     for fun, coeff in terms:
         score = coeff * score + fun()
         norm *= coeff
-    score /= (norm -1)
+    score /= (norm - 1)
     return score
 
 
