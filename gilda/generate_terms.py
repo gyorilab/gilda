@@ -6,8 +6,7 @@ from indra.util import write_unicode_csv
 from indra.tools.grounding import Term, normalize
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
-
-resources = os.path.join(os.path.dirname(__file__), os.pardir, 'resources')
+from .resources import resource_dir
 
 
 logger = logging.getLogger('gilda.generate_terms')
