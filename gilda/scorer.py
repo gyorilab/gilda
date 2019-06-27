@@ -17,6 +17,9 @@ class Match(object):
         return 'Match(%s)' % (','.join(['%s=%s' % (k, v) for k, v in
                                         self.__dict__.items()]))
 
+    def __repr__(self):
+        return str(self)
+
     def _query_cases(self):
         return {c[0] for c in self.cap_combos}
 

@@ -66,8 +66,8 @@ class Grounder(object):
         scores = []
         for entry in entries:
             match = generate_match(raw_str, entry.text)
-            score = score(match, entry)
-            scores.append((entry, score, match))
+            sc = score(match, entry)
+            scores.append((entry, sc, match))
         unique_scores = self._merge_equivalent_matches(scores)
         return unique_scores
 
