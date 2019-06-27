@@ -114,12 +114,6 @@ def generate_match(query, ref, beginning_of_sentence=False):
     Match
         A Match object characterizing the match between the two strings.
     """
-    # First of all, this function assumes that both the query and the ref have
-    # been normalized and so if that is not the case, we raise an error
-    if normalize(query) != normalize(ref):
-        raise ValueError('Normalized query "%s" does not match normalized'
-                         ' reference "%s"' % (query, ref))
-
     # Pre-process both strings first by replacing multiple white spaces
     # with a single ASCII space, and all kinds of dashes with a single
     # ASCII dash.
