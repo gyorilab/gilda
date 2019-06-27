@@ -1,6 +1,7 @@
 import re
 import os
 import pandas
+import logging
 from indra.util import write_unicode_csv
 from indra.tools.grounding import Term, normalize
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
@@ -9,9 +10,12 @@ from indra.databases import hgnc_client, uniprot_client, chebi_client, \
 resources = os.path.join(os.path.dirname(__file__), os.pardir, 'resources')
 
 
+logger = logging.getLogger('gilda.generate_terms')
+
+
 def generate_hgnc_terms():
     fname = os.path.join(resources, 'hgnc_entries.tsv')
-    print('Loading %s' % fname)
+    logger.info('Loading %s' % fname)
     df = pandas.read_csv(fname, delimiter='\t', dtype='str')
     all_term_args = dict()
     for idx, row in df.iterrows():
@@ -64,13 +68,13 @@ def generate_hgnc_terms():
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
-    print('Loaded %d terms' % len(terms))
+    logger.info('Loaded %d terms' % len(terms))
     return terms
 
 
 def generate_chebi_terms():
     fname = os.path.join(resources, 'chebi_entries.tsv')
-    print('Loading %s' % fname)
+    logger.info('Loading %s' % fname)
     df = pandas.read_csv(fname, delimiter='\t', dtype='str')
     terms = []
     for idx, row in df.iterrows():
@@ -79,7 +83,7 @@ def generate_chebi_terms():
         name = row['NAME']
         term = Term(normalize(name), name, db, id, name, 'name')
         terms.append(term)
-    print('Loaded %d terms' % len(terms))
+    logger.info('Loaded %d terms' % len(terms))
 
     # Now we add synonyms
     # NOTE: this file is not in version control, the path needs to be set
@@ -102,7 +106,7 @@ def generate_chebi_terms():
             term = Term(*term_args)
             terms.append(term)
             added.add(term_args)
-    print('Loaded %d terms' % len(terms))
+    logger.info('Loaded %d terms' % len(terms))
 
     return terms
 
@@ -110,7 +114,7 @@ def generate_chebi_terms():
 def generate_go_terms():
     # TODO: add synonyms for GO terms here
     fname = os.path.join(resources, 'go_id_label_mappings.tsv')
-    print('Loading %s' % fname)
+    logger.info('Loading %s' % fname)
     df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None)
     terms = []
     for idx, row in df.iterrows():
@@ -120,13 +124,13 @@ def generate_go_terms():
             continue
         term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1], 'name')
         terms.append(term)
-    print('Loaded %d terms' % len(terms))
+    logger.info('Loaded %d terms' % len(terms))
     return terms
 
 
 def generate_famplex_terms():
     fname = os.path.join(resources, 'famplex', 'grounding_map.csv')
-    print('Loading %s' % fname)
+    logger.info('Loading %s' % fname)
     df = pandas.read_csv(fname, delimiter=',', dtype='str', header=None)
     terms = []
     for idx, row in df.iterrows():
@@ -183,5 +187,5 @@ def get_all_terms():
 if __name__ == '__main__':
     terms = get_all_terms()
     fname = os.path.join(resources, 'grounding_terms.tsv')
-    print('Dumping into %s' % fname)
+    logger.info('Dumping into %s' % fname)
     write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
