@@ -3,3 +3,5 @@ sphinx_rtd_theme
 mock
 boto3
 requests
+pandas
+regex
