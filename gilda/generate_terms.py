@@ -94,8 +94,10 @@ def generate_chebi_terms():
     logger.info('Loaded %d terms' % len(terms))
 
     # Now we add synonyms
-    # NOTE: this file is not in version control, the path needs to be set
-    # accordingly
+    # NOTE: this file is not in version control. The file is available
+    # at ftp://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_
+    # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
+    # into the INDRA resources folder.
     fname = os.path.join(resources, 'names_3star.tsv')
     df = pandas.read_csv(fname, delimiter='\t', dtype='str',
                          keep_default_na=False, na_values=[''])
