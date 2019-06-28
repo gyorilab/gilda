@@ -119,6 +119,26 @@ def generate_chebi_terms():
     return terms
 
 
+def generate_mesh_terms():
+    fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
+    logger.info('Loading %s' % fname)
+    df = pandas.read_csv(fname, delimeter='\t', dtype='str', header=None,
+                         na_values=[''])
+    terms = []
+    for idx, row in df.iterrows():
+        db = 'MESH'
+        id_ = row[0]
+        name = row[1]
+        norm_name = normalize(name)
+        synonyms = row[2].split('|')
+        term = Term(norm_name, name, db, id_, name, 'name')
+        terms.append(term)
+        for synonym in synonyms:
+            term = Term(norm_name, synonym, db, id_, name, 'synonym')
+            terms.append(term)
+    return terms
+
+
 def generate_go_terms():
     # TODO: add synonyms for GO terms here
     fname = os.path.join(resources, 'go_id_label_mappings.tsv')
