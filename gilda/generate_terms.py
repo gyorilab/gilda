@@ -209,6 +209,7 @@ def get_all_terms():
     terms += generate_hgnc_terms()
     terms += generate_chebi_terms()
     terms += generate_go_terms()
+    terms += generate_mesh_terms()
     return terms
 
 
