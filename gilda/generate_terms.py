@@ -122,20 +122,23 @@ def generate_chebi_terms():
 def generate_mesh_terms():
     fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimeter='\t', dtype='str', header=None,
-                         na_values=[''])
+    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
+                         keep_default_na=False, na_values=None)
     terms = []
     for idx, row in df.iterrows():
         db = 'MESH'
         id_ = row[0]
         name = row[1]
-        norm_name = normalize(name)
-        synonyms = row[2].split('|')
-        term = Term(norm_name, name, db, id_, name, 'name')
+        term = Term(normalize(name), name, db, id_, name, 'name')
         terms.append(term)
-        for synonym in synonyms:
-            term = Term(norm_name, synonym, db, id_, name, 'synonym')
-            terms.append(term)
+        synonyms = row[2]
+        if row[2]:
+            synonyms = synonyms.split('|')
+            for synonym in synonyms:
+                term = Term(normalize(synonym), synonym, db, id_, name,
+                            'synonym')
+                terms.append(term)
+    logger.info('Loaded %d terms' % len(terms))
     return terms
 
 
