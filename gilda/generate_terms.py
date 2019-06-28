@@ -94,8 +94,10 @@ def generate_chebi_terms():
     logger.info('Loaded %d terms' % len(terms))
 
     # Now we add synonyms
-    # NOTE: this file is not in version control, the path needs to be set
-    # accordingly
+    # NOTE: this file is not in version control. The file is available
+    # at ftp://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_
+    # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
+    # into the INDRA resources folder.
     fname = os.path.join(resources, 'names_3star.tsv')
     df = pandas.read_csv(fname, delimiter='\t', dtype='str',
                          keep_default_na=False, na_values=[''])
@@ -116,6 +118,29 @@ def generate_chebi_terms():
             added.add(term_args)
     logger.info('Loaded %d terms' % len(terms))
 
+    return terms
+
+
+def generate_mesh_terms():
+    fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
+    logger.info('Loading %s' % fname)
+    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
+                         keep_default_na=False, na_values=None)
+    terms = []
+    for idx, row in df.iterrows():
+        db = 'MESH'
+        id_ = row[0]
+        name = row[1]
+        term = Term(normalize(name), name, db, id_, name, 'name')
+        terms.append(term)
+        synonyms = row[2]
+        if row[2]:
+            synonyms = synonyms.split('|')
+            for synonym in synonyms:
+                term = Term(normalize(synonym), synonym, db, id_, name,
+                            'synonym')
+                terms.append(term)
+    logger.info('Loaded %d terms' % len(terms))
     return terms
 
 
@@ -189,6 +214,7 @@ def get_all_terms():
     terms += generate_hgnc_terms()
     terms += generate_chebi_terms()
     terms += generate_go_terms()
+    terms += generate_mesh_terms()
     return terms
 
 
