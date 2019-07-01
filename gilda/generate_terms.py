@@ -56,11 +56,14 @@ def generate_hgnc_terms():
         else:
             term_args = (normalize(name), name, db, id, name, 'name', 'hgnc')
             all_term_args[term_args] = None
+            if row['Approved name']:
+                app_name = row['Approved name']
+                term_args = (normalize(app_name), app_name, db, id, name,
+                             'name', 'hgnc')
+                all_term_args[term_args] = None
 
         # Handle regular entry synonyms
         synonyms = []
-        if row['Approved name']:
-            synonyms.append(row['Approved name'])
         if row['Synonyms'] and not pandas.isnull(row['Synonyms']):
             synonyms += row['Synonyms'].split(', ')
         for synonym in synonyms:
