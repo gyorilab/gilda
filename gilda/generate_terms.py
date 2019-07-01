@@ -209,12 +209,34 @@ def generate_famplex_terms():
     return terms
 
 
+def generate_uniprot_terms():
+    import requests
+    url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
+           'genes(PREFERRED),protein%20names&sort=score&'
+           'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
+           '%20AND%20reviewed:yes')
+    res = requests.get(url)
+    with open('up_synonyms.tsv', 'w') as fh:
+        fh.write(res.text)
+    df = pandas.read_csv('up_synonyms.tsv', delimiter='\t', dtype=str)
+    terms = []
+    for _, row in df.iterrows():
+        parts = [p.strip() for p in row['Protein names'].split('(')]
+        names = [p[:-1] if p.endswith(')') else p for p in parts]
+        for name in names:
+            term = Term(normalize(name), name, 'UP', row['Entry'],
+                        row['Gene names  (primary )'], 'synonym')
+            terms.append(term)
+    return terms
+
+
 def get_all_terms():
     terms = generate_famplex_terms()
     terms += generate_hgnc_terms()
     terms += generate_chebi_terms()
     terms += generate_go_terms()
     terms += generate_mesh_terms()
+    terms += generate_uniprot_terms()
     return terms
 
 
