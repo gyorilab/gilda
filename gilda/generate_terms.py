@@ -46,7 +46,7 @@ def generate_hgnc_terms():
             if not new_id:
                 continue
             term_args = (normalize(previous_name), previous_name, db, new_id,
-                         new_name, 'previous')
+                         new_name, 'previous', 'hgnc')
             all_term_args[term_args] = None
             # NOTE: consider adding withdrawn synonyms e.g.,
             # symbol withdrawn, see pex1     symbol withdrawn, see PEX1
@@ -54,7 +54,7 @@ def generate_hgnc_terms():
             continue
         # Handle regular entry official names
         else:
-            term_args = (normalize(name), name, db, id, name, 'name')
+            term_args = (normalize(name), name, db, id, name, 'name', 'hgnc')
             all_term_args[term_args] = None
 
         # Handle regular entry synonyms
@@ -64,7 +64,8 @@ def generate_hgnc_terms():
         if row['Synonyms'] and not pandas.isnull(row['Synonyms']):
             synonyms += row['Synonyms'].split(', ')
         for synonym in synonyms:
-            term_args = (normalize(synonym), synonym, db, id, name, 'synonym')
+            term_args = (normalize(synonym), synonym, db, id, name, 'synonym',
+                         'hgnc')
             all_term_args[term_args] = None
 
         # Handle regular entry previous symbols
@@ -72,7 +73,7 @@ def generate_hgnc_terms():
             prev_symbols = row['Previous symbols'].split(', ')
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
-                             'previous')
+                             'previous', 'hgnc')
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
@@ -89,7 +90,7 @@ def generate_chebi_terms():
         db = 'CHEBI'
         id = 'CHEBI:' + row['CHEBI_ID']
         name = row['NAME']
-        term = Term(normalize(name), name, db, id, name, 'name')
+        term = Term(normalize(name), name, db, id, name, 'name', 'chebi')
         terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
 
@@ -109,7 +110,8 @@ def generate_chebi_terms():
         name = str(row['NAME'])
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
-        term_args = (normalize(name), name, db, id, chebi_name, 'synonym')
+        term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
+                     'chebi')
         if term_args in added:
             continue
         else:
@@ -131,14 +133,14 @@ def generate_mesh_terms():
         db = 'MESH'
         id_ = row[0]
         name = row[1]
-        term = Term(normalize(name), name, db, id_, name, 'name')
+        term = Term(normalize(name), name, db, id_, name, 'name', 'mesh')
         terms.append(term)
         synonyms = row[2]
         if row[2]:
             synonyms = synonyms.split('|')
             for synonym in synonyms:
                 term = Term(normalize(synonym), synonym, db, id_, name,
-                            'synonym')
+                            'synonym', 'mesh')
                 terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
@@ -155,7 +157,8 @@ def generate_go_terms():
             continue
         if 'obsolete' in row[1]:
             continue
-        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1], 'name')
+        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1], 'name',
+                    'go')
         terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
@@ -173,11 +176,11 @@ def generate_famplex_terms():
                       (not pandas.isnull(k) and not pandas.isnull(v))}
         if 'FPLX' in groundings:
             id = groundings['FPLX']
-            term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion')
+            term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion', 'famplex')
         elif 'HGNC' in groundings:
             id = groundings['HGNC']
             term = Term(norm_txt, txt, 'HGNC', hgnc_client.get_hgnc_id(id), id,
-                        'assertion')
+                        'assertion', 'famplex')
         elif 'UP' in groundings:
             db = 'UP'
             id = groundings['UP']
@@ -189,19 +192,20 @@ def generate_famplex_terms():
                 if hgnc_id:
                     db = 'HGNC'
                     id = hgnc_id
-            term = Term(norm_txt, txt, db, id, name, 'assertion')
+            term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
             name = chebi_client.get_chebi_name_from_id(id[6:])
-            term = Term(norm_txt, txt, 'CHEBI', id, name, 'assertion')
+            term = Term(norm_txt, txt, 'CHEBI', id, name, 'assertion',
+                        'famplex')
         elif 'GO' in groundings:
             id = groundings['GO']
             term = Term(norm_txt, txt, 'GO', id,
-                        go_client.get_go_label(id), 'assertion')
+                        go_client.get_go_label(id), 'assertion', 'famplex')
         elif 'MESH' in groundings:
             id = groundings['MESH']
             term = Term(norm_txt, txt, 'MESH', id,
-                        mesh_client.get_mesh_name(id), 'assertion')
+                        mesh_client.get_mesh_name(id), 'assertion', 'famplex')
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -225,7 +229,7 @@ def generate_uniprot_terms():
         names = [p[:-1] if p.endswith(')') else p for p in parts]
         for name in names:
             term = Term(normalize(name), name, 'UP', row['Entry'],
-                        row['Gene names  (primary )'], 'synonym')
+                        row['Gene names  (primary )'], 'synonym', 'uniprot')
             terms.append(term)
     return terms
 
