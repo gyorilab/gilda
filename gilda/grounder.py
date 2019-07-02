@@ -90,6 +90,7 @@ class Grounder(object):
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
+        logger.info('Running disambiguation for %s' % raw_str)
         if raw_str not in self.disambiguators:
             return scored_matches
 
@@ -103,6 +104,8 @@ class Grounder(object):
                 for match in scored_matches:
                     if match.term.db == db and match.term.id == id:
                         match.multiply(score)
+                        logger.info('Multiplying entry %s`\'s score with %.2f'
+                                    % (match.entry.entry_name, score))
         except Exception as e:
             logger.exception(e)
 
