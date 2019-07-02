@@ -1,5 +1,6 @@
 """Module containing various string processing functions used for grounding."""
 import regex as re
+from .greek_alphabet import greek_alphabet, greek_to_latin
 
 
 # We try to list all kinds of dashes here
@@ -99,8 +100,38 @@ def split_preserve_tokens(s):
     return re.split(r'(\W)', s)
 
 
+def replace_greek_uni(s):
+    """Replace Greek spelled out letters with their unicode character."""
+    for greek_uni, greek_spelled_out in greek_alphabet.items():
+        s = s.replace(greek_spelled_out, greek_uni)
+    return s
+
+
+def replace_greek_latin(s):
+    """Replace Greek spelled out letters with their latin character."""
+    for greek_spelled_out, latin in greek_to_latin.items():
+        s = s.replace(greek_spelled_out, latin)
+    return s
+
+
 def get_capitalization_pattern(word, beginning_of_sentence=False):
-    """Return the type of capitalization"""
+    """Return the type of capitalization for the string.
+
+    Parameters
+    ----------
+    word : str
+        The word whose capitalization is determined.
+    beginning_of_sentence : Optional[bool]
+        True if the word appears at the beginning of a sentence. Default: False
+
+    Returns
+    -------
+    str
+        The capitalization pattern of the given word. Returns one of the
+        following: sentence_initial_cap, single_cap_letter, all_caps, all_lower,
+        initial_cap, mixed.
+
+    """
     if beginning_of_sentence and re.match(r'^\p{Lu}\p{Ll}*$', word):
         return 'sentence_initial_cap'
     elif re.match(r'^\p{Lu}$', word):
