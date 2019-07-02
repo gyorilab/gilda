@@ -97,6 +97,7 @@ class Grounder(object):
         try:
             res = self.disambiguators[raw_str].disambiguate([context])
             grounding_dict = res[0][2]
+            logger.info('Result from Adeft: %s' % str(grounding_dict))
             for grounding, score in grounding_dict.items():
                 if grounding == 'ungrounded':
                     continue
@@ -104,8 +105,8 @@ class Grounder(object):
                 for match in scored_matches:
                     if match.term.db == db and match.term.id == id:
                         match.multiply(score)
-                        logger.info('Multiplying entry %s`\'s score with %.2f'
-                                    % (match.entry.entry_name, score))
+                        logger.info('Multiplying entry %s\'s score with %.2f'
+                                    % (match.term.entry_name, score))
         except Exception as e:
             logger.exception(e)
 
