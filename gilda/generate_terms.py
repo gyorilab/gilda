@@ -218,6 +218,7 @@ def generate_famplex_terms():
 
 def generate_uniprot_terms():
     import requests
+    from indra.databases import uniprot_client
     url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
            'genes(PREFERRED),protein%20names&sort=score&'
            'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
@@ -230,9 +231,20 @@ def generate_uniprot_terms():
     for _, row in df.iterrows():
         parts = [p.strip() for p in row['Protein names'].split('(')]
         names = [p[:-1] if p.endswith(')') else p for p in parts]
+        up_id = row['Entry']
+        gene_name = row['Gene names  (primary )']
+        hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+        if hgnc_id:
+            ns = 'HGNC'
+            id = hgnc_id
+            standard_name = gene_name
+        else:
+            ns = 'UP'
+            id = row['Entry']
+            standard_name = gene_name
         for name in names:
-            term = Term(normalize(name), name, 'UP', row['Entry'],
-                        row['Gene names  (primary )'], 'synonym', 'uniprot')
+            term = Term(normalize(name), name, ns, id,
+                        standard_name, 'synonym', 'uniprot')
             terms.append(term)
     return terms
 
