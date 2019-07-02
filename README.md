@@ -4,7 +4,7 @@
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 
 ## Installation
-Gilda is deployed as a web service at http://34.201.164.108:8001/ (see Usage
+Gilda is deployed as a web service at http://34.201.164.108:8001/ground (see Usage
 instructions below), it only needs to be installed if used locally.
 
 The recommended method to install Gilda is via Github as:
