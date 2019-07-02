@@ -1,4 +1,3 @@
-import os
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
 from . import appreq
@@ -17,16 +16,16 @@ def test_grounder():
 
     scores = gr.ground('kras')
     assert len(scores) == 1, scores
-    assert appreq(scores[0][1], 0.8536), scores
+    assert appreq(scores[0].score, 0.9845), scores
     scores = gr.ground('k-ras')
     assert len(scores) == 1, scores
-    assert appreq(scores[0][1], 0.8546), scores
+    assert appreq(scores[0].score, 0.9936), scores
     scores = gr.ground('KRAS')
     assert len(scores) == 1, scores
-    assert appreq(scores[0][1], 0.85542), scores
+    assert appreq(scores[0].score, 1.0), scores
     scores = gr.ground('bRaf')
     assert len(scores) == 1, scores
-    assert appreq(scores[0][1], 0.85466), scores
+    assert appreq(scores[0].score, 0.9936), scores
 
 
 def test_grounder_bug():

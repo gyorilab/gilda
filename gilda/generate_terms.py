@@ -6,6 +6,7 @@ import re
 import os
 import pandas
 import logging
+import requests
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
@@ -217,8 +218,6 @@ def generate_famplex_terms():
 
 
 def generate_uniprot_terms():
-    import requests
-    from indra.databases import uniprot_client
     url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
            'genes(PREFERRED),protein%20names&sort=score&'
            'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
