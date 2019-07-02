@@ -18,5 +18,16 @@ To run the service locally, run
 ```bash
 python -m gilda.app.app
 ```
+
 This runs the service on port 8001 by default, accepting POST requests on the `http://localhost:8001/ground`
-endpoint. The requests use a JSON header, 
+endpoint. The requests use a JSON header, below is an example request using `curl`:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' http://localhost:8001/ground
+```
+
+The same request using Python's request package would be as follows:
+
+```python
+requests.post('http://localhost:8001/ground', json={'text': 'kras'})
+```
