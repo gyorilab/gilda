@@ -4,7 +4,8 @@ import itertools
 from adeft import available_shortforms as available_adeft_models
 from adeft.disambiguate import load_disambiguator
 from .term import Term
-from .process import normalize, replace_dashes
+from .process import normalize, replace_dashes, replace_greek_uni, \
+    replace_greek_latin
 from .scorer import generate_match, score
 
 
@@ -31,15 +32,28 @@ class Grounder(object):
         list of Term
             A list of Terms that are potential matches for the given string.
         """
-        norm = normalize(raw_str)
-        norm_spacedash = normalize(replace_dashes(raw_str, ' '))
-        lookups = [norm]
-        if norm_spacedash != norm:
-            lookups.append(norm_spacedash)
+        lookups = self._generate_lookups(raw_str)
         entries = []
         for lookup in lookups:
             entries += self.entries.get(lookup, [])
         return entries
+
+    def _generate_lookups(self, raw_str):
+        # We first add the normalized string itself
+        norm = normalize(raw_str)
+        lookups = {norm}
+        # Then we add a version with dashes replaced by spaces
+        norm_spacedash = normalize(replace_dashes(raw_str, ' '))
+        lookups.add(norm_spacedash)
+        # We then try to replace spelled out greek letters with
+        # their unicode equivalents or their latin equivalents
+        greek_replaced = normalize(replace_greek_uni(raw_str))
+        lookups.add(greek_replaced)
+        greek_replaced = normalize(replace_greek_latin(raw_str))
+        lookups.add(greek_replaced)
+        logger.info('Looking up the following strings: %s' %
+                    ', '.join(lookups))
+        return lookups
 
     def ground(self, raw_str):
         """Return scored groundings for a given raw string.
