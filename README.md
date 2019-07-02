@@ -16,14 +16,18 @@ into the `~/.gilda/<version>` folder during runtime. Given some additional depen
 resource file can also be regenerated locally by running `python -m gilda.generate_terms`.
 
 ## Usage
-Gilda can either be used programmatically via its Python API, or as a REST service (recommended).
-To run the service locally, run
+Gilda can either be used as a REST service (recommended) or programmatically via its Python API.
+An introduction Jupyter notebook for using Gilda as a service is available at
+https://github.com/bgyori/gilda/blob/master/notebooks/gilda_introduction.ipynb
+
+The REST service accepts POST requests with a JSON header on the /ground endpoint.
+There is a public REST service running on AWS but the service can also be run locally as
+
 ```bash
 python -m gilda.app.app
 ```
 
-This runs the service on port 8001 by default, accepting POST requests on the `http://localhost:8001/ground`
-endpoint. The requests use a JSON header, below is an example request using `curl`:
+Below is an example request using `curl`:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' http://localhost:8001/ground
@@ -35,9 +39,9 @@ The same request using Python's request package would be as follows:
 requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 ```
 
+The above requests can also be used to interact with the public service, by using the
+appropriate URL instead of `localhost`.
+
 As for using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module
 of Gilda and their usage.
-
-An introduction Jupyter notebook to Gilda is also available at
-https://github.com/bgyori/gilda/blob/master/notebooks/gilda_introduction.ipynb
