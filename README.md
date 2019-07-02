@@ -31,3 +31,7 @@ The same request using Python's request package would be as follows:
 ```python
 requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 ```
+
+As for using Gilda as a Python package, the documentation at
+http://gilda.readthedocs.org provides detailed descriptions of each module
+of Gilda and their usage.
