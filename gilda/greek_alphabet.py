@@ -60,5 +60,4 @@ greek_to_latin = {
    'Gamma': 'C',
    'delta': 'd',
    'Delta': 'D',
-
 }

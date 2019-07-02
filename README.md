@@ -35,3 +35,6 @@ requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 As for using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module
 of Gilda and their usage.
+
+An introduction Jupyter notebook to Gilda is also available at
+https://github.com/bgyori/gilda/blob/master/notebooks/gilda_introduction.ipynb
