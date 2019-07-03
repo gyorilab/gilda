@@ -91,22 +91,37 @@ class Grounder(object):
 
     def disambiguate(self, raw_str, scored_matches, context):
         logger.info('Running disambiguation for %s' % raw_str)
+        # If we don't have a disambiguator for this string, we return with
+        # the original scores intact
         if raw_str not in self.disambiguators:
             return scored_matches
 
+        # Otherwise, we attempt to disambiguate
         try:
+            # We find the disambiguator for the given string and pass in
+            # context
             res = self.disambiguators[raw_str].disambiguate([context])
+            # The actual grounding dict is at this index in the result
             grounding_dict = res[0][2]
             logger.info('Result from Adeft: %s' % str(grounding_dict))
-            for grounding, score in grounding_dict.items():
-                if grounding == 'ungrounded':
-                    continue
-                db, id = grounding.split(':', maxsplit=1)
-                for match in scored_matches:
+            # We attempt to get the score for the 'ungrounded' entry
+            ungrounded_score = grounding_dict.get('ungrounded', 1.0)
+            # Now we check if each scored match has a corresponding Adeft
+            # grounding and score. If we find one, we multiply the original
+            # match score with the Adeft score. Otherwise, we multiply the
+            # original score with the 'ungrounded' score given by Adeft.
+            for match in scored_matches:
+                has_adeft_grounding = False
+                for grounding, score in grounding_dict.items():
+                    if grounding == 'ungrounded':
+                        continue
+                    db, id = grounding.split(':', maxsplit=1)
                     if match.term.db == db and match.term.id == id:
                         match.multiply(score)
-                        logger.info('Multiplying entry %s\'s score with %.2f'
-                                    % (match.term.entry_name, score))
+                        has_adeft_grounding = True
+                        break
+                if not has_adeft_grounding:
+                    match.multiply(ungrounded_score)
         except Exception as e:
             logger.exception(e)
 
@@ -160,6 +175,8 @@ class ScoredMatch(object):
         }
 
     def multiply(self, value):
+        logger.info('Multiplying the score of "%s" with %.3f'
+                    % (self.term.entry_name, value))
         self.score = self.score * value
 
 
