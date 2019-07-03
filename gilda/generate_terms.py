@@ -254,7 +254,7 @@ def generate_adeft_terms():
     all_term_args = set()
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
-        for grounding in da.grounding_dict[shortform].values():
+        for grounding in da.names.keys():
             if grounding == 'ungrounded':
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
