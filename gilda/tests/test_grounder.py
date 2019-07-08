@@ -41,3 +41,8 @@ def test_grounder_num_entries():
     assert len(entries) == 3, entries
 
 
+def test_grounder_depluralize():
+    entries = gr.lookup('RAFs')
+    assert len(entries) == 2, entries
+    for entry in entries:
+        assert entry.norm_text == 'raf'
