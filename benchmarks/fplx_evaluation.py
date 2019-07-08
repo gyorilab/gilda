@@ -81,160 +81,84 @@ for _, row in df.iterrows():
     groundings.append(grounding)
 
 
+def evaluate_old_grounding(grounding):
+    """Return status of old grounding."""
+    if not grounding['db_refs']:
+        return 'ungrounded'
+    elif not grounding['correct']:
+        return 'incorrect'
+    else:
+        return 'correct'
+
+
+def evaluate_new_grounding(grounding, term):
+    """Return status of new grounding by comparing to old grounding."""
+    if grounding['text'] in correct_assertions:
+        if term['id'] == correct_assertions[grounding['text']].get(term['db']):
+            return 'correct'
+    elif grounding['text'] in incorrect_assertions:
+        if term['id'] == \
+                incorrect_assertions[grounding['text']].get(term['db']):
+            return 'incorrect'
+    elif not grounding['correct']:
+        # If the grounding matches one of the known incorrect ones
+        if grounding['db_refs'].get(term['db']) == term['id']:
+            return 'incorrect'
+    else:
+        # If the grounding matches one of the known correct ones
+        if grounding['db_refs'].get(term['db']) == term['id']:
+            return 'correct'
+    return 'unknown'
+
+
+# Generate an initial comparison matrix
 # This dict contains counts of all the possible relationships between
 # the reference grounding and the one produced by Gilda
-comparison = {
-    'ungrounded_ungrounded': 0,
-    'ungrounded_grounded': 0,
-    'ungrounded_correct': 0,
-    'ungrounded_incorrect': 0,
-    'incorrect_ungrounded': 0,
-    'incorrect_not_matching': 0,
-    'incorrect_matching': 0,
-    'incorrect_correct': 0,
-    'incorrect_incorrect': 0,
-    'correct_ungrounded': 0,
-    'correct_not_matching': 0,
-    'correct_matching': 0,
-    'correct_correct': 0,
-    'correct_incorrect': 0
-    }
+comparison = {'%s_%s' % (a, b): 0 for a, b in
+              itertools.product(['ungrounded', 'correct', 'incorrect'],
+                                ['ungrounded', 'unknown', 'correct',
+                                 'incorrect'])}
 
-incorrect_not_matching = []
-correct_not_matching = []
-correct_ungrounded = []
-ungrounded_grounded = []
+# Now iterate over all the old groundings, get the new one, and build up
+# the values in the comparison matrix
 for grounding in groundings:
+    old_eval = evaluate_old_grounding(grounding)
     # Send grounding requests
     res = requests.post('%s/ground' % service_url,
-                        json={'text': grounding['text']})
-
-    entry = None
-    # If there is a grounding returned
-    if res.json():
-        # Get the top entry in the response which we consider the
-        # grounding
-        entry = res.json()[0]['term']
-        # If the reference is ungrounded
-        if not grounding['db_refs']:
-            if grounding['text'] in correct_assertions:
-                if entry['id'] == \
-                        correct_assertions[grounding['text']].get(
-                            entry['db']):
-                    comparison['ungrounded_correct'] += 1
-            elif grounding['text'] in incorrect_assertions:
-                if entry['id'] == \
-                        incorrect_assertions[grounding['text']].get(
-                            entry['db']):
-                    comparison['ungrounded_incorrect'] += 1
-            else:
-                ungrounded_grounded.append((grounding, entry))
-                comparison['ungrounded_grounded'] += 1
-        # If the reference is known to be incorrect
-        elif not grounding['correct']:
-            # If the grounding matches one of the known incorrect ones
-            if grounding['db_refs'].get(entry['db']) == entry['id']:
-                comparison['incorrect_matching'] += 1
-            # Otherwise the grounding is not matching the known incorrect
-            # one and we can't determine its correctness
-            else:
-                if grounding['text'] in correct_assertions:
-                    if entry['id'] == \
-                            correct_assertions[grounding['text']].get(
-                                entry['db']):
-                        comparison['incorrect_correct'] += 1
-                elif grounding['text'] in incorrect_assertions:
-                    if entry['id'] == \
-                        incorrect_assertions[grounding['text']].get(
-                            entry['db']):
-                        comparison['incorrect_incorrect'] += 1
-                else:
-                    incorrect_not_matching.append((grounding, entry))
-                    comparison['incorrect_not_matching'] += 1
-        # If the reference is known to be correct
-        else:
-            # If the grounding matches one of the known correct ones
-            if entry['id'] == grounding['db_refs'].get(entry['db']):
-                comparison['correct_matching'] += 1
-
-            elif grounding['text'] in correct_assertions:
-                if entry['id'] == \
-                        correct_assertions[grounding['text']].get(
-                            entry['db']):
-                    comparison['correct_correct'] += 1
-            elif grounding['text'] in incorrect_assertions:
-                if entry['id'] == \
-                        incorrect_assertions[grounding['text']].get(
-                            entry['db']):
-                    comparison['correct_incorrect'] += 1
-            # Otherwise we got a different grounding from the known correct
-            # one and so we assume that its incorrect
-            else:
-                comparison['correct_not_matching'] += 1
-                correct_not_matching.append((grounding, entry))
-    # The remaining cases account for the case when we got no grounding
-    # but the reference is either correct, incorrect, or ungrounded
-    elif grounding['correct']:
-        comparison['correct_ungrounded'] += 1
-        correct_ungrounded.append((grounding, entry))
-    elif not grounding['correct'] and not grounding['db_refs']:
-        comparison['ungrounded_ungrounded'] += 1
-    elif not grounding['correct'] and grounding['db_refs']:
-        comparison['incorrect_ungrounded'] += 1
+                        json={'text': grounding['text']}).json()
+    if not res:
+        comparison['%s_ungrounded' % old_eval] += 1
+        continue
+    term = res[0]['term']
+    new_eval = evaluate_new_grounding(grounding, term)
+    comparison['%s_%s' % (old_eval, new_eval)] += 1
 
 
-# In each of the following tuples, the first element is the worst case and
-# the second element is the best case estimate based on information we have
-correct = (comparison['correct_matching'] +
-           comparison['incorrect_correct'] +
-           comparison['ungrounded_correct'] +
-           comparison['correct_correct'],
+# We now calculate various summary statistics and then print them
+def get_sum_start(d, s):
+    return sum([v for k, v in d.items() if k.startswith(s)])
 
-           comparison['correct_matching'] +
-           comparison['correct_correct'] +
-           comparison['incorrect_correct'] +
-           comparison['ungrounded_correct'] +
-           comparison['incorrect_not_matching'] +
-           comparison['ungrounded_grounded'] +
-           comparison['correct_not_matching'])
-incorrect = (comparison['incorrect_matching'] +
-             comparison['incorrect_incorrect'] +
-             comparison['correct_not_matching'] +
-             comparison['correct_incorrect'] +
-             comparison['ungrounded_grounded'] +
-             comparison['ungrounded_incorrect'] +
-             comparison['incorrect_not_matching'],
 
-             comparison['incorrect_matching'] +
-             comparison['incorrect_incorrect'] +
-             comparison['ungrounded_incorrect'] +
-             comparison['correct_incorrect'])
-ungrounded = (comparison['correct_ungrounded'] +
-              comparison['incorrect_ungrounded'] +
-              comparison['ungrounded_ungrounded'])
+def get_sum_end(d, s):
+    return sum([v for k, v in d.items() if k.endswith(s)])
 
-old_correct = (comparison['correct_not_matching'] +
-               comparison['correct_matching'] +
-               comparison['correct_ungrounded'] +
-               comparison['correct_correct'] +
-               comparison['correct_incorrect'])
-old_incorrect = (comparison['incorrect_not_matching'] +
-                 comparison['incorrect_matching'] +
-                 comparison['incorrect_ungrounded'] +
-                 comparison['incorrect_correct'] +
-                 comparison['incorrect_incorrect'])
-old_ungrounded = (comparison['ungrounded_ungrounded'] +
-                  comparison['ungrounded_grounded'] +
-                  comparison['ungrounded_correct'] +
-                  comparison['ungrounded_incorrect'])
+
+old_correct = get_sum_start(comparison, 'correct')
+old_incorrect = get_sum_start(comparison, 'incorrect')
+old_ungrounded = get_sum_start(comparison, 'ungrounded')
+correct = get_sum_end(comparison, '_correct')
+incorrect = get_sum_end(comparison, '_incorrect')
+ungrounded = get_sum_end(comparison, '_ungrounded')
+unknown = get_sum_end(comparison, '_unknown')
+
 
 assert old_correct + old_incorrect + old_ungrounded == 300
 
 
-prec = (correct[0] / (correct[0] + incorrect[0]),
-        correct[1] / (correct[1] + incorrect[1]))
-recall = (correct[0] / (correct[0] + ungrounded),
-          correct[1] / (correct[1] + ungrounded))
+prec = (correct / (correct + incorrect + unknown),
+        (correct + unknown) / (correct + incorrect + unknown))
+recall = (correct / (correct + ungrounded),
+          (correct + unknown) / (correct + unknown + ungrounded))
 fscore = (2 * prec[0] * recall[0] / (prec[0] + recall[0]),
           2 * prec[1] * recall[1] / (prec[1] + recall[1]))
 
