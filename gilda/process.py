@@ -144,3 +144,54 @@ def get_capitalization_pattern(word, beginning_of_sentence=False):
         return 'initial_cap'
     else:
         return 'mixed'
+
+
+def depluralize(word):
+    """Return the depluralized version of the word, along with a status  flag.
+
+    Parameters
+    ----------
+    word : str
+        The word which is to be depluralized.
+
+    Returns
+    -------
+    str
+        The original word, if it is detected to be non-plural, or the
+        depluralized version of the word.
+    str
+        A status flag represeting the detected pluralization status of the
+        word, with non_plural (e.g., BRAF), plural_oes (e.g., mosquitoes),
+        plural_ies (e.g., antibodies), plural_es (e.g., switches),
+        plural_cap_s (e.g., MAPKs), and plural_s (e.g., receptors).
+    """
+    # If the word doesn't end in s, we assume it's not plural
+    if not word.endswith('s'):
+        return word, 'non_plural'
+    # Another case is words ending in -sis (e.g., apoptosis), these are almost
+    # exclusively non plural so we return here too
+    elif word.endswith('sis'):
+        return word, 'non_plural'
+    # This is the case when the word ends with an o which is pluralized as oes
+    # e.g., mosquitoes
+    elif word.endswith('oes'):
+        return word[:-2], 'plural_oes'
+    # This is the case when the word ends with a y which is pluralized as ies,
+    # e.g., antibodies
+    elif word.endswith('ies'):
+        return word[:-3] + 'y', 'plural_ies'
+    # These are the cases where words form plurals by adding -es so we
+    # return by stripping it off
+    elif word.endswith(('xes', 'ses', 'ches', 'shes')):
+        return word[:-2], 'plural_es'
+    # If the word is all caps and the last letter is an s, then it's a very
+    # strong signal that it is pluralized so we have a custom return value
+    # for that
+    elif re.match(r'^\p{Lu}+$', word[:-1]):
+        return word[:-1], 'plural_caps_s'
+    # Otherwise, we just go with the assumption that the last s is the
+    # plural marker
+    else:
+        return word[:-1], 'plural_s'
+    # Note: there don't seem to be any compelling examples of -f or -fe -> ves
+    # so it is not implemented
