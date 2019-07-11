@@ -5,7 +5,7 @@ from adeft import available_shortforms as available_adeft_models
 from adeft.disambiguate import load_disambiguator
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
-    replace_greek_latin
+    replace_greek_latin, depluralize
 from .scorer import generate_match, score
 
 
@@ -39,6 +39,9 @@ class Grounder(object):
         return entries
 
     def _generate_lookups(self, raw_str):
+        # TODO: we should propagate flags about depluralization and possible
+        #  other modifications made here and take them into account when
+        #  scoring
         # We first add the normalized string itself
         norm = normalize(raw_str)
         lookups = {norm}
@@ -51,6 +54,9 @@ class Grounder(object):
         lookups.add(greek_replaced)
         greek_replaced = normalize(replace_greek_latin(raw_str))
         lookups.add(greek_replaced)
+        # Finally, we attempt to depluralize the word
+        depluralized = normalize(depluralize(raw_str)[0])
+        lookups.add(depluralized)
         logger.info('Looking up the following strings: %s' %
                     ', '.join(lookups))
         return lookups
