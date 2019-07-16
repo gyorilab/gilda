@@ -247,7 +247,7 @@ def generate_uniprot_terms():
     return terms
 
 
-def _parse_uniprot_synonyms(synonyms_str):
+def parse_uniprot_synonyms(synonyms_str):
     syns = ['']
     parentheses_depth = 0
     start = True

@@ -1,4 +1,4 @@
-from gilda.generate_terms import _parse_uniprot_synonyms
+from gilda.generate_terms import parse_uniprot_synonyms
 
 
 def test_parse_embedded_parentheses_uniprot():
@@ -6,7 +6,7 @@ def test_parse_embedded_parentheses_uniprot():
            'transporter A3) (Na(+)-coupled neutral amino acid transporter 4)'
            ' (Solute carrier family 38 member 4) (System A amino acid '
            'transporter 3)')
-    syms = _parse_uniprot_synonyms(txt)
+    syms = parse_uniprot_synonyms(txt)
     for s in syms:
         assert not s.endswith(' '), '"%s"' % s
     assert len(syms) == 5, syms
