@@ -49,7 +49,18 @@ def get_ambiguities():
         # Everything else is an ambiguity
         ambigs.append(entries)
     ambigs = filter_out_duplicates(ambigs)
+    ambigs = filter_out_shared_prefix(ambigs)
     return ambigs
+
+
+def filter_out_shared_prefix(ambigs):
+    non_long_prefix_ambigs = []
+    for terms in ambigs:
+        names = [term.entry_name for term in terms]
+        prefix = lcp(names)
+        if len(prefix) < 3:
+            non_long_prefix_ambigs.append(terms)
+    return non_long_prefix_ambigs
 
 
 def filter_out_duplicates(ambigs):
