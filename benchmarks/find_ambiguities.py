@@ -48,7 +48,22 @@ def get_ambiguities():
             continue
         # Everything else is an ambiguity
         ambigs.append(entries)
+    ambigs = filter_out_duplicates(ambigs)
     return ambigs
+
+
+def filter_out_duplicates(ambigs):
+    unique_ambigs = []
+    for terms in ambigs:
+        keys = set()
+        unique_terms = []
+        for term in terms:
+            key = tuple(term.to_list()[:-1])
+            if key not in keys:
+                keys.add(key)
+                unique_terms.append(term)
+        unique_ambigs.append(unique_terms)
+    return unique_ambigs
 
 
 def find_families(ambigs):
