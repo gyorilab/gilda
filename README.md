@@ -45,3 +45,6 @@ appropriate URL instead of `localhost`.
 As for using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module
 of Gilda and their usage.
+
+## Funding
+The development of Gilda is funded under the DARPA Communicating with Computers program (ARO grant W911NF-15-1-0544).
