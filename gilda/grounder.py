@@ -3,6 +3,7 @@ import logging
 import itertools
 from adeft import available_shortforms as available_adeft_models
 from adeft.disambiguate import load_disambiguator
+from collections import defaultdict
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
@@ -203,16 +204,13 @@ def load_terms_file(terms_file):
     """
     df = pandas.read_csv(terms_file, delimiter='\t', na_values=[''],
                          keep_default_na=False)
-    entries = {}
+    entries = defaultdict(list)
     for idx, row in df.iterrows():
         # Replace pandas nans with Nones
         row_nones = [r if not pandas.isna(r) else None for r in row]
         entry = Term(*row_nones)
-        if row[0] in entries:
-            entries[row[0]].append(entry)
-        else:
-            entries[row[0]] = [entry]
-    return entries
+        entries[row[0]].append(entry)
+    return dict(entries)
 
 
 def load_adeft_models():
