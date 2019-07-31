@@ -99,6 +99,20 @@ def lcp(strs):
     return prefix
 
 
+def get_abstract(pmid):
+    from indra_db.util import get_db
+    from indra_db.util.content_scripts import get_text_content_from_text_refs
+    from indra.literature.adeft_tools import universal_extract_text
+    print('Getting %s' % pmid)
+    db = get_db('primary')
+    content = get_text_content_from_text_refs(text_refs={'PMID': pmid},
+                                              db=db)
+    if content:
+        text = universal_extract_text(content)
+        return text
+    return None
+
+
 def get_papers(ambig_terms):
     gene_pmids = {}
     pmid_counter = Counter()
@@ -109,11 +123,13 @@ def get_papers(ambig_terms):
     texts = []
     labels = []
     for gene, pmids in gene_pmids.items():
+        print('Loading %d PMIDs for %s' % (len(pmids), gene))
         pmids = [p for p in pmids if pmid_counter[p] == 1]
         for pmid in pmids:
-            texts.append(pubmed_client.get_abstract(pmid))
-            time.sleep(0.5)
-        labels.append(gene)
+            abstract = get_abstract(pmid)
+            if abstract:
+                texts.append(abstract)
+                labels.append(gene)
     return texts, labels
 
 
@@ -129,3 +145,5 @@ if __name__ == '__main__':
     ambigs = get_ambiguities()
     ambigs = rank_ambiguities(ambigs)
     find_families(ambigs)
+    # texts, labels = get_papers(ambigs[27])
+    # cl = AdeftClassifier(['p75'], list(set(labels)))
