@@ -228,8 +228,7 @@ def generate_uniprot_terms():
     df = pandas.read_csv('up_synonyms.tsv', delimiter='\t', dtype=str)
     terms = []
     for _, row in df.iterrows():
-        parts = [p.strip() for p in row['Protein names'].split('(')]
-        names = [p[:-1] if p.endswith(')') else p for p in parts]
+        names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
         gene_name = row['Gene names  (primary )']
         hgnc_id = hgnc_client.get_hgnc_id(gene_name)
@@ -246,6 +245,31 @@ def generate_uniprot_terms():
                         standard_name, 'synonym', 'uniprot')
             terms.append(term)
     return terms
+
+
+def parse_uniprot_synonyms(synonyms_str):
+    syns = ['']
+    parentheses_depth = 0
+    start = True
+    for c in synonyms_str:
+        if c == '(':
+            if start:
+                syns[-1] = syns[-1][:-1]
+                syns.append('')
+                start = False
+            elif parentheses_depth == 0:
+                syns[-1] = syns[-1][:-1]
+                syns.append('')
+            else:
+                syns[-1] += c
+            parentheses_depth += 1
+        elif c == ')':
+            if parentheses_depth > 1:
+                syns[-1] += c
+            parentheses_depth -= 1
+        else:
+            syns[-1] += c
+    return syns
 
 
 def generate_adeft_terms():
