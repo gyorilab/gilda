@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import pickle
 from collections import Counter
@@ -119,8 +120,13 @@ def get_papers(ambig_terms):
     pmid_counter = Counter()
     for term in ambig_terms:
         gene = term.entry_name
-        gene_pmids[gene] = pubmed_client.get_ids_for_gene(gene)
+        try:
+            gene_pmids[gene] = pubmed_client.get_ids_for_gene(gene)
+        except ValueError:
+            print('Could not get PMIDs for gene: %s' % gene)
+            gene_pmids[gene] = []
         pmid_counter.update(gene_pmids[gene])
+        time.sleep(0.5)
     texts = []
     labels = []
     for gene, pmids in gene_pmids.items():
