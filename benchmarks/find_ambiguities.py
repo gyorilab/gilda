@@ -1,8 +1,9 @@
 import os
-import time
 import json
+import pickle
 from collections import Counter
 from indra.literature import pubmed_client
+from adeft.modeling.classify import AdeftClassifier
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
 
@@ -99,7 +100,7 @@ def lcp(strs):
     return prefix
 
 
-def get_abstract(pmid):
+def get_text_content(pmid):
     from indra_db.util import get_db
     from indra_db.util.content_scripts import get_text_content_from_text_refs
     from indra.literature.adeft_tools import universal_extract_text
@@ -126,9 +127,9 @@ def get_papers(ambig_terms):
         print('Loading %d PMIDs for %s' % (len(pmids), gene))
         pmids = [p for p in pmids if pmid_counter[p] == 1]
         for pmid in pmids:
-            abstract = get_abstract(pmid)
-            if abstract:
-                texts.append(abstract)
+            txt = get_text_content(pmid)
+            if txt:
+                texts.append(txt)
                 labels.append(gene)
     return texts, labels
 
@@ -144,6 +145,14 @@ def rank_ambiguities(ambigs):
 if __name__ == '__main__':
     ambigs = get_ambiguities()
     ambigs = rank_ambiguities(ambigs)
-    find_families(ambigs)
-    # texts, labels = get_papers(ambigs[27])
-    # cl = AdeftClassifier(['p75'], list(set(labels)))
+    # find_families(ambigs)
+    param_grid = {'C': [10.0], 'max_features': [100, 1000],
+                  'ngram_range': [(1, 2)]}
+    for ambig in ambigs:
+        texts, labels = get_papers(ambig)
+        cl = AdeftClassifier([ambig[0].text], list(set(labels)))
+        cl.cv(texts, labels, param_grid, cv=5)
+        print(cl.stats)
+        fname = '%s.pkl' % ambig[0].text
+        with open(fname, 'wb') as fh:
+            pickle.dump(cl, fh)
