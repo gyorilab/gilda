@@ -6,6 +6,9 @@ from indra.literature import pubmed_client
 from adeft.modeling.classify import AdeftClassifier
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
+from indra_db.util import get_db
+from indra_db.util.content_scripts import get_text_content_from_text_refs
+from indra.literature.adeft_tools import universal_extract_text
 
 grounding_terms_file = os.path.join(os.path.dirname(__file__), os.pardir,
                                     os.pardir, 'resources',
@@ -70,7 +73,7 @@ def filter_out_duplicates(ambigs):
         keys = set()
         unique_terms = []
         for term in terms:
-            key = tuple(term.to_list()[:-1])
+            key = (term.db, term.id)
             if key not in keys:
                 keys.add(key)
                 unique_terms.append(term)
@@ -101,10 +104,7 @@ def lcp(strs):
 
 
 def get_text_content(pmid):
-    from indra_db.util import get_db
-    from indra_db.util.content_scripts import get_text_content_from_text_refs
-    from indra.literature.adeft_tools import universal_extract_text
-    print('Getting %s' % pmid)
+    # print('Getting %s' % pmid)
     db = get_db('primary')
     content = get_text_content_from_text_refs(text_refs={'PMID': pmid},
                                               db=db)
@@ -149,10 +149,17 @@ if __name__ == '__main__':
     param_grid = {'C': [10.0], 'max_features': [100, 1000],
                   'ngram_range': [(1, 2)]}
     for ambig in ambigs:
+        fname = 'models/%s.pkl' % ambig[0].text
+        if os.path.exists(fname):
+            print('Model exists at %s, skipping' % fname)
+            continue
         texts, labels = get_papers(ambig)
+        label_counts = Counter(labels)
+        if len(label_counts) < 2 or any([v <= 1 for v in label_counts.values()]):
+            print('Could not get labels for more than one entry, skipping')
+            continue
         cl = AdeftClassifier([ambig[0].text], list(set(labels)))
         cl.cv(texts, labels, param_grid, cv=5)
         print(cl.stats)
-        fname = '%s.pkl' % ambig[0].text
         with open(fname, 'wb') as fh:
             pickle.dump(cl, fh)
