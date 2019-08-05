@@ -164,6 +164,8 @@ if __name__ == '__main__':
         if len(label_counts) < 2 or any([v <= 1 for v in label_counts.values()]):
             print('Could not get labels for more than one entry, skipping')
             continue
+        if sum(label_counts.values()) <= 5:
+            print('Got no more than 5 PMIDs overall, skipping')
         cl = AdeftClassifier([ambig[0].text], list(set(labels)))
         cl.cv(texts, labels, param_grid, cv=5)
         print(cl.stats)
