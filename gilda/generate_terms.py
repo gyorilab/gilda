@@ -201,7 +201,7 @@ def _generate_obo_terms(prefix):
         id_ = entry['id']
         name = entry['name']
         yield Term(normalize(name), name, db, id_, name, 'name', prefix)
-        for synonym in entry['synonyms']:
+        for synonym in set(entry['synonyms']):
             yield Term(normalize(synonym), synonym, db, id_, name,
                        'synonym', prefix)
 
