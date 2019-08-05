@@ -251,20 +251,20 @@ def parse_uniprot_synonyms(synonyms_str):
     syns = ['']
     parentheses_depth = 0
     start = True
-    for c in synonyms_str:
+    for idx, c in enumerate(synonyms_str):
         if c == '(':
-            if start:
+            if start and synonyms_str[idx-1] == ' ':
                 syns[-1] = syns[-1][:-1]
                 syns.append('')
                 start = False
-            elif parentheses_depth == 0:
+            elif parentheses_depth == 0 and synonyms_str[idx-1] == ' ':
                 syns[-1] = syns[-1][:-1]
                 syns.append('')
             else:
                 syns[-1] += c
             parentheses_depth += 1
         elif c == ')':
-            if parentheses_depth > 1:
+            if start or not start and parentheses_depth > 1:
                 syns[-1] += c
             parentheses_depth -= 1
         else:
