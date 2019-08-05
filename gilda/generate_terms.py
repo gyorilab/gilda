@@ -2,6 +2,7 @@
 It uses several resource files and database clients from INDRA and requires it
 to be available locally."""
 
+import json
 import re
 import os
 import csv
@@ -169,6 +170,40 @@ def generate_mesh_terms(ignore_mappings=False):
                 terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
+
+
+def generate_doid_terms():
+    return _get_obo_terms('doid')
+
+
+def generate_efo_terms():
+    return _get_obo_terms('efo')
+
+
+def generate_hp_terms():
+    return _get_obo_terms('hp')
+
+
+def _get_obo_terms(prefix):
+    terms_ = list(_generate_obo_terms(prefix))
+    logger.info('Loaded %d terms from %s', len(terms_), prefix)
+    return terms_
+
+
+def _generate_obo_terms(prefix):
+    filename = os.path.join(resources, '{prefix}.json'.format(prefix=prefix))
+    logger.info('Loading %s', filename)
+    with open(filename) as file:
+        entries = json.load(file)
+
+    db = prefix.upper()
+    for entry in entries:
+        id_ = entry['id']
+        name = entry['name']
+        yield Term(normalize(name), name, db, id_, name, 'name', prefix)
+        for synonym in entry['synonyms']:
+            yield Term(normalize(synonym), synonym, db, id_, name,
+                       'synonym', prefix)
 
 
 def generate_go_terms():
@@ -364,12 +399,19 @@ def get_all_terms():
     terms += generate_mesh_terms()
     terms += generate_uniprot_terms()
     terms += generate_adeft_terms()
+    terms += generate_doid_terms()
+    terms += generate_hp_terms()
+    terms += generate_efo_terms()
     terms = filter_out_duplicates(terms)
     return terms
 
 
-if __name__ == '__main__':
+def main():
     terms = get_all_terms()
     from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
     write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
+
+
+if __name__ == '__main__':
+    main()
