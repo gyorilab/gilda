@@ -15,8 +15,9 @@ from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
 from tqdm import tqdm
-from .term import Term
-from .process import normalize
+from gilda.term import Term
+from gilda.process import normalize
+from gilda.resources import resource_dir
 
 
 indra_module_path = indra.__path__[0]
