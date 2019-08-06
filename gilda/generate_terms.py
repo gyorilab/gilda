@@ -2,6 +2,7 @@
 It uses several resource files and database clients from INDRA and requires it
 to be available locally."""
 
+import itertools as itt
 import json
 import re
 import os
@@ -13,6 +14,7 @@ import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
+from tqdm import tqdm
 from .term import Term
 from .process import normalize
 
@@ -191,48 +193,42 @@ def _generate_obo_terms(prefix):
         entries = json.load(file)
 
     terms = []
-    for entry in entries:
-        entities = [
-            (prefix.upper(), entry['id'], entry['name']),
-        ]
+    for entry in tqdm(entries, desc=prefix):
+        db, db_id, db_name = prefix.upper(), entry['id'], entry['name']
+        name_term = Term(
+            norm_text=normalize(db_name),
+            text=db_name,
+            db=db,
+            id=db_id,
+            entry_name=db_name,
+            status='name',
+            source=prefix,
+        )
+        terms.append(name_term)
 
+        entities = [
+            (db, db_id, db_name),
+        ]
         # TODO add more entities based on xrefs?
         for xref in entry['xrefs']:
-            try:
-                xref_db, xref_db_id = xref.split(':', 1)
-            except ValueError:
-                continue
-
-            if xref_db == 'MESH':
-                mesh_name = mesh_client.get_mesh_name(xref_db_id)
+            if xref.upper().startswith('MESH:'):
+                mesh_id = xref[len('MESH:'):]
+                mesh_name = mesh_client.get_mesh_name(mesh_id, offline=False)
                 if mesh_name is not None:
-                    entities.append((xref_db, xref_db_id, mesh_name))
+                    entities.append(('MESH', mesh_id, mesh_name))
 
-        for db, db_id, db_name in entities:
-            # Make the preferred label term
-            name_term = Term(
-                norm_text=normalize(db_name),
-                text=db_name,
+        synonyms = set(entry['synonyms'])
+        for synonym, (db, db_id, db_name) in itt.product(synonyms, entities):
+            synonym_term = Term(
+                norm_text=normalize(synonym),
+                text=synonym,
                 db=db,
                 id=db_id,
                 entry_name=db_name,
-                status='name',
+                status='synonym',
                 source=prefix,
             )
-            terms.append(name_term)
-
-            # Make unique terms for each synonym
-            for synonym in set(entry['synonyms']):
-                synonym_term = Term(
-                    norm_text=normalize(synonym),
-                    text=synonym,
-                    db=db,
-                    id=db_id,
-                    entry_name=db_name,
-                    status='synonym',
-                    source=prefix,
-                )
-                terms.append(synonym_term)
+            terms.append(synonym_term)
 
     logger.info('Loaded %d terms from %s', len(terms), prefix)
     return terms

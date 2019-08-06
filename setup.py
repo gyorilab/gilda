@@ -27,7 +27,7 @@ setup(name='gilda',
       install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask',
                         'flask-wtf', 'flask-bootstrap'],
       extras_require={'test': ['nose', 'coverage'],
-                      'terms': ['indra'],
+                      'terms': ['indra', 'tqdm'],
                       'benchmarks': ['pandas', 'requests']},
       keywords=['nlp', 'biology']
       )
