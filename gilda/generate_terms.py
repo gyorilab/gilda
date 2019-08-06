@@ -212,28 +212,27 @@ def _generate_obo_terms(prefix):
         ]
         # TODO add more entities based on xrefs?
         for xref in entry['xrefs']:
-            xref_upper = xref.upper()
-            if xref_upper.startswith('MESH:'):
-                mesh_id = xref[len('MESH:'):]
-                mesh_name = mesh_client.get_mesh_name(mesh_id, offline=True)
+            xref_db, xref_db_id = xref['namespace'], xref['id']
+            if xref_db_id == 'NoID':
+                continue
+            if xref_db in {'MESH', 'MSH'}:
+                mesh_name = mesh_client.get_mesh_name(xref_db_id, offline=True)
                 if mesh_name is not None:
-                    entities.append(('MESH', mesh_id, mesh_name))
+                    entities.append(('MESH', xref_db_id, mesh_name))
                 else:
-                    logger.info('Could not find MESH xref %s / %s', xref, mesh_id)
-            if xref_upper.startswith('MSH:'):
-                mesh_id = xref[len('MSH:'):]
-                mesh_name = mesh_client.get_mesh_name(mesh_id, offline=True)
-                if mesh_name is not None:
-                    entities.append(('MESH', mesh_id, mesh_name))
-                else:
-                    logger.info('Could not find MESH xref %s / %s', xref, mesh_id)
-            elif xref_upper.startswith('DOID:'):
-                # DOID has prefix built in
-                doid_name = doid_client.get_doid_name_from_doid_id(xref)
+                    logger.info('Could not find MESH xref %s', xref_db_id)
+            elif xref_db == 'DOID':
+                if not xref_db_id.startswith('DOID:'):
+                    xref_db_id = 'DOID:' + xref_db_id
+                doid_name = doid_client.get_doid_name_from_doid_id(xref_db_id)
+                if doid_name is None:
+                    doid_canonical_id = doid_client.get_doid_id_from_doid_alt_id(xref_db_id)
+                    if doid_canonical_id is not None:
+                        doid_name = doid_client.get_doid_name_from_doid_id(doid_canonical_id)
                 if doid_name is not None:
                     entities.append(('DOID', xref, doid_name))
                 else:
-                    logger.info('Could not find DOID xref %s', xref)
+                    logger.info('Could not find DOID xref %s', xref_db_id)
 
         synonyms = set(entry['synonyms'])
         for synonym, (db, db_id, db_name) in itt.product(synonyms, entities):
@@ -441,13 +440,13 @@ def get_all_terms():
     terms = []
 
     generated_term_groups = [
-        generate_famplex_terms(),
-        generate_hgnc_terms(),
-        generate_chebi_terms(),
-        generate_go_terms(),
-        generate_mesh_terms(),
-        generate_uniprot_terms(),
-        generate_adeft_terms(),
+        # generate_famplex_terms(),
+        # generate_hgnc_terms(),
+        # generate_chebi_terms(),
+        # generate_go_terms(),
+        # generate_mesh_terms(),
+        # generate_uniprot_terms(),
+        # generate_adeft_terms(),
         generate_doid_terms(),
         generate_hp_terms(),
         generate_efo_terms(),
