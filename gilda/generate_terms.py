@@ -392,16 +392,23 @@ def filter_out_duplicates(terms):
 
 
 def get_all_terms():
-    terms = generate_famplex_terms()
-    terms += generate_hgnc_terms()
-    terms += generate_chebi_terms()
-    terms += generate_go_terms()
-    terms += generate_mesh_terms()
-    terms += generate_uniprot_terms()
-    terms += generate_adeft_terms()
-    terms += generate_doid_terms()
-    terms += generate_hp_terms()
-    terms += generate_efo_terms()
+    terms = []
+
+    generated_term_groups = [
+        generate_famplex_terms(),
+        generate_hgnc_terms(),
+        generate_chebi_terms(),
+        generate_go_terms(),
+        generate_mesh_terms(),
+        generate_uniprot_terms(),
+        generate_adeft_terms(),
+        generate_doid_terms(),
+        generate_hp_terms(),
+        generate_efo_terms(),
+    ]
+    for generated_terms in generated_term_groups:
+        terms += generated_terms
+
     terms = filter_out_duplicates(terms)
     return terms
 
