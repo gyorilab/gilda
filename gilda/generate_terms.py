@@ -213,7 +213,7 @@ def _generate_obo_terms(prefix):
         for xref in entry['xrefs']:
             if xref.upper().startswith('MESH:'):
                 mesh_id = xref[len('MESH:'):]
-                mesh_name = mesh_client.get_mesh_name(mesh_id, offline=False)
+                mesh_name = mesh_client.get_mesh_name(mesh_id, offline=True)
                 if mesh_name is not None:
                     entities.append(('MESH', mesh_id, mesh_name))
 
