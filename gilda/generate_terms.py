@@ -173,21 +173,15 @@ def generate_mesh_terms(ignore_mappings=False):
 
 
 def generate_doid_terms():
-    return _get_obo_terms('doid')
+    return _generate_obo_terms('doid')
 
 
 def generate_efo_terms():
-    return _get_obo_terms('efo')
+    return _generate_obo_terms('efo')
 
 
 def generate_hp_terms():
-    return _get_obo_terms('hp')
-
-
-def _get_obo_terms(prefix):
-    terms_ = list(_generate_obo_terms(prefix))
-    logger.info('Loaded %d terms from %s', len(terms_), prefix)
-    return terms_
+    return _generate_obo_terms('hp')
 
 
 def _generate_obo_terms(prefix):
@@ -196,14 +190,42 @@ def _generate_obo_terms(prefix):
     with open(filename) as file:
         entries = json.load(file)
 
-    db = prefix.upper()
+    terms = []
     for entry in entries:
-        id_ = entry['id']
-        name = entry['name']
-        yield Term(normalize(name), name, db, id_, name, 'name', prefix)
-        for synonym in set(entry['synonyms']):
-            yield Term(normalize(synonym), synonym, db, id_, name,
-                       'synonym', prefix)
+        entities = [
+            (prefix.upper(), entry['id'], entry['name']),
+        ]
+
+        # TODO add more entities based on xrefs?
+
+        for db, db_id, db_name in entities:
+            # Make the preferred label term
+            name_term = Term(
+                norm_text=normalize(db_name),
+                text=db_name,
+                db=db,
+                id=db_id,
+                entry_name=db_name,
+                status='name',
+                source=prefix,
+            )
+            terms.append(name_term)
+
+            # Make unique terms for each synonym
+            for synonym in set(entry['synonyms']):
+                synonym_term = Term(
+                    norm_text=normalize(synonym),
+                    text=synonym,
+                    db=db,
+                    id=db_id,
+                    entry_name=db_name,
+                    status='synonym',
+                    source=prefix,
+                )
+                terms.append(synonym_term)
+
+    logger.info('Loaded %d terms from %s', len(terms), prefix)
+    return terms
 
 
 def generate_go_terms():
