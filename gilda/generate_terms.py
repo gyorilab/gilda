@@ -197,6 +197,16 @@ def _generate_obo_terms(prefix):
         ]
 
         # TODO add more entities based on xrefs?
+        for xref in entry['xrefs']:
+            try:
+                xref_db, xref_db_id = xref.split(':', 1)
+            except ValueError:
+                continue
+
+            if xref_db == 'MESH':
+                mesh_name = mesh_client.get_mesh_name(xref_db_id)
+                if mesh_name is not None:
+                    entities.append((xref_db, xref_db_id, mesh_name))
 
         for db, db_id, db_name in entities:
             # Make the preferred label term
