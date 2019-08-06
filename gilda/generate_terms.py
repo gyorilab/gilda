@@ -13,7 +13,7 @@ import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client
+    go_client, mesh_client, doid_client
 from tqdm import tqdm
 from .term import Term
 from .process import normalize
@@ -211,11 +211,17 @@ def _generate_obo_terms(prefix):
         ]
         # TODO add more entities based on xrefs?
         for xref in entry['xrefs']:
-            if xref.upper().startswith('MESH:'):
+            xref_upper = xref.upper()
+            if xref_upper.startswith('MESH:') or xref_upper.startswith('MSH:'):
                 mesh_id = xref[len('MESH:'):]
                 mesh_name = mesh_client.get_mesh_name(mesh_id, offline=True)
                 if mesh_name is not None:
                     entities.append(('MESH', mesh_id, mesh_name))
+            elif xref_upper.startswith('DOID:'):
+                # DOID has prefix built in
+                doid_name = doid_client.get_doid_name_from_doid_id(xref)
+                if doid_name is not None:
+                    entities.append(('DOID', xref, doid_name))
 
         synonyms = set(entry['synonyms'])
         for synonym, (db, db_id, db_name) in itt.product(synonyms, entities):
