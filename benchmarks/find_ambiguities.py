@@ -3,12 +3,12 @@ import time
 import json
 import pickle
 from collections import Counter
-from indra.literature import pubmed_client
 from adeft.modeling.classify import AdeftClassifier
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
 from indra_db.util import get_db
 from indra_db.util.content_scripts import get_text_content_from_text_refs
+from indra.literature import pubmed_client
 from indra.literature.adeft_tools import universal_extract_text
 
 grounding_terms_file = os.path.join(os.path.dirname(__file__), os.pardir,
@@ -18,14 +18,11 @@ grounding_terms_file = os.path.join(os.path.dirname(__file__), os.pardir,
 gr = Grounder(get_grounding_terms())
 
 
-def get_ambiguities():
+def get_ambiguities(hgnc_only=False, skip_assertions=True, skip_names=True):
     ambig_entries = {}
-    asserted_entries = []
     for terms in gr.entries.values():
         for term in terms:
-            if term.status == 'assertion':
-                asserted_entries.append(term.text)
-            if term.db != 'HGNC':
+            if hgnc_only and term.db != 'HGNC':
                 continue
             # We consider it an ambiguity if the same text entry appears
             # multiple times in the same DB
@@ -37,19 +34,19 @@ def get_ambiguities():
 
     ambigs = []
     for text, entries in ambig_entries.items():
-        # We skip assertions because they are prioritized anyway
-        if text in asserted_entries:
-            continue
         # If there aren't multiple entries, we skip it
         if len(entries) <= 1:
             continue
         # If the entries all point to the same ID, we skip it
-        ids = {e.id for e in entries}
-        if len(ids) <= 1:
+        db_ids = {(e.db, e.id) for e in entries}
+        if len(db_ids) <= 1:
             continue
         # If there is a name in statuses, we skip it because it's prioritized
         statuses = {e.status for e in entries}
-        if 'name' in statuses:
+        if skip_names and 'name' in statuses:
+            continue
+        # We skip assertions because they are prioritized anyway
+        if skip_assertions and 'assertion' in statuses:
             continue
         # Everything else is an ambiguity
         ambigs.append(entries)
@@ -116,27 +113,37 @@ def get_text_content(pmid):
 
 
 def get_papers(ambig_terms):
-    gene_pmids = {}
+    term_pmids = {}
     pmid_counter = Counter()
     for term in ambig_terms:
-        gene = term.entry_name
-        try:
-            gene_pmids[gene] = pubmed_client.get_ids_for_gene(gene)
-        except ValueError:
-            print('Could not get PMIDs for gene: %s' % gene)
-            gene_pmids[gene] = []
-        pmid_counter.update(gene_pmids[gene])
-        time.sleep(0.5)
+        key = (term.db, term.id)
+        if term.db == 'HGNC':
+            gene = term.entry_name
+            try:
+                term_pmids[key] = pubmed_client.get_ids_for_gene(gene)
+            except ValueError:
+                print('Could not get PMIDs for gene: %s' % gene)
+                term_pmids[key] = []
+            pmid_counter.update(term_pmids[key])
+            time.sleep(0.5)
+        elif term.db == 'MESH':
+            term_pmids[key] = pubmed_client.get_ids_for_mesh(term.id,
+                                                             major_topic=False)
+            pmid_counter.update(term_pmids[key])
+            time.sleep(0.5)
+        else:
+            print('Unhandled ambiguous term: %s' % str(key))
+
     texts = []
     labels = []
-    for gene, pmids in gene_pmids.items():
-        print('Loading %d PMIDs for %s' % (len(pmids), gene))
+    for key, pmids in term_pmids.items():
+        print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
         pmids = [p for p in pmids if pmid_counter[p] == 1]
         for pmid in pmids:
             txt = get_text_content(pmid)
             if txt:
                 texts.append(txt)
-                labels.append(gene)
+                labels.append(key)
     return texts, labels
 
 
