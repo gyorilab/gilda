@@ -155,7 +155,8 @@ if __name__ == '__main__':
     param_grid = {'C': [10.0], 'max_features': [100, 1000],
                   'ngram_range': [(1, 2)]}
     for ambig in ambigs:
-        fname = 'models/%s.pkl' % ambig[0].text
+        print('Learning model for: %s' % str(ambig))
+        fname = 'models/%s.pkl' % ambig[0].text.replace('/', '_')
         if os.path.exists(fname):
             print('Model exists at %s, skipping' % fname)
             continue
@@ -166,8 +167,10 @@ if __name__ == '__main__':
             continue
         if sum(label_counts.values()) <= 5:
             print('Got no more than 5 PMIDs overall, skipping')
+            continue
         cl = AdeftClassifier([ambig[0].text], list(set(labels)))
         cl.cv(texts, labels, param_grid, cv=5)
         print(cl.stats)
+        obj = {'cl': cl, 'ambig': ambig}
         with open(fname, 'wb') as fh:
-            pickle.dump(cl, fh)
+            pickle.dump(obj, fh)
