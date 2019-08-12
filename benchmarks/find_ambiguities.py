@@ -186,18 +186,24 @@ if __name__ == '__main__':
     ambigs = filter_out_shared_prefix(ambigs)
     ambigs = filter_out_mesh_proteins(ambigs)
     ambigs = rank_ambiguities(ambigs, str_counts)
-    import ipdb; ipdb.set_trace()
+    pickle_name = 'gilda_ambiguities_hgnc_mesh.pkl'
     # find_families(ambigs)
     param_grid = {'C': [10.0], 'max_features': [100, 1000],
                   'ngram_range': [(1, 2)]}
     print('Found a total of %d ambiguities.' % len(ambigs))
+
+    # Deal with pre-cached pickle
+    if os.path.exists(pickle_name):
+        with open(pickle_name, 'rb') as fh:
+            models = pickle.load(fh)
+
     for ambig in ambigs:
-        print('Learning model for: %s which has %d occurrences'
-              '\n=======' % (str(ambig), str_counts[ambig[0].text]))
-        fname = 'models/%s.pkl' % ambig[0].text.replace('/', '_')
-        if os.path.exists(fname):
-            print('Model exists at %s, skipping' % fname)
+        if ambig[0].text in models:
+            print('Model for %s already exists' % ambig[0].text)
             continue
+        else:
+            print('Learning model for: %s which has %d occurrences'
+                  '\n=======' % (str(ambig), str_counts[ambig[0].text]))
         texts, labels = get_papers(ambig)
         label_counts = Counter(labels)
         if len(label_counts) < 2 or any([v <= 1 for v in
@@ -210,7 +216,7 @@ if __name__ == '__main__':
         cl = AdeftClassifier([ambig[0].text], list(set(labels)))
         cl.cv(texts, labels, param_grid, cv=5)
         print(cl.stats)
-        obj = {'cl': cl, 'ambig': ambig}
-        with open(fname, 'wb') as fh:
-            pickle.dump(obj, fh)
+        models[ambig[0].text] = {'cl': cl, 'ambig': ambig}
         print()
+        with open(pickle_name, 'wb') as fh:
+            pickle.dump(models, fh)
