@@ -7,6 +7,7 @@ import os
 import pandas
 import logging
 import requests
+import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
@@ -140,7 +141,7 @@ def generate_mesh_terms():
                             keep_default_na=False, na_values=None)
     mesh_mappings = {}
     for _, row in df_me.iterrows():
-        mesh_mappings = {row[1]: (row[3], row[4])}
+        mesh_mappings[row[1]] = (row[3], row[4])
 
     terms = []
     for idx, row in df.iterrows():
@@ -324,6 +325,19 @@ def generate_adeft_terms():
     return terms
 
 
+def filter_out_duplicates(terms):
+    logger.info('Filtering %d terms for uniqueness...' % len(terms))
+    term_key = lambda term: (term.db, term.id, term.text)
+    statuses = {'assertion': 1, 'name': 2, 'synonym': 3, 'previous': 4}
+    new_terms = []
+    for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
+                                      key=lambda x: term_key(x)):
+        terms = sorted(terms, key=lambda x: statuses[x.status])
+        new_terms.append(terms[0])
+    logger.info('Got %d unique terms...' % len(new_terms))
+    return new_terms
+
+
 def get_all_terms():
     terms = generate_famplex_terms()
     terms += generate_hgnc_terms()
@@ -332,6 +346,7 @@ def get_all_terms():
     terms += generate_mesh_terms()
     terms += generate_uniprot_terms()
     terms += generate_adeft_terms()
+    terms = filter_out_duplicates(terms)
     return terms
 
 
