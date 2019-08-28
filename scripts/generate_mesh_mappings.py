@@ -1,3 +1,4 @@
+import os
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
 from indra.databases import mesh_client, hgnc_client
@@ -6,6 +7,8 @@ gr = Grounder(get_grounding_terms())
 
 mesh_protein = 'D000602'
 mesh_enzyme = 'D045762'
+resources = os.path.join(os.path.dirname(__file__), os.path.pardir,
+                         'gilda', 'resources')
 
 
 def dump_mappings(mappings, fname):
@@ -32,6 +35,7 @@ def get_mesh_mappings(ambigs):
         me = mesh_entries[0]
         if (mesh_client.mesh_isa(me.id, mesh_protein) or
                 mesh_client.mesh_isa(me.id, mesh_enzyme)):
+            print('Considering %s' % me.id)
             if len(fplx_entries) == 1:
                 key = (me.id, 'FPLX', fplx_entries[0].id)
                 predicted_mappings[key] = (me, fplx_entries[0])
@@ -60,4 +64,4 @@ def find_ambiguities(gr):
 if __name__ == '__main__':
     ambigs = find_ambiguities(gr)
     mappings = get_mesh_mappings(ambigs)
-    dump_mappings(mappings, 'mesh_mappings.tsv')
+    dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
