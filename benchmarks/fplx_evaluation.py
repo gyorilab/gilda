@@ -122,18 +122,32 @@ def make_comparison(groundings):
 
     # Now iterate over all the old groundings, get the new one, and build up
     # the values in the comparison matrix
-    for grounding in groundings:
+    for idx, grounding in enumerate(groundings):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
         res = requests.post('%s/ground' % service_url,
                             json={'text': grounding['text']}).json()
         if not res:
-            comparison['%s_ungrounded' % old_eval].append((grounding, None))
+            comparison['%s_ungrounded' % old_eval].append((idx, grounding, None))
             continue
         term = res[0]['term']
         new_eval = evaluate_new_grounding(grounding, term)
-        comparison['%s_%s' % (old_eval, new_eval)].append((grounding, term))
+        comparison['%s_%s' % (old_eval, new_eval)].append((idx, grounding, term))
     return comparison
+
+
+def get_comparison_delta(groundings, c1, c2):
+    def find_grounding(c, idx):
+        for k, v in c.items():
+            for entry in v:
+                if entry[0] == idx:
+                    return k, entry
+
+    for idx, grounding in enumerate(groundings):
+        c1g = find_grounding(c1, idx)
+        c2g = find_grounding(c2, idx)
+        if c1g[0] != c2g[0]:
+            print(c1g, c2g)
 
 
 # We now calculate various summary statistics and then print them
