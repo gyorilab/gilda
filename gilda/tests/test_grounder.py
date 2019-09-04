@@ -9,9 +9,9 @@ gr = Grounder(get_grounding_terms())
 def test_grounder():
     entries = gr.lookup('kras')
     statuses = [e.status for e in entries]
-    assert 'name' in statuses
+    assert 'assertion' in statuses
     for entry in entries:
-        if entry.status == 'name':
+        if entry.status == 'assertion':
             assert entry.id == '6407', entry
 
     scores = gr.ground('kras')
