@@ -1,4 +1,4 @@
-import pandas
+import csv
 import logging
 import itertools
 from adeft import available_shortforms as available_adeft_models
@@ -201,18 +201,16 @@ def load_terms_file(terms_file):
         A lookup dictionary whose keys are normalized entity texts, and values
         are lists of Terms with that normalized entity text.
     """
-    df = pandas.read_csv(terms_file, delimiter='\t', na_values=[''],
-                         keep_default_na=False)
-    entries = {}
-    for idx, row in df.iterrows():
-        # Replace pandas nans with Nones
-        row_nones = [r if not pandas.isna(r) else None for r in row]
-        entry = Term(*row_nones)
-        if row[0] in entries:
-            entries[row[0]].append(entry)
-        else:
-            entries[row[0]] = [entry]
-    return entries
+    with open(terms_file, 'r') as fh:
+        entries = {}
+        for row in csv.reader(fh, delimiter='\t'):
+            row_nones = [r if r else None for r in row]
+            entry = Term(*row_nones)
+            if row[0] in entries:
+                entries[row[0]].append(entry)
+            else:
+                entries[row[0]] = [entry]
+        return entries
 
 
 def load_adeft_models():
