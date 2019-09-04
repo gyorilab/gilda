@@ -146,7 +146,7 @@ def generate_mesh_terms():
     terms = []
     for idx, row in df.iterrows():
         db_id = row[0]
-        name = row[1]
+        text_name = row[1]
         mapping = mesh_mappings.get(db_id)
         if mapping:
             db, db_id = mapping
@@ -158,7 +158,9 @@ def generate_mesh_terms():
         else:
             db = 'MESH'
             status = 'name'
-        term = Term(normalize(name), name, db, db_id, name, status, 'mesh')
+            name = text_name
+        term = Term(normalize(text_name), text_name, db, db_id, name, status,
+                    'mesh')
         terms.append(term)
         synonyms = row[2]
         if row[2]:
