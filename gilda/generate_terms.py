@@ -212,13 +212,16 @@ def generate_famplex_terms():
             db = 'UP'
             id = groundings['UP']
             name = id
-            gene_name = uniprot_client.get_gene_name(id)
+            gene_name = uniprot_client.get_gene_name(
+                id.split('-', maxsplit=1)[0], web_fallback=False)
             if gene_name:
                 name = gene_name
                 hgnc_id = hgnc_client.get_hgnc_id(gene_name)
                 if hgnc_id:
                     db = 'HGNC'
                     id = hgnc_id
+            else:
+                logger.warning('No gene name for %s' % id)
             term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
