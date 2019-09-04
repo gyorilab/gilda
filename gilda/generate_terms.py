@@ -7,6 +7,7 @@ import os
 import pandas
 import logging
 import requests
+import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
@@ -18,6 +19,7 @@ from .resources import resource_dir
 
 indra_module_path = indra.__path__[0]
 resources = os.path.join(indra_module_path, 'resources')
+gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
 
@@ -128,22 +130,43 @@ def generate_chebi_terms():
 
 
 def generate_mesh_terms():
+    # Load MeSH ID/label mappings from INDRA
     fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
     df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
                          keep_default_na=False, na_values=None)
+    # Load MeSH HGNC/FPLX mappings
+    fname = os.path.join(gilda_resources, 'mesh_mappings.tsv')
+    df_me = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
+                            keep_default_na=False, na_values=None)
+    mesh_mappings = {}
+    for _, row in df_me.iterrows():
+        mesh_mappings[row[1]] = (row[3], row[4])
+
     terms = []
     for idx, row in df.iterrows():
-        db = 'MESH'
-        id_ = row[0]
-        name = row[1]
-        term = Term(normalize(name), name, db, id_, name, 'name', 'mesh')
+        db_id = row[0]
+        text_name = row[1]
+        mapping = mesh_mappings.get(db_id)
+        if mapping:
+            db, db_id = mapping
+            status = 'synonym'
+            if db == 'HGNC':
+                name = hgnc_client.get_hgnc_name(db_id)
+            elif db == 'FPLX':
+                name = db_id
+        else:
+            db = 'MESH'
+            status = 'name'
+            name = text_name
+        term = Term(normalize(text_name), text_name, db, db_id, name, status,
+                    'mesh')
         terms.append(term)
         synonyms = row[2]
         if row[2]:
             synonyms = synonyms.split('|')
             for synonym in synonyms:
-                term = Term(normalize(synonym), synonym, db, id_, name,
+                term = Term(normalize(synonym), synonym, db, db_id, name,
                             'synonym', 'mesh')
                 terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
@@ -304,6 +327,19 @@ def generate_adeft_terms():
     return terms
 
 
+def filter_out_duplicates(terms):
+    logger.info('Filtering %d terms for uniqueness...' % len(terms))
+    term_key = lambda term: (term.db, term.id, term.text)
+    statuses = {'assertion': 1, 'name': 2, 'synonym': 3, 'previous': 4}
+    new_terms = []
+    for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
+                                      key=lambda x: term_key(x)):
+        terms = sorted(terms, key=lambda x: statuses[x.status])
+        new_terms.append(terms[0])
+    logger.info('Got %d unique terms...' % len(new_terms))
+    return new_terms
+
+
 def get_all_terms():
     terms = generate_famplex_terms()
     terms += generate_hgnc_terms()
@@ -312,6 +348,7 @@ def get_all_terms():
     terms += generate_mesh_terms()
     terms += generate_uniprot_terms()
     terms += generate_adeft_terms()
+    terms = filter_out_duplicates(terms)
     return terms
 
 

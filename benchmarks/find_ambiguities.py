@@ -12,10 +12,6 @@ from indra.databases import mesh_client
 from indra.literature import pubmed_client
 from indra.literature.adeft_tools import universal_extract_text
 
-grounding_terms_file = os.path.join(os.path.dirname(__file__), os.pardir,
-                                    os.pardir, 'resources',
-                                    'grounding_terms.tsv')
-
 gr = Grounder(get_grounding_terms())
 
 
