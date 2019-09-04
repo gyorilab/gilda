@@ -1,4 +1,3 @@
-import argparse
 from flask import Flask, abort, Response, request, jsonify
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
@@ -23,12 +22,3 @@ def ground():
                                reverse=True):
         res.append(scored_match.to_json())
     return jsonify(res)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Run the grounding app.')
-    parser.add_argument('--host', default='0.0.0.0')
-    parser.add_argument('--port', default=8001, type=int)
-    args = parser.parse_args()
-    app.run(host=args.host, port=args.port, threaded=False)
