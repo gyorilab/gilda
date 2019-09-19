@@ -188,12 +188,8 @@ if __name__ == '__main__':
                   'ngram_range': [(1, 2)]}
     print('Found a total of %d ambiguities.' % len(ambigs))
 
-    # Deal with pre-cached pickle
-    if os.path.exists(pickle_name):
-        with open(pickle_name, 'rb') as fh:
-            models = pickle.load(fh)
-
-    for ambig in ambigs:
+    models = {}
+    for ambig in ambigs[:10]:
         if ambig[0].text in models:
             print('Model for %s already exists' % ambig[0].text)
             continue
