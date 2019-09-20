@@ -3,6 +3,7 @@ import time
 import pickle
 from collections import Counter
 from adeft.modeling.classify import AdeftClassifier
+from indra.util import batch_iter
 from indra_db.util import get_db
 from indra_db.util.content_scripts import get_text_content_from_text_refs
 from indra.literature import pubmed_client
@@ -37,7 +38,7 @@ def get_papers(ambig_terms):
             time.sleep(0.5)
         elif term.db == 'MESH':
             pmids = pubmed_client.get_ids_for_mesh(term.id, major_topic=False)
-            if len(pmids > 1000):
+            if len(pmids) > 1000:
                 pmids = pubmed_client.get_ids_for_mesh(term.id,
                                                        major_topic=True)
             term_pmids[key] = pmids[:1000]
@@ -86,23 +87,24 @@ if __name__ == '__main__':
     ambigs = filter_out_shared_prefix(ambigs)
     ambigs = filter_out_mesh_proteins(ambigs)
     ambigs = rank_ambiguities(ambigs, str_counts)
-    pickle_name = 'gilda_ambiguities_hgnc_mesh.pkl'
     param_grid = {'C': [10.0], 'max_features': [100, 1000],
                   'ngram_range': [(1, 2)]}
     print('Found a total of %d ambiguities.' % len(ambigs))
 
     models = {}
-    for ambig_terms in ambigs:
-        entity_text = ambig_terms[0].text
-        print()
-        if entity_text in models:
-            print('Model for %s already exists' % entity_text)
-            continue
-        else:
-            terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
-            print('Learning model for: %s which has %d occurrences'
+    for idx, ambig_terms_batch in enumerate(batch_iter(ambigs, 100)):
+        pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % idx
+        for ambig_terms in ambig_terms_batch:
+            entity_text = ambig_terms[0].text
+            print()
+            if entity_text in models:
+                print('Model for %s already exists' % entity_text)
+                continue
+            else:
+                terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
+                print('Learning model for: %s which has %d occurrences'
                   '\n=======' % (terms_str, str_counts[entity_text]))
-        cl = learn_model(ambig_terms, param_grid)
-        models[entity_text] = {'cl': cl, 'ambig': ambig_terms}
-    with open(pickle_name, 'wb') as fh:
-        pickle.dump(models, fh)
+            cl = learn_model(ambig_terms, param_grid)
+            models[entity_text] = {'cl': cl, 'ambig': ambig_terms}
+            with open(pickle_name, 'wb') as fh:
+                pickle.dump(models, fh)
