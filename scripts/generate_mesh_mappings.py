@@ -1,9 +1,8 @@
 import os
-from gilda.grounder import Grounder
-from gilda.resources import get_grounding_terms
+from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
+    generate_mesh_terms
 from indra.databases import mesh_client, hgnc_client
 
-gr = Grounder(get_grounding_terms())
 
 mesh_protein = 'D000602'
 mesh_enzyme = 'D045762'
@@ -45,23 +44,24 @@ def get_mesh_mappings(ambigs):
     return predicted_mappings
 
 
-def find_ambiguities(gr):
+def find_ambiguities(terms):
     ambig_entries = {}
-    for terms in gr.entries.values():
-        for term in terms:
-            # We consider it an ambiguity if the same text entry appears
-            # multiple times
-            key = term.text
-            if key in ambig_entries:
-                ambig_entries[key].append(term)
-            else:
-                ambig_entries[key] = [term]
+    for term in terms:
+        # We consider it an ambiguity if the same text entry appears
+        # multiple times
+        key = term.text
+        if key in ambig_entries:
+            ambig_entries[key].append(term)
+        else:
+            ambig_entries[key] = [term]
     # It's only an ambiguity if there are two entries at least
     ambig_entries = {k: v for k, v in ambig_entries.items() if len(v) >= 2}
     return ambig_entries
 
 
 if __name__ == '__main__':
-    ambigs = find_ambiguities(gr)
+    terms = generate_mesh_terms(ignore_mappings=True) + \
+        generate_hgnc_terms() + generate_famplex_terms()
+    ambigs = find_ambiguities(terms)
     mappings = get_mesh_mappings(ambigs)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
