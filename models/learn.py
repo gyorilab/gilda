@@ -72,7 +72,7 @@ def learn_model(ambig_terms, params):
     if any([v <= 5 for v in label_counts.values()]):
         print('Could not get enough labels for at least one entry, skipping')
         return None
-    cl = AdeftClassifier([ambig[0].text], list(set(labels)))
+    cl = AdeftClassifier([ambig_terms[0].text], list(set(labels)))
     cl.cv(texts, labels, params, cv=5)
     print(cl.stats)
     return cl
@@ -99,7 +99,7 @@ if __name__ == '__main__':
             print('Model for %s already exists' % entity_text)
             continue
         else:
-            terms_str = '> ' + '\n> '.join(str(t) for t in ambig_terms)
+            terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
             print('Learning model for: %s which has %d occurrences'
                   '\n=======' % (terms_str, str_counts[entity_text]))
         cl = learn_model(ambig_terms, param_grid)

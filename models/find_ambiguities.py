@@ -25,6 +25,7 @@ def get_ambiguities(skip_assertions=True, skip_names=True):
         db_ids = {(e.db, e.id) for e in entries}
         statuses = {e.status for e in entries}
         sources = {e.source for e in entries}
+        names = {e.entry_name for e in entries}
         # If the entries all point to the same ID, we skip it
         if len(db_ids) <= 1:
             continue
@@ -38,6 +39,10 @@ def get_ambiguities(skip_assertions=True, skip_names=True):
         if 'CHEBI' in dbs:
             continue
         if 'adeft' in sources:
+            continue
+        # This typically happens for some UniProt IDs that don't have gene
+        # names
+        if any(n is None for n in names):
             continue
         # Everything else is an ambiguity
         ambigs.append(entries)
