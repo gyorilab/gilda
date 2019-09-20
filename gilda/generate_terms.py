@@ -113,7 +113,8 @@ def generate_chebi_terms():
     for row in read_csv(fname, header=True, delimiter='\t'):
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
         if not chebi_id:
-            logger.info('Could not get valid ID for %s' % row['COMPOUND_ID'])
+            logger.info('Could not get valid CHEBI ID for %s' %
+                        row['COMPOUND_ID'])
             continue
         db = 'CHEBI'
         id = 'CHEBI:%s' % chebi_id
@@ -136,7 +137,7 @@ def generate_chebi_terms():
     return terms
 
 
-def generate_mesh_terms():
+def generate_mesh_terms(ignore_mappings=False):
     # Load MeSH ID/label mappings from INDRA
     mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
     mesh_mappings = {}
@@ -150,7 +151,7 @@ def generate_mesh_terms():
         db_id = row[0]
         text_name = row[1]
         mapping = mesh_mappings.get(db_id)
-        if mapping:
+        if not ignore_mappings and mapping:
             db, db_id = mapping
             status = 'synonym'
             if db == 'HGNC':
@@ -343,6 +344,8 @@ def filter_out_duplicates(terms):
                                       key=lambda x: term_key(x)):
         terms = sorted(terms, key=lambda x: statuses[x.status])
         new_terms.append(terms[0])
+    # Re-sort the terms
+    new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
     logger.info('Got %d unique terms...' % len(new_terms))
     return new_terms
 
