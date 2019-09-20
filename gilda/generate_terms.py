@@ -112,11 +112,18 @@ def generate_chebi_terms():
     added = set()
     for row in read_csv(fname, header=True, delimiter='\t'):
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
+        if not chebi_id:
+            logger.info('Could not get valid ID for %s' % row['COMPOUND_ID'])
+            continue
         db = 'CHEBI'
         id = 'CHEBI:%s' % chebi_id
         name = str(row['NAME'])
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
+        if chebi_name is None:
+            logger.info('Could not get valid name for %s' % chebi_id)
+            continue
+
         term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
                      'chebi')
         if term_args in added:
@@ -126,7 +133,6 @@ def generate_chebi_terms():
             terms.append(term)
             added.add(term_args)
     logger.info('Loaded %d terms' % len(terms))
-
     return terms
 
 
