@@ -4,6 +4,7 @@ to be available locally."""
 
 import re
 import os
+import csv
 import pandas
 import logging
 import requests
@@ -24,31 +25,35 @@ gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 logger = logging.getLogger('gilda.generate_terms')
 
 
+def read_csv(fname, header=False, delimiter=','):
+    with open(fname, 'r') as fh:
+        reader = csv.reader(fh, delimiter=delimiter)
+        if header:
+            header_names = next(reader)
+            for row in reader:
+                yield {h: r for h, r in zip(header_names, row)}
+        else:
+            for row in reader:
+                yield row
+
+
 def generate_hgnc_terms():
     fname = os.path.join(resources, 'hgnc_entries.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str')
-    all_term_args = dict()
-    for idx, row in df.iterrows():
+    all_term_args = {}
+    rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
+    id_name_map = {r['HGNC ID'].split(':')[1]: r['Approved symbol']
+                   for r in rows}
+    for row in rows:
         db, id = row['HGNC ID'].split(':')
         name = row['Approved symbol']
         # Special handling for rows representing withdrawn symbols
-        if 'withdrawn' in name:
-            match = re.match(r'([^ ]+)~withdrawn', name)
-            if not match:
-                match = re.match(r'([^ ]+)~withdrawn,synonym', name)
-                if not match:
-                    continue
-            previous_name = match.groups()[0]
-            match = re.match(r'symbol withdrawn, see ([^ ]+)',
-                             row['Approved name'])
-            if not match:
-                continue
-            new_name = match.groups()[0]
-            new_id = hgnc_client.get_hgnc_id(new_name)
-            if not new_id:
-                continue
-            term_args = (normalize(previous_name), previous_name, db, new_id,
+        if row['Status'] == 'Symbol Withdrawn':
+            m = re.match(r'symbol withdrawn, see \[HGNC:(?: ?)(\d+)\]',
+                         row['Approved name'])
+            new_id = m.groups()[0]
+            new_name = id_name_map[new_id]
+            term_args = (normalize(name), name, db, new_id,
                          new_name, 'previous', 'hgnc')
             all_term_args[term_args] = None
             # NOTE: consider adding withdrawn synonyms e.g.,
@@ -131,44 +136,40 @@ def generate_chebi_terms():
 
 def generate_mesh_terms():
     # Load MeSH ID/label mappings from INDRA
-    fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
-    logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
-                         keep_default_na=False, na_values=None)
-    # Load MeSH HGNC/FPLX mappings
-    fname = os.path.join(gilda_resources, 'mesh_mappings.tsv')
-    df_me = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
-                            keep_default_na=False, na_values=None)
+    mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
     mesh_mappings = {}
-    for _, row in df_me.iterrows():
-        mesh_mappings[row[1]] = (row[3], row[4])
-
-    terms = []
-    for idx, row in df.iterrows():
-        db_id = row[0]
-        text_name = row[1]
-        mapping = mesh_mappings.get(db_id)
-        if mapping:
-            db, db_id = mapping
-            status = 'synonym'
-            if db == 'HGNC':
-                name = hgnc_client.get_hgnc_name(db_id)
-            elif db == 'FPLX':
-                name = db_id
-        else:
-            db = 'MESH'
-            status = 'name'
-            name = text_name
-        term = Term(normalize(text_name), text_name, db, db_id, name, status,
-                    'mesh')
-        terms.append(term)
-        synonyms = row[2]
-        if row[2]:
-            synonyms = synonyms.split('|')
-            for synonym in synonyms:
-                term = Term(normalize(synonym), synonym, db, db_id, name,
-                            'synonym', 'mesh')
-                terms.append(term)
+    with open(mesh_mappings_file, 'r') as fh:
+        for row in csv.reader(fh):
+            mesh_mappings[row[1]] = (row[3], row[4])
+    # Load MeSH HGNC/FPLX mappings
+    mesh_names_file = os.path.join(resources,
+                                   'mesh_id_label_mappings.tsv')
+    with open(mesh_names_file, 'r') as fh:
+        for row in csv.reader(fh):
+            db_id = row[0]
+            text_name = row[1]
+            mapping = mesh_mappings.get(db_id)
+            if mapping:
+                db, db_id = mapping
+                status = 'synonym'
+                if db == 'HGNC':
+                    name = hgnc_client.get_hgnc_name(db_id)
+                elif db == 'FPLX':
+                    name = db_id
+            else:
+                db = 'MESH'
+                status = 'name'
+                name = text_name
+            term = Term(normalize(text_name), text_name, db, db_id, name,
+                        status, 'mesh')
+            terms.append(term)
+            synonyms = row[2]
+            if row[2]:
+                synonyms = synonyms.split('|')
+                for synonym in synonyms:
+                    term = Term(normalize(synonym), synonym, db, db_id, name,
+                                'synonym', 'mesh')
+                    terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
@@ -177,16 +178,16 @@ def generate_go_terms():
     # TODO: add synonyms for GO terms here
     fname = os.path.join(resources, 'go_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None)
     terms = []
-    for idx, row in df.iterrows():
-        if not row[0].startswith('GO'):
-            continue
-        if 'obsolete' in row[1]:
-            continue
-        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1], 'name',
-                    'go')
-        terms.append(term)
+    with open(fname, 'r') as fh:
+        for row in csv.reader(fh):
+            if not row[0].startswith('GO'):
+                continue
+            if 'obsolete' in row[1]:
+                continue
+            term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1],
+                        'name', 'go')
+            terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
