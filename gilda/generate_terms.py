@@ -138,38 +138,37 @@ def generate_mesh_terms():
     # Load MeSH ID/label mappings from INDRA
     mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
     mesh_mappings = {}
-    with open(mesh_mappings_file, 'r') as fh:
-        for row in csv.reader(fh):
-            mesh_mappings[row[1]] = (row[3], row[4])
+    for row in read_csv(mesh_mappings_file, delimiter='\t'):
+        mesh_mappings[row[1]] = (row[3], row[4])
     # Load MeSH HGNC/FPLX mappings
     mesh_names_file = os.path.join(resources,
                                    'mesh_id_label_mappings.tsv')
-    with open(mesh_names_file, 'r') as fh:
-        for row in csv.reader(fh):
-            db_id = row[0]
-            text_name = row[1]
-            mapping = mesh_mappings.get(db_id)
-            if mapping:
-                db, db_id = mapping
-                status = 'synonym'
-                if db == 'HGNC':
-                    name = hgnc_client.get_hgnc_name(db_id)
-                elif db == 'FPLX':
-                    name = db_id
-            else:
-                db = 'MESH'
-                status = 'name'
-                name = text_name
-            term = Term(normalize(text_name), text_name, db, db_id, name,
-                        status, 'mesh')
-            terms.append(term)
-            synonyms = row[2]
-            if row[2]:
-                synonyms = synonyms.split('|')
-                for synonym in synonyms:
-                    term = Term(normalize(synonym), synonym, db, db_id, name,
-                                'synonym', 'mesh')
-                    terms.append(term)
+    terms = []
+    for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
+        db_id = row[0]
+        text_name = row[1]
+        mapping = mesh_mappings.get(db_id)
+        if mapping:
+            db, db_id = mapping
+            status = 'synonym'
+            if db == 'HGNC':
+                name = hgnc_client.get_hgnc_name(db_id)
+            elif db == 'FPLX':
+                name = db_id
+        else:
+            db = 'MESH'
+            status = 'name'
+            name = text_name
+        term = Term(normalize(text_name), text_name, db, db_id, name,
+                    status, 'mesh')
+        terms.append(term)
+        synonyms = row[2]
+        if row[2]:
+            synonyms = synonyms.split('|')
+            for synonym in synonyms:
+                term = Term(normalize(synonym), synonym, db, db_id, name,
+                            'synonym', 'mesh')
+                terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
