@@ -1,6 +1,6 @@
 import os
 from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
-    generate_mesh_terms
+    generate_mesh_terms, generate_uniprot_terms
 from indra.databases import mesh_client, hgnc_client
 
 
@@ -61,7 +61,8 @@ def find_ambiguities(terms):
 
 if __name__ == '__main__':
     terms = generate_mesh_terms(ignore_mappings=True) + \
-        generate_hgnc_terms() + generate_famplex_terms()
+        generate_hgnc_terms() + generate_famplex_terms() + \
+        generate_uniprot_terms(download=False)
     ambigs = find_ambiguities(terms)
     mappings = get_mesh_mappings(ambigs)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
