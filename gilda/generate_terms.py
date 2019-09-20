@@ -5,7 +5,6 @@ to be available locally."""
 import re
 import os
 import csv
-import pandas
 import logging
 import requests
 import itertools
@@ -72,7 +71,7 @@ def generate_hgnc_terms():
 
         # Handle regular entry synonyms
         synonyms = []
-        if row['Synonyms'] and not pandas.isnull(row['Synonyms']):
+        if row['Synonyms'] and row['Synonyms']:
             synonyms += row['Synonyms'].split(', ')
         for synonym in synonyms:
             term_args = (normalize(synonym), synonym, db, id, name, 'synonym',
@@ -80,7 +79,7 @@ def generate_hgnc_terms():
             all_term_args[term_args] = None
 
         # Handle regular entry previous symbols
-        if not pandas.isna(row['Previous symbols']):
+        if row['Previous symbols']:
             prev_symbols = row['Previous symbols'].split(', ')
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
@@ -95,9 +94,8 @@ def generate_hgnc_terms():
 def generate_chebi_terms():
     fname = os.path.join(resources, 'chebi_entries.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str')
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, header=True, delimiter='\t'):
         db = 'CHEBI'
         id = 'CHEBI:' + row['CHEBI_ID']
         name = row['NAME']
@@ -111,10 +109,8 @@ def generate_chebi_terms():
     # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
     # into the INDRA resources folder.
     fname = os.path.join(resources, 'names_3star.tsv')
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str',
-                         keep_default_na=False, na_values=[''])
     added = set()
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, header=True, delimiter='\t'):
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
         db = 'CHEBI'
         id = 'CHEBI:%s' % chebi_id
@@ -239,30 +235,33 @@ def generate_famplex_terms():
     return terms
 
 
-def generate_uniprot_terms():
-    url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
-           'genes(PREFERRED),protein%20names&sort=score&'
-           'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
-           '%20AND%20reviewed:yes')
-    res = requests.get(url)
-    with open('up_synonyms.tsv', 'w') as fh:
-        fh.write(res.text)
-    df = pandas.read_csv('up_synonyms.tsv', delimiter='\t', dtype=str)
+def generate_uniprot_terms(download=True):
+    if download:
+        url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
+               'genes(PREFERRED),protein%20names&sort=score&'
+               'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
+               '%20AND%20reviewed:yes')
+        logger.info('Downloading UniProt resource file')
+        res = requests.get(url)
+        with open('up_synonyms.tsv', 'w') as fh:
+            fh.write(res.text)
     terms = []
-    for _, row in df.iterrows():
+    for row in read_csv('up_synonyms.tsv', delimiter='\t', header=True):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
-        gene_name = row['Gene names  (primary )']
-        hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+        hgnc_id = uniprot_client.get_hgnc_id(up_id)
         if hgnc_id:
             ns = 'HGNC'
             id = hgnc_id
-            standard_name = gene_name
+            standard_name = hgnc_client.get_hgnc_name(hgnc_id)
         else:
             ns = 'UP'
             id = row['Entry']
-            standard_name = gene_name
+            standard_name = row['Gene names  (primary )']
         for name in names:
+            # Skip names that are EC codes
+            if name.startswith('EC '):
+                continue
             term = Term(normalize(name), name, ns, id,
                         standard_name, 'synonym', 'uniprot')
             terms.append(term)
