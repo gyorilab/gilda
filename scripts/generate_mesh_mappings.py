@@ -1,6 +1,6 @@
 import os
 from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
-    generate_mesh_terms, generate_uniprot_terms
+    generate_mesh_terms, generate_uniprot_terms, filter_out_duplicates
 from indra.databases import mesh_client, hgnc_client
 
 
@@ -25,7 +25,7 @@ def dump_mappings(mappings, fname):
 
 def get_mesh_mappings(ambigs):
     predicted_mappings = {}
-    for _, ambig in ambigs.items():
+    for text, ambig in ambigs.items():
         hgnc_entries = [a for a in ambig if a.db == 'HGNC']
         mesh_entries = [a for a in ambig if a.db == 'MESH']
         fplx_entries = [a for a in ambig if a.db == 'FPLX']
@@ -63,6 +63,7 @@ if __name__ == '__main__':
     terms = generate_mesh_terms(ignore_mappings=True) + \
         generate_hgnc_terms() + generate_famplex_terms() + \
         generate_uniprot_terms(download=False)
+    terms = filter_out_duplicates(terms)
     ambigs = find_ambiguities(terms)
     mappings = get_mesh_mappings(ambigs)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
