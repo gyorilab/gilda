@@ -249,15 +249,18 @@ def generate_uniprot_terms(download=True):
     for row in read_csv('up_synonyms.tsv', delimiter='\t', header=True):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
+        standard_name = row['Gene names  (primary )']
+        ns = 'UP'
+        id = row['Entry']
+        # We skip a small number of not critical entries that don't have
+        # standard names
+        if not standard_name:
+            continue
         hgnc_id = uniprot_client.get_hgnc_id(up_id)
         if hgnc_id:
             ns = 'HGNC'
             id = hgnc_id
             standard_name = hgnc_client.get_hgnc_name(hgnc_id)
-        else:
-            ns = 'UP'
-            id = row['Entry']
-            standard_name = row['Gene names  (primary )']
         for name in names:
             # Skip names that are EC codes
             if name.startswith('EC '):
