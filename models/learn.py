@@ -92,7 +92,7 @@ if __name__ == '__main__':
     print('Found a total of %d ambiguities.' % len(ambigs))
 
     models = {}
-    for ambig_terms in ambigs[:10]:
+    for ambig_terms in ambigs:
         entity_text = ambig_terms[0].text
         print()
         if entity_text in models:
