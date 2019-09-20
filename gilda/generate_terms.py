@@ -25,7 +25,7 @@ gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 logger = logging.getLogger('gilda.generate_terms')
 
 
-def read_csv(fname, header=False, delimiter=','):
+def read_csv(fname, header=False, delimiter='\t'):
     with open(fname, 'r') as fh:
         reader = csv.reader(fh, delimiter=delimiter)
         if header:
@@ -178,15 +178,14 @@ def generate_go_terms():
     fname = os.path.join(resources, 'go_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
     terms = []
-    with open(fname, 'r') as fh:
-        for row in csv.reader(fh):
-            if not row[0].startswith('GO'):
-                continue
-            if 'obsolete' in row[1]:
-                continue
-            term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1],
-                        'name', 'go')
-            terms.append(term)
+    for row in read_csv(fname, delimiter='\t'):
+        if not row[0].startswith('GO'):
+            continue
+        if 'obsolete' in row[1]:
+            continue
+        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1],
+                    'name', 'go')
+        terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
@@ -194,13 +193,11 @@ def generate_go_terms():
 def generate_famplex_terms():
     fname = os.path.join(resources, 'famplex', 'grounding_map.csv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter=',', dtype='str', header=None)
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, delimiter=','):
         txt = row[0]
         norm_txt = normalize(txt)
-        groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if
-                      (not pandas.isnull(k) and not pandas.isnull(v))}
+        groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if (k and v)}
         if 'FPLX' in groundings:
             id = groundings['FPLX']
             term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion', 'famplex')
@@ -212,16 +209,15 @@ def generate_famplex_terms():
             db = 'UP'
             id = groundings['UP']
             name = id
-            gene_name = uniprot_client.get_gene_name(
-                id.split('-', maxsplit=1)[0], web_fallback=False)
-            if gene_name:
-                name = gene_name
-                hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+            if uniprot_client.is_human(id):
+                hgnc_id = uniprot_client.get_hgnc_id(id)
                 if hgnc_id:
-                    db = 'HGNC'
-                    id = hgnc_id
-            else:
-                logger.warning('No gene name for %s' % id)
+                    name = hgnc_client.get_hgnc_name(hgnc_id)
+                    if hgnc_id:
+                        db = 'HGNC'
+                        id = hgnc_id
+                else:
+                    logger.warning('No gene name for %s' % id)
             term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
