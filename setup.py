@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='gilda',
-      version='0.1.2',
+      version='0.1.3',
       description=('Grounding for biomedical entities with contextual '
                    'disambiguation'),
       long_description=long_description,
@@ -24,7 +24,7 @@ setup(name='gilda',
           'Programming Language :: Python :: 3.7'
       ],
       packages=find_packages(),
-      install_requires=['regex', 'pandas', 'adeft', 'boto3', 'flask'],
+      install_requires=['regex', 'adeft', 'boto3', 'flask'],
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra']},
       keywords=['nlp', 'biology']

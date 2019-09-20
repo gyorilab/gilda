@@ -4,7 +4,7 @@ to be available locally."""
 
 import re
 import os
-import pandas
+import csv
 import logging
 import requests
 import itertools
@@ -24,31 +24,35 @@ gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 logger = logging.getLogger('gilda.generate_terms')
 
 
+def read_csv(fname, header=False, delimiter='\t'):
+    with open(fname, 'r') as fh:
+        reader = csv.reader(fh, delimiter=delimiter)
+        if header:
+            header_names = next(reader)
+            for row in reader:
+                yield {h: r for h, r in zip(header_names, row)}
+        else:
+            for row in reader:
+                yield row
+
+
 def generate_hgnc_terms():
     fname = os.path.join(resources, 'hgnc_entries.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str')
-    all_term_args = dict()
-    for idx, row in df.iterrows():
+    all_term_args = {}
+    rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
+    id_name_map = {r['HGNC ID'].split(':')[1]: r['Approved symbol']
+                   for r in rows}
+    for row in rows:
         db, id = row['HGNC ID'].split(':')
         name = row['Approved symbol']
         # Special handling for rows representing withdrawn symbols
-        if 'withdrawn' in name:
-            match = re.match(r'([^ ]+)~withdrawn', name)
-            if not match:
-                match = re.match(r'([^ ]+)~withdrawn,synonym', name)
-                if not match:
-                    continue
-            previous_name = match.groups()[0]
-            match = re.match(r'symbol withdrawn, see ([^ ]+)',
-                             row['Approved name'])
-            if not match:
-                continue
-            new_name = match.groups()[0]
-            new_id = hgnc_client.get_hgnc_id(new_name)
-            if not new_id:
-                continue
-            term_args = (normalize(previous_name), previous_name, db, new_id,
+        if row['Status'] == 'Symbol Withdrawn':
+            m = re.match(r'symbol withdrawn, see \[HGNC:(?: ?)(\d+)\]',
+                         row['Approved name'])
+            new_id = m.groups()[0]
+            new_name = id_name_map[new_id]
+            term_args = (normalize(name), name, db, new_id,
                          new_name, 'previous', 'hgnc')
             all_term_args[term_args] = None
             # NOTE: consider adding withdrawn synonyms e.g.,
@@ -67,7 +71,7 @@ def generate_hgnc_terms():
 
         # Handle regular entry synonyms
         synonyms = []
-        if row['Synonyms'] and not pandas.isnull(row['Synonyms']):
+        if row['Synonyms'] and row['Synonyms']:
             synonyms += row['Synonyms'].split(', ')
         for synonym in synonyms:
             term_args = (normalize(synonym), synonym, db, id, name, 'synonym',
@@ -75,7 +79,7 @@ def generate_hgnc_terms():
             all_term_args[term_args] = None
 
         # Handle regular entry previous symbols
-        if not pandas.isna(row['Previous symbols']):
+        if row['Previous symbols']:
             prev_symbols = row['Previous symbols'].split(', ')
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
@@ -90,9 +94,8 @@ def generate_hgnc_terms():
 def generate_chebi_terms():
     fname = os.path.join(resources, 'chebi_entries.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str')
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, header=True, delimiter='\t'):
         db = 'CHEBI'
         id = 'CHEBI:' + row['CHEBI_ID']
         name = row['NAME']
@@ -106,16 +109,22 @@ def generate_chebi_terms():
     # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
     # into the INDRA resources folder.
     fname = os.path.join(resources, 'names_3star.tsv')
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str',
-                         keep_default_na=False, na_values=[''])
     added = set()
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, header=True, delimiter='\t'):
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
+        if not chebi_id:
+            logger.info('Could not get valid CHEBI ID for %s' %
+                        row['COMPOUND_ID'])
+            continue
         db = 'CHEBI'
         id = 'CHEBI:%s' % chebi_id
         name = str(row['NAME'])
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
+        if chebi_name is None:
+            logger.info('Could not get valid name for %s' % chebi_id)
+            continue
+
         term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
                      'chebi')
         if term_args in added:
@@ -125,30 +134,24 @@ def generate_chebi_terms():
             terms.append(term)
             added.add(term_args)
     logger.info('Loaded %d terms' % len(terms))
-
     return terms
 
 
-def generate_mesh_terms():
+def generate_mesh_terms(ignore_mappings=False):
     # Load MeSH ID/label mappings from INDRA
-    fname = os.path.join(resources, 'mesh_id_label_mappings.tsv')
-    logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
-                         keep_default_na=False, na_values=None)
-    # Load MeSH HGNC/FPLX mappings
-    fname = os.path.join(gilda_resources, 'mesh_mappings.tsv')
-    df_me = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None,
-                            keep_default_na=False, na_values=None)
+    mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
     mesh_mappings = {}
-    for _, row in df_me.iterrows():
+    for row in read_csv(mesh_mappings_file, delimiter='\t'):
         mesh_mappings[row[1]] = (row[3], row[4])
-
+    # Load MeSH HGNC/FPLX mappings
+    mesh_names_file = os.path.join(resources,
+                                   'mesh_id_label_mappings.tsv')
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
         db_id = row[0]
         text_name = row[1]
         mapping = mesh_mappings.get(db_id)
-        if mapping:
+        if not ignore_mappings and mapping:
             db, db_id = mapping
             status = 'synonym'
             if db == 'HGNC':
@@ -159,8 +162,8 @@ def generate_mesh_terms():
             db = 'MESH'
             status = 'name'
             name = text_name
-        term = Term(normalize(text_name), text_name, db, db_id, name, status,
-                    'mesh')
+        term = Term(normalize(text_name), text_name, db, db_id, name,
+                    status, 'mesh')
         terms.append(term)
         synonyms = row[2]
         if row[2]:
@@ -177,15 +180,14 @@ def generate_go_terms():
     # TODO: add synonyms for GO terms here
     fname = os.path.join(resources, 'go_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter='\t', dtype='str', header=None)
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, delimiter='\t'):
         if not row[0].startswith('GO'):
             continue
         if 'obsolete' in row[1]:
             continue
-        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1], 'name',
-                    'go')
+        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1],
+                    'name', 'go')
         terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
@@ -194,13 +196,11 @@ def generate_go_terms():
 def generate_famplex_terms():
     fname = os.path.join(resources, 'famplex', 'grounding_map.csv')
     logger.info('Loading %s' % fname)
-    df = pandas.read_csv(fname, delimiter=',', dtype='str', header=None)
     terms = []
-    for idx, row in df.iterrows():
+    for row in read_csv(fname, delimiter=','):
         txt = row[0]
         norm_txt = normalize(txt)
-        groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if
-                      (not pandas.isnull(k) and not pandas.isnull(v))}
+        groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if (k and v)}
         if 'FPLX' in groundings:
             id = groundings['FPLX']
             term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion', 'famplex')
@@ -212,16 +212,15 @@ def generate_famplex_terms():
             db = 'UP'
             id = groundings['UP']
             name = id
-            gene_name = uniprot_client.get_gene_name(
-                id.split('-', maxsplit=1)[0], web_fallback=False)
-            if gene_name:
-                name = gene_name
-                hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+            if uniprot_client.is_human(id):
+                hgnc_id = uniprot_client.get_hgnc_id(id)
                 if hgnc_id:
-                    db = 'HGNC'
-                    id = hgnc_id
-            else:
-                logger.warning('No gene name for %s' % id)
+                    name = hgnc_client.get_hgnc_name(hgnc_id)
+                    if hgnc_id:
+                        db = 'HGNC'
+                        id = hgnc_id
+                else:
+                    logger.warning('No gene name for %s' % id)
             term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
@@ -243,30 +242,36 @@ def generate_famplex_terms():
     return terms
 
 
-def generate_uniprot_terms():
-    url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
-           'genes(PREFERRED),protein%20names&sort=score&'
-           'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
-           '%20AND%20reviewed:yes')
-    res = requests.get(url)
-    with open('up_synonyms.tsv', 'w') as fh:
-        fh.write(res.text)
-    df = pandas.read_csv('up_synonyms.tsv', delimiter='\t', dtype=str)
+def generate_uniprot_terms(download=True):
+    if download:
+        url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
+               'genes(PREFERRED),protein%20names&sort=score&'
+               'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
+               '%20AND%20reviewed:yes')
+        logger.info('Downloading UniProt resource file')
+        res = requests.get(url)
+        with open('up_synonyms.tsv', 'w') as fh:
+            fh.write(res.text)
     terms = []
-    for _, row in df.iterrows():
+    for row in read_csv('up_synonyms.tsv', delimiter='\t', header=True):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
-        gene_name = row['Gene names  (primary )']
-        hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+        standard_name = row['Gene names  (primary )']
+        ns = 'UP'
+        id = row['Entry']
+        # We skip a small number of not critical entries that don't have
+        # standard names
+        if not standard_name:
+            continue
+        hgnc_id = uniprot_client.get_hgnc_id(up_id)
         if hgnc_id:
             ns = 'HGNC'
             id = hgnc_id
-            standard_name = gene_name
-        else:
-            ns = 'UP'
-            id = row['Entry']
-            standard_name = gene_name
+            standard_name = hgnc_client.get_hgnc_name(hgnc_id)
         for name in names:
+            # Skip names that are EC codes
+            if name.startswith('EC '):
+                continue
             term = Term(normalize(name), name, ns, id,
                         standard_name, 'synonym', 'uniprot')
             terms.append(term)
@@ -339,6 +344,8 @@ def filter_out_duplicates(terms):
                                       key=lambda x: term_key(x)):
         terms = sorted(terms, key=lambda x: statuses[x.status])
         new_terms.append(terms[0])
+    # Re-sort the terms
+    new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
     logger.info('Got %d unique terms...' % len(new_terms))
     return new_terms
 
