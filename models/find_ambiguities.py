@@ -1,21 +1,11 @@
-import os
-import time
-import json
-import pickle
-from collections import Counter
-from adeft.modeling.classify import AdeftClassifier
 from gilda.grounder import Grounder
 from gilda.resources import get_grounding_terms
-from indra_db.util import get_db
-from indra_db.util.content_scripts import get_text_content_from_text_refs
 from indra.databases import mesh_client
-from indra.literature import pubmed_client
-from indra.literature.adeft_tools import universal_extract_text
 
 gr = Grounder(get_grounding_terms())
 
 
-def get_ambiguities(hgnc_only=False, skip_assertions=True, skip_names=True):
+def get_ambiguities(skip_assertions=True, skip_names=True):
     ambig_entries = {}
     for terms in gr.entries.values():
         for term in terms:
@@ -93,7 +83,8 @@ def filter_out_mesh_proteins(ambigs):
         if len(new_ambigs) >= 2:
             all_new_ambigs.append(new_ambigs)
         else:
-            print('Filtered out: %s' % str(terms))
+            terms_str = '> ' + '\n> '.join(str(t) for t in terms)
+            print('Filtered out:\n%s' % terms_str)
     return all_new_ambigs
 
 
@@ -118,97 +109,3 @@ def lcp(strs):
             break
     return prefix
 
-
-def get_text_content(pmid):
-    # print('Getting %s' % pmid)
-    db = get_db('primary')
-    content = get_text_content_from_text_refs(text_refs={'PMID': pmid},
-                                              db=db)
-    if content:
-        text = universal_extract_text(content)
-        return text
-    return None
-
-
-def get_papers(ambig_terms):
-    term_pmids = {}
-    pmid_counter = Counter()
-    for term in ambig_terms:
-        key = (term.db, term.id)
-        if term.db == 'HGNC':
-            gene = term.entry_name
-            try:
-                term_pmids[key] = pubmed_client.get_ids_for_gene(gene)
-            except ValueError:
-                print('Could not get PMIDs for gene: %s' % gene)
-                term_pmids[key] = []
-            pmid_counter.update(term_pmids[key])
-            time.sleep(0.5)
-        elif term.db == 'MESH':
-            pmids = pubmed_client.get_ids_for_mesh(term.id, major_topic=False)
-            if len(pmids > 1000):
-                pmids = pubmed_client.get_ids_for_mesh(term.id,
-                                                       major_topic=True)
-            term_pmids[key] = pmids[:1000]
-            pmid_counter.update(term_pmids[key])
-            time.sleep(0.5)
-        else:
-            print('Unhandled ambiguous term: %s' % str(key))
-
-    texts = []
-    labels = []
-    for key, pmids in term_pmids.items():
-        print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
-        pmids = [p for p in pmids if pmid_counter[p] == 1]
-        for pmid in pmids:
-            txt = get_text_content(pmid)
-            if txt:
-                texts.append(txt)
-                labels.append('%s:%s' % key)
-    return texts, labels
-
-
-def rank_ambiguities(ambigs, str_counts):
-    sorted_ambigs = sorted(ambigs, key=lambda x: str_counts.get(x[0].text, 0),
-                           reverse=True)
-    return sorted_ambigs
-
-
-if __name__ == '__main__':
-    with open('raw_agent_text_count.json') as fh:
-        str_counts = json.load(fh)
-    ambigs = get_ambiguities()
-    ambigs = filter_out_duplicates(ambigs)
-    ambigs = filter_out_shared_prefix(ambigs)
-    ambigs = filter_out_mesh_proteins(ambigs)
-    ambigs = rank_ambiguities(ambigs, str_counts)
-    pickle_name = 'gilda_ambiguities_hgnc_mesh.pkl'
-    # find_families(ambigs)
-    param_grid = {'C': [10.0], 'max_features': [100, 1000],
-                  'ngram_range': [(1, 2)]}
-    print('Found a total of %d ambiguities.' % len(ambigs))
-
-    models = {}
-    for ambig in ambigs[:10]:
-        if ambig[0].text in models:
-            print('Model for %s already exists' % ambig[0].text)
-            continue
-        else:
-            print('Learning model for: %s which has %d occurrences'
-                  '\n=======' % (str(ambig), str_counts[ambig[0].text]))
-        texts, labels = get_papers(ambig)
-        label_counts = Counter(labels)
-        if len(label_counts) < 2 or any([v <= 1 for v in
-                                         label_counts.values()]):
-            print('Could not get labels for more than one entry, skipping')
-            continue
-        if sum(label_counts.values()) <= 5:
-            print('Got no more than 5 PMIDs overall, skipping')
-            continue
-        cl = AdeftClassifier([ambig[0].text], list(set(labels)))
-        cl.cv(texts, labels, param_grid, cv=5)
-        print(cl.stats)
-        models[ambig[0].text] = {'cl': cl, 'ambig': ambig}
-        print()
-        with open(pickle_name, 'wb') as fh:
-            pickle.dump(models, fh)
