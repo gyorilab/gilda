@@ -1,6 +1,9 @@
 import json
 import time
 import pickle
+import argparse
+import functools
+from multiprocessing import Pool
 from collections import Counter
 from adeft.modeling.classify import AdeftClassifier
 from indra.util import batch_iter
@@ -68,6 +71,9 @@ def rank_ambiguities(ambigs, str_counts):
 
 
 def learn_model(ambig_terms, params):
+    print()
+    terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
+    print('Learning model for: %s\n=======' % terms_str)
     texts, labels = get_papers(ambig_terms)
     label_counts = Counter(labels)
     if any([v <= 5 for v in label_counts.values()]):
@@ -76,10 +82,22 @@ def learn_model(ambig_terms, params):
     cl = AdeftClassifier([ambig_terms[0].text], list(set(labels)))
     cl.cv(texts, labels, params, cv=5)
     print(cl.stats)
-    return cl
+    return {'cl': cl, 'ambig': ambig_terms}
+
+
+def learn_batch(ambig_terms_batch):
+    models = {}
+    for ambig_terms in ambig_terms_batch:
+        entity_text = ambig_terms[0].text
+        res = learn_model(ambig_terms, param_grid)
+        models[entity_text] = res
+    return models
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--nproc', default=1, type=int)
+    args = parser.parse_args()
     with open('raw_agent_text_count.json') as fh:
         str_counts = json.load(fh)
     ambigs = get_ambiguities()
@@ -92,19 +110,25 @@ if __name__ == '__main__':
     print('Found a total of %d ambiguities.' % len(ambigs))
 
     models = {}
-    for idx, ambig_terms_batch in enumerate(batch_iter(ambigs, 100)):
-        pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % idx
-        for ambig_terms in ambig_terms_batch:
-            entity_text = ambig_terms[0].text
-            print()
-            if entity_text in models:
-                print('Model for %s already exists' % entity_text)
-                continue
-            else:
-                terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
-                print('Learning model for: %s which has %d occurrences'
-                  '\n=======' % (terms_str, str_counts[entity_text]))
-            cl = learn_model(ambig_terms, param_grid)
-            models[entity_text] = {'cl': cl, 'ambig': ambig_terms}
+    if args.nproc == 1:
+        for idx, ambig_terms_batch in enumerate(batch_iter(ambigs, 10)):
+            pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % idx
+            models = learn_batch(ambig_terms_batch)
             with open(pickle_name, 'wb') as fh:
                 pickle.dump(models, fh)
+    else:
+        pool = Pool(args.nproc)
+        fun = functools.partial(learn_model, params=param_grid)
+        pkl_idx = 0
+        models = {}
+        for count, model in enumerate(pool.imap_unordered(fun, ambigs,
+                                                          chunksize=10)):
+            if (count + 1) % 100 == 0:
+                pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % pkl_idx
+                with open(pickle_name, 'wb') as fh:
+                    pickle.dump(models, fh)
+                pkl_idx += 1
+                models = {}
+        pool.close()
+        pool.join()
+
