@@ -1,3 +1,4 @@
+import os
 import json
 import time
 import pickle
@@ -82,8 +83,7 @@ def rank_ambiguities(ambigs, str_counts):
 
 
 def learn_model(ambig_terms_pmids, params):
-    ambig_terms = [a, _ for a, p in ambig_terms_pmids]
-    term_pmids = [_, p for a, p in ambig_terms_pmids]
+    ambig_terms, term_pmids = ambig_terms_pmids
 
     print()
     terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
