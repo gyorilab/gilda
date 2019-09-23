@@ -169,6 +169,8 @@ if __name__ == '__main__':
         for count, model in enumerate(pool.imap_unordered(fun,
                                                           all_ambigs_pmids,
                                                           chunksize=10)):
+            models[model['ambig'][0].text] = model
+            print('#### %d ####' % count)
             if (count + 1) % 100 == 0:
                 pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % pkl_idx
                 with open(pickle_name, 'wb') as fh:
