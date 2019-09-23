@@ -60,23 +60,29 @@ def get_all_pmids(ambigs):
     return all_pmids
 
 
+def get_texts_for_term(term_key, pmids):
+    labels = []
+    print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
+    for pmid in pmids:
+        txt = get_text_content(pmid)
+        if txt:
+            texts.append(txt)
+    print('Loaded %d PMIDs for %s' % (len(labels), str(key)))
+    if len(texts) < 5:
+        print('Splitting texts for %s' % str(key))
+        texts = split_texts(texts, 5)
+    return texts
+
+
 def get_papers(ambig_terms, term_pmids=None):
     if not term_pmids:
         term_pmids = get_pmids(ambig_terms)
     texts = []
     labels = []
     for key, pmids in term_pmids.items():
-        print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
-        for pmid in pmids:
-            txt = get_text_content(pmid)
-            if txt:
-                texts.append(txt)
-                labels.append('%s:%s' % key)
-        print('Loaded %d PMIDs for %s' % (len(labels), str(key)))
-        if len(texts) < 5:
-            print('Splitting texts for %s' % str(key))
-            texts = split_texts(texts, 5)
-            labels = [key for _ in texts]
+        texts1 = get_texts_for_term(key, pmids)
+        texts += texts1
+        labels += ['%s:%s' % key for _ in texts1]
     return texts, labels
 
 
