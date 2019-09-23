@@ -68,7 +68,7 @@ def get_texts_for_term(key, pmids):
         if txt:
             texts.append(txt)
     print('Loaded %d texts for %s' % (len(texts), str(key)))
-    if len(texts) < 5:
+    if texts and len(texts) < 5:
         print('Splitting texts for %s' % str(key))
         texts = split_texts(texts, 5)
     return texts
