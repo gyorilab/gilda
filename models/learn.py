@@ -84,7 +84,7 @@ def split_texts(texts, nmin):
     while len(texts) < nmin:
         texts = sorted(texts, key=lambda x: len(x), reverse=True)
         texts = [texts[0][:int(len(texts[0])/2)],
-                 texts[0][int(len(texts[0])/2)+1:]] + texts[1:]
+                 texts[0][int(len(texts[0])/2):]] + texts[1:]
     return texts
 
 
