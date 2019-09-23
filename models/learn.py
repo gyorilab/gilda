@@ -107,9 +107,13 @@ def learn_model(ambig_terms_pmids, params):
     terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
     print('Learning model for: %s\n=======' % terms_str)
     texts, labels = get_papers(ambig_terms, term_pmids)
+    if len(set(labels)) < 2:
+        print('Could not get enough labels for more than one class, skipping.')
+        return None
+
     label_counts = Counter(labels)
     if any([v <= 5 for v in label_counts.values()]):
-        print('Could not get enough labels for at least one entry, skipping')
+        print('Could not get enough labels for at least one entry, skipping.')
         return None
     cl = AdeftClassifier([ambig_terms[0].text], list(set(labels)))
     cl.cv(texts, labels, params, cv=5)
