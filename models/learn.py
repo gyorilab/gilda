@@ -25,7 +25,7 @@ def get_text_content(pmid):
     return None
 
 
-def get_papers(ambig_terms):
+def get_pmids(ambig_terms):
     term_pmids = {}
     pmid_counter = Counter()
     for term in ambig_terms:
@@ -49,18 +49,29 @@ def get_papers(ambig_terms):
             time.sleep(0.5)
         else:
             print('Unhandled ambiguous term: %s' % str(key))
+    term_pmids = {k: [p for p in pmids if pmid_counter[p] == 1]
+                  for k, pmids in term_pmids.items()}
+    return term_pmids
 
+
+def get_all_pmids(ambigs):
+    all_pmids = [(a, get_pmids(a)) for a in ambigs]
+    return all_pmids
+
+
+def get_papers(ambig_terms, term_pmids=None):
+    if not term_pmids:
+        term_pmids = get_pmids(ambig_terms)
     texts = []
     labels = []
     for key, pmids in term_pmids.items():
         print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
-        pmids = [p for p in pmids if pmid_counter[p] == 1]
         for pmid in pmids:
             txt = get_text_content(pmid)
             if txt:
                 texts.append(txt)
                 labels.append('%s:%s' % key)
-    print('Training data size: %s' % str(Counter(labels)))
+        print('Loaded %d PMIDs for %s' % (len(labels), str(key)))
     return texts, labels
 
 
@@ -70,11 +81,14 @@ def rank_ambiguities(ambigs, str_counts):
     return sorted_ambigs
 
 
-def learn_model(ambig_terms, params):
+def learn_model(ambig_terms_pmids, params):
+    ambig_terms = [a, _ for a, p in ambig_terms_pmids]
+    term_pmids = [_, p for a, p in ambig_terms_pmids]
+
     print()
     terms_str = '\n> ' + '\n> '.join(str(t) for t in ambig_terms)
     print('Learning model for: %s\n=======' % terms_str)
-    texts, labels = get_papers(ambig_terms)
+    texts, labels = get_papers(ambig_terms, term_pmids)
     label_counts = Counter(labels)
     if any([v <= 5 for v in label_counts.values()]):
         print('Could not get enough labels for at least one entry, skipping')
@@ -94,24 +108,43 @@ def learn_batch(ambig_terms_batch):
     return models
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--nproc', default=1, type=int)
-    args = parser.parse_args()
-    with open('raw_agent_text_count.json') as fh:
-        str_counts = json.load(fh)
+def get_filter_ambigs(str_counts):
     ambigs = get_ambiguities()
     ambigs = filter_out_duplicates(ambigs)
     ambigs = filter_out_shared_prefix(ambigs)
     ambigs = filter_out_mesh_proteins(ambigs)
     ambigs = rank_ambiguities(ambigs, str_counts)
+    return ambigs
+
+
+with open('raw_agent_text_count.json') as fh:
+    str_counts = json.load(fh)
+
+
+if __name__ == '__main__':
+    # Initialization
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--nproc', default=1, type=int)
+    args = parser.parse_args()
+    pmid_cache_file = 'all_pmids.pkl'
+    if os.path.exists(pmid_cache_file):
+        # Cached PMIDs
+        with open('all_pmids.pkl', 'rb') as fh:
+            all_ambigs_pmids = pickle.load(fh)
+    else:
+        ambigs = get_filter_ambigs(str_counts)
+        all_ambigs_pmids = get_all_pmids(ambigs)
+
+    # Construct list of ambiguities
+    #print('Found a total of %d ambiguities.' % len(ambigs))
+
+    # Learn models
     param_grid = {'C': [10.0], 'max_features': [100, 1000],
                   'ngram_range': [(1, 2)]}
-    print('Found a total of %d ambiguities.' % len(ambigs))
-
     models = {}
     if args.nproc == 1:
-        for idx, ambig_terms_batch in enumerate(batch_iter(ambigs, 10)):
+        for idx, ambig_terms_batch in \
+                enumerate(batch_iter(all_ambigs_pmids, 10)):
             pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % idx
             models = learn_batch(ambig_terms_batch)
             with open(pickle_name, 'wb') as fh:
@@ -121,7 +154,8 @@ if __name__ == '__main__':
         fun = functools.partial(learn_model, params=param_grid)
         pkl_idx = 0
         models = {}
-        for count, model in enumerate(pool.imap_unordered(fun, ambigs,
+        for count, model in enumerate(pool.imap_unordered(fun,
+                                                          all_ambigs_pmids,
                                                           chunksize=10)):
             if (count + 1) % 100 == 0:
                 pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % pkl_idx
