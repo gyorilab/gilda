@@ -73,7 +73,19 @@ def get_papers(ambig_terms, term_pmids=None):
                 texts.append(txt)
                 labels.append('%s:%s' % key)
         print('Loaded %d PMIDs for %s' % (len(labels), str(key)))
+        if len(texts) < 5:
+            print('Splitting texts for %s' % str(key))
+            texts = split_texts(texts, 5)
+            labels = [key for _ in texts]
     return texts, labels
+
+
+def split_texts(texts, nmin):
+    while len(texts) < nmin:
+        texts = sorted(texts, key=lambda x: len(x), reverse=True)
+        texts = [texts[0][:int(len(texts[0])/2)],
+                 texts[0][int(len(texts[0])/2)+1:]] + texts[1:]
+    return texts
 
 
 def rank_ambiguities(ambigs, str_counts):
