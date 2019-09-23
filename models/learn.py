@@ -60,14 +60,14 @@ def get_all_pmids(ambigs):
     return all_pmids
 
 
-def get_texts_for_term(term_key, pmids):
-    labels = []
+def get_texts_for_term(key, pmids):
+    texts = []
     print('Loading %d PMIDs for %s' % (len(pmids), str(key)))
     for pmid in pmids:
         txt = get_text_content(pmid)
         if txt:
             texts.append(txt)
-    print('Loaded %d PMIDs for %s' % (len(labels), str(key)))
+    print('Loaded %d texts for %s' % (len(texts), str(key)))
     if len(texts) < 5:
         print('Splitting texts for %s' % str(key))
         texts = split_texts(texts, 5)
