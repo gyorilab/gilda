@@ -119,7 +119,8 @@ def learn_model(ambig_terms_pmids, params):
     cl = AdeftClassifier([ambig_terms[0].text], list(set(labels)))
     cl.cv(texts, labels, params, cv=5)
     print(cl.stats)
-    return {'cl': cl, 'ambig': ambig_terms}
+    cl_model_info = cl.get_model_info()
+    return {'cl': cl_model_info, 'ambig': ambig_terms}
 
 
 def learn_batch(ambig_terms_batch):
