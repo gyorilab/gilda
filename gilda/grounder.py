@@ -2,8 +2,9 @@ import csv
 import pickle
 import logging
 import itertools
-from adeft import available_shortforms as available_adeft_models
 from adeft.disambiguate import load_disambiguator
+from adeft.modeling.classify import load_model_info
+from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
@@ -76,10 +77,7 @@ class Grounder(object):
         Returns
         -------
         list of tuple
-            A list of tuples with each tuple containing a Term, the score
-            associated with the match to that term, and a dict describing
-            the match. If a Term was matched multiple times, only the highest
-            scoring match is returned.
+            A list of ScoredMatch objects.
         """
         entries = self.lookup(raw_str)
         logger.info('Comparing %s with %d entries' %
@@ -146,7 +144,15 @@ class Grounder(object):
         return scored_matches
 
     def disambiguate_gilda(self, raw_str, scored_matches, context):
-        return None
+        res = self.gilda_disambiguators[raw_str].predict_proba([context])
+        if not res:
+            raise ValueError('No result from disambiguation.')
+        grounding_dict = res[0]
+        for match in scored_matches:
+            key = '%s:%s' % (match.term.db, match.term.id)
+            score = grounding_dict.get(key, 0.0)
+            match.multiply(score)
+        return scored_matches
 
     @staticmethod
     def _merge_equivalent_matches(scored_matches):
@@ -237,4 +243,6 @@ def load_adeft_models():
 
 def load_gilda_models():
     with open(get_gilda_models(), 'rb') as fh:
-        return pickle.load(fh)
+        models_raw = pickle.load(fh)
+    models = {k: load_model_info(v['cl']) for k, v in models_raw.items()}
+    return models
