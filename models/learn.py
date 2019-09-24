@@ -68,9 +68,10 @@ def get_texts_for_term(key, pmids):
         if txt:
             texts.append(txt)
     print('Loaded %d texts for %s' % (len(texts), str(key)))
-    if texts and len(texts) < 5:
+    if texts and len(texts) <= 5:
         print('Splitting texts for %s' % str(key))
-        texts = split_texts(texts, 5)
+        texts = split_texts(texts, 6)
+        print('Now have %s texts for %s' % (len(texts), str(key)))
     return texts
 
 
@@ -184,12 +185,12 @@ if __name__ == '__main__':
                 print('Model is None, skipping')
             else:
                 models[model['ambig'][0].text] = model
-                if (count + 1) % 100 == 0:
-                    pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % pkl_idx
-                    with open(pickle_name, 'wb') as fh:
-                        pickle.dump(models, fh)
-                    pkl_idx += 1
-                    models = {}
+            if (count + 1) % 100 == 0:
+                pickle_name = 'gilda_ambiguities_hgnc_mesh_%d.pkl' % pkl_idx
+                with open(pickle_name, 'wb') as fh:
+                    pickle.dump(models, fh)
+                pkl_idx += 1
+                models = {}
         pool.close()
         pool.join()
 
