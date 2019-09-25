@@ -4,7 +4,7 @@
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 
 ## Installation
-Gilda is deployed as a web service at http://34.201.164.108:8001/ground (see Usage
+Gilda is deployed as a web service at http://grounding.indra.bio/ground (see Usage
 instructions below), it only needs to be installed if used locally.
 
 The recommended method to install Gilda is via Github as:
@@ -24,7 +24,7 @@ The REST service accepts POST requests with a JSON header on the /ground endpoin
 There is a public REST service running on AWS but the service can also be run locally as
 
 ```bash
-python -m gilda.app.app
+python -m gilda.app
 ```
 
 Below is an example request using `curl`:
@@ -40,7 +40,7 @@ requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 ```
 
 The above requests can also be used to interact with the public service, by using the
-appropriate URL instead of `localhost`.
+appropriate URL instead of `localhost:8001`.
 
 As for using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module
