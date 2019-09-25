@@ -24,7 +24,7 @@ setup(name='gilda',
           'Programming Language :: Python :: 3.7'
       ],
       packages=find_packages(),
-      install_requires=['regex', 'adeft', 'boto3', 'flask'],
+      install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask'],
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra']},
       keywords=['nlp', 'biology']

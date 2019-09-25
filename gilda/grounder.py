@@ -1,12 +1,15 @@
 import csv
+import pickle
 import logging
 import itertools
-from adeft import available_shortforms as available_adeft_models
 from adeft.disambiguate import load_disambiguator
+from adeft.modeling.classify import load_model_info
+from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
 from .scorer import generate_match, score
+from .resources import get_gilda_models
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +19,8 @@ class Grounder(object):
     """Class to look up and ground query texts in a terms file."""
     def __init__(self, terms_file):
         self.entries = load_terms_file(terms_file)
-        self.disambiguators = load_adeft_models()
+        self.adeft_disambiguators = load_adeft_models()
+        self.gilda_disambiguators = load_gilda_models()
 
     def lookup(self, raw_str):
         """Return matching Terms for a given raw string.
@@ -73,10 +77,7 @@ class Grounder(object):
         Returns
         -------
         list of tuple
-            A list of tuples with each tuple containing a Term, the score
-            associated with the match to that term, and a dict describing
-            the match. If a Term was matched multiple times, only the highest
-            scoring match is returned.
+            A list of ScoredMatch objects.
         """
         entries = self.lookup(raw_str)
         logger.info('Comparing %s with %d entries' %
@@ -97,40 +98,60 @@ class Grounder(object):
 
     def disambiguate(self, raw_str, scored_matches, context):
         logger.info('Running disambiguation for %s' % raw_str)
+
         # If we don't have a disambiguator for this string, we return with
-        # the original scores intact
-        if raw_str not in self.disambiguators:
-            return scored_matches
+        # the original scores intact. Otherwise, we attempt to disambiguate.
+        if raw_str in self.adeft_disambiguators:
+            try:
+                scored_matches = \
+                    self.disambiguate_adeft(raw_str, scored_matches, context)
+            except Exception as e:
+                logger.exception(e)
+        elif raw_str in self.gilda_disambiguators:
+            try:
+                scored_matches = \
+                    self.disambiguate_gilda(raw_str, scored_matches, context)
+            except Exception as e:
+                logger.exception(e)
 
-        # Otherwise, we attempt to disambiguate
-        try:
-            # We find the disambiguator for the given string and pass in
-            # context
-            res = self.disambiguators[raw_str].disambiguate([context])
-            # The actual grounding dict is at this index in the result
-            grounding_dict = res[0][2]
-            logger.info('Result from Adeft: %s' % str(grounding_dict))
-            # We attempt to get the score for the 'ungrounded' entry
-            ungrounded_score = grounding_dict.get('ungrounded', 1.0)
-            # Now we check if each scored match has a corresponding Adeft
-            # grounding and score. If we find one, we multiply the original
-            # match score with the Adeft score. Otherwise, we multiply the
-            # original score with the 'ungrounded' score given by Adeft.
-            for match in scored_matches:
-                has_adeft_grounding = False
-                for grounding, score in grounding_dict.items():
-                    if grounding == 'ungrounded':
-                        continue
-                    db, id = grounding.split(':', maxsplit=1)
-                    if match.term.db == db and match.term.id == id:
-                        match.multiply(score)
-                        has_adeft_grounding = True
-                        break
-                if not has_adeft_grounding:
-                    match.multiply(ungrounded_score)
-        except Exception as e:
-            logger.exception(e)
+        return scored_matches
 
+    def disambiguate_adeft(self, raw_str, scored_matches, context):
+        # We find the disambiguator for the given string and pass in
+        # context
+        res = self.adeft_disambiguators[raw_str].disambiguate([context])
+        # The actual grounding dict is at this index in the result
+        grounding_dict = res[0][2]
+        logger.info('Result from Adeft: %s' % str(grounding_dict))
+        # We attempt to get the score for the 'ungrounded' entry
+        ungrounded_score = grounding_dict.get('ungrounded', 1.0)
+        # Now we check if each scored match has a corresponding Adeft
+        # grounding and score. If we find one, we multiply the original
+        # match score with the Adeft score. Otherwise, we multiply the
+        # original score with the 'ungrounded' score given by Adeft.
+        for match in scored_matches:
+            has_adeft_grounding = False
+            for grounding, score in grounding_dict.items():
+                if grounding == 'ungrounded':
+                    continue
+                db, id = grounding.split(':', maxsplit=1)
+                if match.term.db == db and match.term.id == id:
+                    match.multiply(score)
+                    has_adeft_grounding = True
+                    break
+            if not has_adeft_grounding:
+                match.multiply(ungrounded_score)
+        return scored_matches
+
+    def disambiguate_gilda(self, raw_str, scored_matches, context):
+        res = self.gilda_disambiguators[raw_str].predict_proba([context])
+        if not res:
+            raise ValueError('No result from disambiguation.')
+        grounding_dict = res[0]
+        for match in scored_matches:
+            key = '%s:%s' % (match.term.db, match.term.id)
+            score = grounding_dict.get(key, 0.0)
+            match.multiply(score)
         return scored_matches
 
     @staticmethod
@@ -218,3 +239,11 @@ def load_adeft_models():
     for shortform in available_adeft_models:
         adeft_disambiguators[shortform] = load_disambiguator(shortform)
     return adeft_disambiguators
+
+
+def load_gilda_models():
+    with open(get_gilda_models(), 'rb') as fh:
+        models_raw = pickle.load(fh)
+    models = {k: load_model_info(v['cl']) for k, v in models_raw.items()}
+    models = {k: v for k, v in models.items() if v.stats['f1']['mean'] > 0.7}
+    return models
