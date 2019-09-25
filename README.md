@@ -9,7 +9,7 @@ instructions below), it only needs to be installed if used locally.
 
 The recommended method to install Gilda is via Github as:
 ```bash
-pip install git+https://github.com/bgyori/gilda.git
+pip install git+https://github.com/indralab/gilda.git
 ```
 Note that Gilda uses a single large resource file for grounding, which is automatically downloaded
 into the `~/.gilda/<version>` folder during runtime. Given some additional dependencies, the grounding
@@ -18,7 +18,7 @@ resource file can also be regenerated locally by running `python -m gilda.genera
 ## Usage
 Gilda can either be used as a REST service (recommended) or programmatically via its Python API.
 An introduction Jupyter notebook for using Gilda as a service is available at
-https://github.com/bgyori/gilda/blob/master/notebooks/gilda_introduction.ipynb
+https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
 The REST service accepts POST requests with a JSON header on the /ground endpoint.
 There is a public REST service running on AWS but the service can also be run locally as
