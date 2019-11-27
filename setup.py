@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='gilda',
-      version='0.1.3',
+      version='0.1.4',
       description=('Grounding for biomedical entities with contextual '
                    'disambiguation'),
       long_description=long_description,
