@@ -7,6 +7,14 @@ app = Flask(__name__)
 grounder = Grounder(get_grounding_terms())
 
 
+@app.route('/', methods=['GET'])
+def info():
+    res = ('This is the Gilda grounding service. Please POST to the /ground '
+           'endpoint for grounding and see the documentation at '
+           'http://github.com/indralab/gilda for more information.')
+    return res
+
+
 @app.route('/ground', methods=['POST'])
 def ground():
     if request.json is None:
