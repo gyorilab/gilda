@@ -9,6 +9,7 @@ before_install:
 install:
   - pip install .[test]
   - pip install indra
+  - python -m adeft.download
 script:
   - nosetests gilda -v --with-coverage --cover-inclusive --cover-package=gilda
 after_success:
