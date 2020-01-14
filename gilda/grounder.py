@@ -1,4 +1,5 @@
 import csv
+import json
 import pickle
 import logging
 import itertools
@@ -136,10 +137,16 @@ class Grounder(object):
                     continue
                 db, id = grounding.split(':', maxsplit=1)
                 if match.term.db == db and match.term.id == id:
+                    match.disambiguation = {'type': 'adeft',
+                                            'score': score,
+                                            'match': 'grounded'}
                     match.multiply(score)
                     has_adeft_grounding = True
                     break
             if not has_adeft_grounding:
+                match.disambiguation = {'type': 'adeft',
+                                        'score': ungrounded_score,
+                                        'match': 'ungrounded'}
                 match.multiply(ungrounded_score)
         return scored_matches
 
@@ -150,7 +157,13 @@ class Grounder(object):
         grounding_dict = res[0]
         for match in scored_matches:
             key = '%s:%s' % (match.term.db, match.term.id)
-            score = grounding_dict.get(key, 0.0)
+            score_entry = grounding_dict.get(key, None)
+            score = score_entry if score_entry is not None else 0.0
+            match.disambiguation = {'type': 'gilda',
+                                    'score': score,
+                                    'match': ('grounded'
+                                              if score_entry is not None
+                                              else 'ungrounded')}
             match.multiply(score)
         return scored_matches
 
@@ -182,24 +195,33 @@ class ScoredMatch(object):
         The score associated with the match.
     match : gilda.scorer.Match
         The Match object characterizing the match to the Term.
+    disambiguation : Optional[dict]
+        Meta-information about disambiguation, when available.
     """
-    def __init__(self, term, score, match):
+    def __init__(self, term, score, match, disambiguation=None):
         self.term = term
         self.score = score
         self.match = match
+        self.disambiguation = disambiguation
 
     def __str__(self):
-        return 'ScoredMatch(%s,%s,%s)' % (self.term, self.score, self.match)
+        disamb_str = '' if self.disambiguation is None else \
+            (',disambiguation=' + json.dumps(self.disambiguation))
+        return 'ScoredMatch(%s,%s,%s%s)' % \
+            (self.term, self.score, self.match, disamb_str)
 
     def __repr__(self):
         return str(self)
 
     def to_json(self):
-        return {
+        js = {
             'term': self.term.to_json(),
             'score': self.score,
             'match': self.match.to_json()
         }
+        if self.disambiguation is not None:
+            js['disambiguation'] = self.disambiguation
+        return js
 
     def multiply(self, value):
         logger.info('Multiplying the score of "%s" with %.3f'

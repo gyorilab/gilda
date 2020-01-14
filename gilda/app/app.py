@@ -22,3 +22,9 @@ def ground():
                                reverse=True):
         res.append(scored_match.to_json())
     return jsonify(res)
+
+
+@app.route('/models', methods=['GET', 'POST'])
+def models():
+    models = sorted(list(grounder.gilda_disambiguators.keys()))
+    return jsonify(models)
