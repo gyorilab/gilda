@@ -59,3 +59,16 @@ def test_disambiguate_adeft():
         if match.term.db == 'HGNC' and match.term.id == '6091':
             assert match.disambiguation['match'] == 'grounded'
             assert match.disambiguation['score'] == 1.0
+
+
+def test_disambiguate_gilda():
+    matches = gr.ground('NDR1')
+    matches = gr.disambiguate('NDR1', matches, 'STK38')
+    for match in matches:
+        assert match.disambiguation['type'] == 'gilda'
+        assert match.disambiguation['match'] == 'grounded'
+        if match.term.db == 'HGNC' and match.term.id == '17847':
+            assert match.disambiguation['score'] > 0.99
+        if match.term.db == 'HGNC' and match.term.id == '7679':
+            assert match.disambiguation['score'] < 0.01
+        print(match)
