@@ -46,3 +46,16 @@ def test_grounder_depluralize():
     assert len(entries) == 2, entries
     for entry in entries:
         assert entry.norm_text == 'raf'
+
+
+def test_disambiguate_adeft():
+    matches = gr.ground('IR')
+    matches = gr.disambiguate('IR', matches, 'Insulin Receptor (IR)')
+    for match in matches:
+        assert match.disambiguation is not None
+        assert match.disambiguation['type'] == 'adeft'
+        assert match.disambiguation['match'] in ('grounded', 'ungrounded')
+        assert match.disambiguation['score'] is not None
+        if match.term.db == 'HGNC' and match.term.id == '6091':
+            assert match.disambiguation['match'] == 'grounded'
+            assert match.disambiguation['score'] == 1.0

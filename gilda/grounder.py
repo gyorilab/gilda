@@ -1,4 +1,5 @@
 import csv
+import json
 import pickle
 import logging
 import itertools
@@ -140,15 +141,13 @@ class Grounder(object):
                                             'score': score,
                                             'match': 'grounded'}
                     match.multiply(score)
-                    match.disambiguation = score
                     has_adeft_grounding = True
                     break
             if not has_adeft_grounding:
-                match.disambiguation = {'type': adeft,
+                match.disambiguation = {'type': 'adeft',
                                         'score': ungrounded_score,
                                         'match': 'ungrounded'}
                 match.multiply(ungrounded_score)
-                match.disambiguation = ungrounded_score
         return scored_matches
 
     def disambiguate_gilda(self, raw_str, scored_matches, context):
@@ -206,7 +205,10 @@ class ScoredMatch(object):
         self.disambiguation = disambiguation
 
     def __str__(self):
-        return 'ScoredMatch(%s,%s,%s)' % (self.term, self.score, self.match)
+        disamb_str = '' if self.disambiguation is None else \
+            (',disambiguation=' + json.dumps(self.disambiguation))
+        return 'ScoredMatch(%s,%s,%s%s)' % \
+            (self.term, self.score, self.match, disamb_str)
 
     def __repr__(self):
         return str(self)
