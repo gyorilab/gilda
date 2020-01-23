@@ -311,7 +311,7 @@ def generate_adeft_terms():
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
         for grounding in da.names.keys():
-            if grounding == 'ungrounded':
+            if grounding == 'ungrounded' or ':' not in grounding:
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
             if db_ns == 'HGNC':
@@ -324,6 +324,8 @@ def generate_adeft_terms():
                 standard_name = chebi_client.get_chebi_name_from_id(db_id)
             elif db_ns == 'FPLX':
                 standard_name = db_id
+            elif db_ns == 'UP':
+                standard_name = uniprot_client.get_gene_name(db_id)
             else:
                 logger.warning('Unknown grounding namespace from Adeft: %s' %
                                db_ns)
