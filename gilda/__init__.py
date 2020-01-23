@@ -1,4 +1,4 @@
-__version__ = '0.1.4'
+__version__ = '0.2.0'
 import logging
 
 logging.basicConfig(format=('%(levelname)s: [%(asctime)s] %(name)s'

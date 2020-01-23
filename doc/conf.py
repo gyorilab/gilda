@@ -24,9 +24,9 @@ copyright = '2019, Benjamin M. Gyori'
 author = 'Benjamin M. Gyori'
 
 # The short X.Y version
-version = '0.1'
+version = '0.2'
 # The full version, including alpha/beta/rc tags
-release = '0.1.4'
+release = '0.2.0'
 
 
 # -- General configuration ---------------------------------------------------
