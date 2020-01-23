@@ -18,7 +18,7 @@ from .resources import resource_dir
 
 
 indra_module_path = indra.__path__[0]
-resources = os.path.join(indra_module_path, 'resources')
+indra_resources = os.path.join(indra_module_path, 'resources')
 gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
@@ -37,7 +37,7 @@ def read_csv(fname, header=False, delimiter='\t'):
 
 
 def generate_hgnc_terms():
-    fname = os.path.join(resources, 'hgnc_entries.tsv')
+    fname = os.path.join(indra_resources, 'hgnc_entries.tsv')
     logger.info('Loading %s' % fname)
     all_term_args = {}
     rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
@@ -92,7 +92,7 @@ def generate_hgnc_terms():
 
 
 def generate_chebi_terms():
-    fname = os.path.join(resources, 'chebi_entries.tsv')
+    fname = os.path.join(indra_resources, 'chebi_entries.tsv')
     logger.info('Loading %s' % fname)
     terms = []
     for row in read_csv(fname, header=True, delimiter='\t'):
@@ -108,7 +108,7 @@ def generate_chebi_terms():
     # at ftp://ftp.ebi.ac.uk/pub/databases/chebi/Flat_file_
     # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
     # into the INDRA resources folder.
-    fname = os.path.join(resources, 'names_3star.tsv')
+    fname = os.path.join(indra_resources, 'names_3star.tsv')
     added = set()
     for row in read_csv(fname, header=True, delimiter='\t'):
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
@@ -138,13 +138,13 @@ def generate_chebi_terms():
 
 
 def generate_mesh_terms(ignore_mappings=False):
-    # Load MeSH ID/label mappings from INDRA
+    # Load MeSH ID/label mappings
     mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
     mesh_mappings = {}
     for row in read_csv(mesh_mappings_file, delimiter='\t'):
         mesh_mappings[row[1]] = (row[3], row[4])
     # Load MeSH HGNC/FPLX mappings
-    mesh_names_file = os.path.join(resources,
+    mesh_names_file = os.path.join(indra_resources,
                                    'mesh_id_label_mappings.tsv')
     terms = []
     for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
@@ -178,7 +178,7 @@ def generate_mesh_terms(ignore_mappings=False):
 
 def generate_go_terms():
     # TODO: add synonyms for GO terms here
-    fname = os.path.join(resources, 'go_id_label_mappings.tsv')
+    fname = os.path.join(indra_resources, 'go_id_label_mappings.tsv')
     logger.info('Loading %s' % fname)
     terms = []
     for row in read_csv(fname, delimiter='\t'):
@@ -194,7 +194,7 @@ def generate_go_terms():
 
 
 def generate_famplex_terms():
-    fname = os.path.join(resources, 'famplex', 'grounding_map.csv')
+    fname = os.path.join(indra_resources, 'famplex', 'grounding_map.csv')
     logger.info('Loading %s' % fname)
     terms = []
     for row in read_csv(fname, delimiter=','):
@@ -311,7 +311,7 @@ def generate_adeft_terms():
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
         for grounding in da.names.keys():
-            if grounding == 'ungrounded':
+            if grounding == 'ungrounded' or ':' not in grounding:
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
             if db_ns == 'HGNC':
@@ -324,6 +324,8 @@ def generate_adeft_terms():
                 standard_name = chebi_client.get_chebi_name_from_id(db_id)
             elif db_ns == 'FPLX':
                 standard_name = db_id
+            elif db_ns == 'UP':
+                standard_name = uniprot_client.get_gene_name(db_id)
             else:
                 logger.warning('Unknown grounding namespace from Adeft: %s' %
                                db_ns)

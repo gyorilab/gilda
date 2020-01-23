@@ -59,7 +59,8 @@ def process_fxpl_groundings(df):
             'text': row['Text'],
             'entity_type': row['EntityType'],
             'db_refs': {},
-            'correct': bool(int(row['Grounding']))
+            'correct': bool(int(row['Grounding'])),
+            'context': row['Sentence']
             }
         # We then extract the grounding (up to 3) that were considered
         # for the curation
@@ -126,7 +127,8 @@ def make_comparison(groundings):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
         res = requests.post('%s/ground' % service_url,
-                            json={'text': grounding['text']}).json()
+                            json={'text': grounding['text'],
+                                  'context': grounding['context']}).json()
         if not res:
             comparison['%s_ungrounded' % old_eval].append((idx, grounding, None))
             continue

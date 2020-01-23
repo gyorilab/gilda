@@ -9,12 +9,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='gilda',
-      version='0.1.4',
+      version='0.2.0',
       description=('Grounding for biomedical entities with contextual '
                    'disambiguation'),
       long_description=long_description,
       long_description_content_type='text/markdown',
-      url='https://github.com/bgyori/gilda',
+      url='https://github.com/indralab/gilda',
       author='Benjamin M. Gyori, Harvard Medical School',
       author_email='benjamin_gyori@hms.harvard.edu',
       classifiers=[
@@ -26,6 +26,7 @@ setup(name='gilda',
       packages=find_packages(),
       install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask'],
       extras_require={'test': ['nose', 'coverage'],
-                      'terms': ['indra']},
+                      'terms': ['indra'],
+                      'benchmarks': ['pandas', 'requests']},
       keywords=['nlp', 'biology']
       )

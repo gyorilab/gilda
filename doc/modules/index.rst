@@ -1,6 +1,13 @@
 Gilda modules reference
 =======================
 
+API
+---
+
+.. automodule:: gilda.api
+    :members:
+    :show-inheritance:
+
 Grounder
 --------
 
