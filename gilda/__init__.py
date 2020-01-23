@@ -7,3 +7,6 @@ logging.basicConfig(format=('%(levelname)s: [%(asctime)s] %(name)s'
 
 
 logger = logging.getLogger('gilda')
+
+
+from .api import *
