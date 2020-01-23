@@ -13,7 +13,7 @@ def info():
 
 
 @app.route('/ground', methods=['POST'])
-def ground():
+def ground_endpoint():
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
     # Get input parameters
