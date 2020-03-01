@@ -277,7 +277,10 @@ def generate_uniprot_terms(download=True):
 
 
 def parse_uniprot_synonyms(synonyms_str):
-    synonyms_str = re.sub(r'\[Includes: ([^]])+\]', '', synonyms_str).strip()
+    synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
+                          '', synonyms_str).strip()
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+                          '', synonyms_str).strip()
     syns = ['']
     parentheses_depth = 0
     start = True
