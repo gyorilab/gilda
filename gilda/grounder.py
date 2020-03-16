@@ -10,7 +10,7 @@ from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
 from .scorer import generate_match, score
-from .resources import get_gilda_models
+from .resources import get_gilda_models, get_grounding_terms
 
 
 logger = logging.getLogger(__name__)
@@ -18,8 +18,18 @@ logger = logging.getLogger(__name__)
 
 class Grounder(object):
     """Class to look up and ground query texts in a terms file."""
-    def __init__(self, terms_file):
-        self.entries = load_terms_file(terms_file)
+    def __init__(self, terms_file=None):
+        if terms_file is None:
+            terms_file = get_grounding_terms()
+
+        if isinstance(terms_file, str):
+            self.entries = load_terms_file(terms_file)
+        elif isinstance(terms_file, dict):
+            self.entries = terms_file
+        else:
+            raise TypeError('terms_file is neither a path nor a normalized'
+                            ' entry name to term dictionary')
+
         self.adeft_disambiguators = load_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
 
