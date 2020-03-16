@@ -14,12 +14,10 @@ from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
 from .term import Term
 from .process import normalize
-from .resources import resource_dir
 
 
 indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')
-gilda_resources = os.path.join(os.path.dirname(__file__), 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
 
@@ -139,7 +137,7 @@ def generate_chebi_terms():
 
 def generate_mesh_terms(ignore_mappings=False):
     # Load MeSH ID/label mappings
-    mesh_mappings_file = os.path.join(gilda_resources, 'mesh_mappings.tsv')
+    from .resources import MESH_MAPPINGS_PATH as mesh_mappings_file
     mesh_mappings = {}
     for row in read_csv(mesh_mappings_file, delimiter='\t'):
         mesh_mappings[row[1]] = (row[3], row[4])
@@ -367,6 +365,6 @@ def get_all_terms():
 
 if __name__ == '__main__':
     terms = get_all_terms()
-    fname = os.path.join(resource_dir, 'grounding_terms.tsv')
+    from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
     write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
