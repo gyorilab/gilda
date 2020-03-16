@@ -1,9 +1,8 @@
 from gilda.grounder import Grounder
-from gilda.resources import get_grounding_terms
 from . import appreq
 
 
-gr = Grounder(get_grounding_terms())
+gr = Grounder()
 
 
 def test_grounder():

@@ -1,8 +1,7 @@
 from gilda.grounder import Grounder
-from gilda.resources import get_grounding_terms
 from indra.databases import mesh_client
 
-gr = Grounder(get_grounding_terms())
+gr = Grounder()
 
 
 def get_ambiguities(skip_assertions=True, skip_names=True):
