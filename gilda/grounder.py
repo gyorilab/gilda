@@ -87,7 +87,7 @@ class Grounder(object):
                     ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str):
+    def ground(self, raw_str, context=None, sort=False):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -95,11 +95,17 @@ class Grounder(object):
         raw_str : str
             A string to be grounded with respect to the set of Terms that the
             Grounder contains.
+        context : Optional[str]
+            Any additional text that serves as context for disambiguating the
+            given entity text, used if a model exists for disambiguating the
+            given text.
+        sort: bool
+            Should the matches be sorted by score before being returned?
 
         Returns
         -------
-        list of tuple
-            A list of ScoredMatch objects.
+        list[gilda.grounder.ScoredMatch]
+            A list of ScoredMatch objects representing the groundings.
         """
         entries = self.lookup(raw_str)
         logger.info('Comparing %s with %d entries' %
@@ -116,6 +122,15 @@ class Grounder(object):
             scored_match = ScoredMatch(term, sc, match)
             scored_matches.append(scored_match)
         unique_scores = self._merge_equivalent_matches(scored_matches)
+
+        if context:
+            unique_scores = self.disambiguate(raw_str, unique_scores, context)
+
+        if sort:
+            unique_scores = sorted(unique_scores,
+                                   key=lambda x: x.score,
+                                   reverse=True)
+
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
@@ -203,6 +218,17 @@ class Grounder(object):
             unique_entries.append(entries[0])
         # Return the list of unique entries
         return unique_entries
+
+    def get_models(self):
+        """Return a list of entity texts for which disambiguation models exist.
+
+        Returns
+        -------
+        list[str]
+            The list of entity texts for which a disambiguation model is
+            available.
+        """
+        return sorted(list(self.gilda_disambiguators.keys()))
 
 
 class ScoredMatch(object):

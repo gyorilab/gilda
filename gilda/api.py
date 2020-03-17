@@ -14,17 +14,11 @@ class GrounderInstance(object):
 
     def ground(self, text, context=None):
         _grounder = self.get_grounder()
-        scored_matches = _grounder.ground(text)
-        if context:
-            scored_matches = _grounder.disambiguate(text,
-                                                    scored_matches,
-                                                    context)
-        scored_matches = sorted(scored_matches, key=lambda x: x.score,
-                                reverse=True)
-        return scored_matches
+        return _grounder.ground(text, context=context, sort=True)
 
     def get_models(self):
-        return sorted(list(self.get_grounder().gilda_disambiguators.keys()))
+        _grounder = self.get_grounder()
+        return _grounder.get_models()
 
     def get_names(self, db, id, status=None, source=None):
         names = []
