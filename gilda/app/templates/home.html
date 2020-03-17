@@ -1,0 +1,31 @@
+{% extends "bootstrap/base.html" %}
+
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+{% import "bootstrap/utils.html" as util %}
+
+{% block content %}
+<div class="container">
+    <br /><br /><br />
+    <div class="col-md-offset-3 col-md-6 col-sm-offset-3 col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Gilda</h3>
+            </div>
+            <div class="panel-body">
+                <p>
+                    This is the Gilda grounding service.
+                </p>
+                <p>
+                    Please POST to the <code>/ground</code> endpoint for
+                    grounding or use the form below. See the 
+                    <a href="http://github.com/indralab/gilda">documentation</a>
+                    for more information.
+                </p>
+
+                {{ wtf.quick_form(form, form_type='horizontal', action=url_for('ground_endpoint')) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
