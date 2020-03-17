@@ -10,7 +10,7 @@ class GrounderInstance(object):
 
     def get_grounder(self):
         if self.grounder is None:
-            self.grounder = Grounder(get_grounding_terms())
+            self.grounder = Grounder()
         return self.grounder
 
     def ground(self, text, context=None):

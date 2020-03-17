@@ -10,16 +10,37 @@ from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
 from .scorer import generate_match, score
-from .resources import get_gilda_models
+from .resources import get_gilda_models, get_grounding_terms
 
 
 logger = logging.getLogger(__name__)
 
 
 class Grounder(object):
-    """Class to look up and ground query texts in a terms file."""
-    def __init__(self, terms_file):
-        self.entries = load_terms_file(terms_file)
+    """Class to look up and ground query texts in a terms file.
+
+    Parameters
+    ----------
+    terms : str or dict or None
+        Specifies the grounding terms that should be loaded in the Grounder.
+        If None, the default grounding terms are loaded from the versioned
+        resource folder. If str, it is interpreted as a path to a grounding
+        terms TSV file which is then loaded. If dict, it is assumed to be
+        a grounding terms dict with normalized entity strings as keys
+        and Term objects as values. Default: None
+    """
+    def __init__(self, terms=None):
+        if terms is None:
+            terms = get_grounding_terms()
+
+        if isinstance(terms, str):
+            self.entries = load_terms_file(terms)
+        elif isinstance(terms, dict):
+            self.entries = terms
+        else:
+            raise TypeError('terms is neither a path nor a normalized'
+                            ' entry name to term dictionary')
+
         self.adeft_disambiguators = load_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
 
