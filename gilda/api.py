@@ -13,12 +13,10 @@ class GrounderInstance(object):
         return self.grounder
 
     def ground(self, text, context=None):
-        _grounder = self.get_grounder()
-        return _grounder.ground(text, context=context, sort=True)
+        return self.get_grounder().ground(text, context=context, sort=True)
 
     def get_models(self):
-        _grounder = self.get_grounder()
-        return _grounder.get_models()
+        return self.get_grounder().get_models()
 
     def get_names(self, db, id, status=None, source=None):
         names = []
