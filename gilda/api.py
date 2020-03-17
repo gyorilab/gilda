@@ -1,7 +1,6 @@
-__all__ = ['ground', 'get_models']
+__all__ = ['ground', 'get_models', 'get_names']
 
 from gilda.grounder import Grounder
-from gilda.resources import get_grounding_terms
 
 
 class GrounderInstance(object):
