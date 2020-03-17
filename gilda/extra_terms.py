@@ -71,7 +71,7 @@ def _generate_obo_terms(prefix):
                     if doid_canonical_id is not None:
                         doid_name = doid_client.get_doid_name_from_doid_id(doid_canonical_id)
                 if doid_name is not None:
-                    entities.append(('DOID', xref, doid_name))
+                    entities.append(('DOID', xref_db_id, doid_name))
                 else:
                     logger.info('Could not find DOID xref %s', xref_db_id)
 
