@@ -27,7 +27,7 @@ class GrounderInstance(object):
     def get_models(self):
         return sorted(list(self.get_grounder().gilda_disambiguators.keys()))
 
-    def get_names(self, db, id, status=None, source=None)
+    def get_names(self, db, id, status=None, source=None):
         names = []
         for entries in self.get_grounder().entries.values():
             for entry in entries:
