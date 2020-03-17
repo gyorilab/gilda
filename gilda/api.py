@@ -13,6 +13,20 @@ class GrounderInstance(object):
             self.grounder = Grounder(get_grounding_terms())
         return self.grounder
 
+    def ground(self, text, context=None):
+        _grounder = self.get_grounder()
+        scored_matches = _grounder.ground(text)
+        if context:
+            scored_matches = _grounder.disambiguate(text,
+                                                    scored_matches,
+                                                    context)
+        scored_matches = sorted(scored_matches, key=lambda x: x.score,
+                                reverse=True)
+        return scored_matches
+
+    def get_models(self):
+        return sorted(list(self.get_grounder().gilda_disambiguators.keys()))
+
 
 grounder = GrounderInstance()
 
@@ -34,14 +48,7 @@ def ground(text, context=None):
     list[gilda.grounder.ScoredMatch]
         A list of ScoredMatch objects representing the groundings.
     """
-    scored_matches = grounder.get_grounder().ground(text)
-    if context:
-        scored_matches = grounder.get_grounder().disambiguate(text,
-                                                              scored_matches,
-                                                              context)
-    scored_matches = sorted(scored_matches, key=lambda x: x.score,
-                            reverse=True)
-    return scored_matches
+    return grounder.ground(text=text, context=context)
 
 
 def get_models():
@@ -53,4 +60,4 @@ def get_models():
         The list of entity texts for which a disambiguation model is
         available.
     """
-    return sorted(list(grounder.get_grounder().gilda_disambiguators.keys()))
+    return grounder.get_models()
