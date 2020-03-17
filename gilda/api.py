@@ -19,14 +19,9 @@ class GrounderInstance(object):
         return self.get_grounder().get_models()
 
     def get_names(self, db, id, status=None, source=None):
-        names = []
-        for entries in self.get_grounder().entries.values():
-            for entry in entries:
-                if (entry.db == db) and (entry.id == id) and \
-                        (not status or entry.status == status) and \
-                        (not source or entry.source == source):
-                    names.append(entry.text)
-        return sorted(list(set(names)))
+        return self.get_grounder().get_names(db, id,
+                                             status=status,
+                                             source=source)
 
 
 grounder = GrounderInstance()

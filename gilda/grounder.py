@@ -230,6 +230,36 @@ class Grounder(object):
         """
         return sorted(list(self.gilda_disambiguators.keys()))
 
+    def get_names(self, db, id, status=None, source=None):
+        """Return a list of entity texts corresponding to a given database ID.
+
+        Parameters
+        ----------
+        db : str
+            The database in which the ID is an entry, e.g., HGNC.
+        id : str
+            The ID of an entry in the database.
+        status : Optional[str]
+            If given, only entity texts with the given status e.g., "synonym"
+            are returned.
+        source : Optional[str]
+            If given, only entity texts from the given source e.g., "uniprot"
+            are returned.
+
+        Returns
+        -------
+        names: list[str]
+            A list of entity texts corresponding to the given database/ID
+        """
+        names = set()
+        for entries in self.entries.values():
+            for entry in entries:
+                if (entry.db == db) and (entry.id == id) and \
+                   (not status or entry.status == status) and \
+                   (not source or entry.source == source):
+                    names.add(entry.text)
+        return sorted(names)
+
 
 class ScoredMatch(object):
     """Class representing a scored match to a grounding term.
