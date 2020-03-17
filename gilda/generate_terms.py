@@ -2,7 +2,6 @@
 It uses several resource files and database clients from INDRA and requires it
 to be available locally."""
 
-import itertools as itt
 import re
 import os
 import csv
@@ -12,9 +11,10 @@ import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client, doid_client
+    go_client, mesh_client
 from gilda.term import Term
 from gilda.process import normalize
+from gilda.extra_terms import generate_doid_terms, generate_efo_terms, generate_hp_terms
 from gilda.resources import resource_dir
 
 
@@ -22,6 +22,10 @@ indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
+
+
+CHEBI_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chebi/' \
+            'Flat_file_tab_delimited/names_3star.tsv.gz'
 
 
 def read_csv(fname, header=False, delimiter='\t'):
@@ -109,8 +113,15 @@ def generate_chebi_terms():
     # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
     # into the INDRA resources folder.
     fname = os.path.join(indra_resources, 'names_3star.tsv')
+    if not os.path.exists(fname):
+        import pandas as pd
+        df = pd.read_csv(CHEBI_URL, sep='\t')
+        rows = (row for _, row in df.iterrows())
+    else:
+        rows = read_csv(fname, header=True, delimiter='\t')
+
     added = set()
-    for row in read_csv(fname, header=True, delimiter='\t'):
+    for row in rows:
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
         if not chebi_id:
             logger.info('Could not get valid CHEBI ID for %s' %
@@ -239,18 +250,19 @@ def generate_famplex_terms():
     return terms
 
 
-def generate_uniprot_terms(download=True):
-    if download:
+def generate_uniprot_terms(reload=False):
+    path = os.path.join(resource_dir, 'up_synonyms.tsv')
+    if not os.path.exists(path) or reload:
         url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
                'genes(PREFERRED),protein%20names&sort=score&'
                'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
                '%20AND%20reviewed:yes')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
-        with open('up_synonyms.tsv', 'w') as fh:
+        with open(path, 'w') as fh:
             fh.write(res.text)
     terms = []
-    for row in read_csv('up_synonyms.tsv', delimiter='\t', header=True):
+    for row in read_csv(path, delimiter='\t', header=True):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
         standard_name = row['Gene names  (primary )']
