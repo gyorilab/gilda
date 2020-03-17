@@ -69,8 +69,8 @@ def generate_hgnc_terms():
 
         # Handle regular entry synonyms
         synonyms = []
-        if row['Synonyms'] and row['Synonyms']:
-            synonyms += row['Synonyms'].split(', ')
+        if row['Alias symbols']:
+            synonyms += row['Alias symbols'].split(', ')
         for synonym in synonyms:
             term_args = (normalize(synonym), synonym, db, id, name, 'synonym',
                          'hgnc')
