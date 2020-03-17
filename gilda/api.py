@@ -13,7 +13,7 @@ class GrounderInstance(object):
         return self.grounder
 
     def ground(self, text, context=None):
-        return self.get_grounder().ground(text, context=context, sort=True)
+        return self.get_grounder().ground(text, context=context)
 
     def get_models(self):
         return self.get_grounder().get_models()
