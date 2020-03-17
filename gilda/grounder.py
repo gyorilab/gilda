@@ -87,7 +87,7 @@ class Grounder(object):
                     ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None, sort=False):
+    def ground(self, raw_str, context=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -99,13 +99,12 @@ class Grounder(object):
             Any additional text that serves as context for disambiguating the
             given entity text, used if a model exists for disambiguating the
             given text.
-        sort: bool
-            Should the matches be sorted by score before being returned?
 
         Returns
         -------
         list[gilda.grounder.ScoredMatch]
-            A list of ScoredMatch objects representing the groundings.
+            A list of ScoredMatch objects representing the groundings sorted
+            by decreasing score.
         """
         entries = self.lookup(raw_str)
         logger.info('Comparing %s with %d entries' %
@@ -121,15 +120,22 @@ class Grounder(object):
             sc = score(match, term)
             scored_match = ScoredMatch(term, sc, match)
             scored_matches.append(scored_match)
+
+        # Return early if we don't have anything to avoid calling other
+        # functions with no matches
+        if not scored_matches:
+            return scored_matches
+
+        # Merge equivalent matches
         unique_scores = self._merge_equivalent_matches(scored_matches)
 
+        # If there's context available, disambiguate based on that
         if context:
             unique_scores = self.disambiguate(raw_str, unique_scores, context)
 
-        if sort:
-            unique_scores = sorted(unique_scores,
-                                   key=lambda x: x.score,
-                                   reverse=True)
+        # Then sort by decreasing score
+        unique_scores = sorted(unique_scores, key=lambda x: x.score,
+                               reverse=True)
 
         return unique_scores
 
