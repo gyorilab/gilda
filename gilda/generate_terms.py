@@ -172,6 +172,7 @@ def generate_mesh_terms(ignore_mappings=False):
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
+
 def generate_go_terms():
     # TODO: add synonyms for GO terms here
     fname = os.path.join(indra_resources, 'go_id_label_mappings.tsv')
