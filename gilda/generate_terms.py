@@ -12,10 +12,10 @@ import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client
-from gilda.term import Term
-from gilda.process import normalize
-from gilda.extra_terms import generate_doid_terms, generate_efo_terms, generate_hp_terms
-from gilda.resources import resource_dir
+from .term import Term
+from .process import normalize
+from .extra_terms import generate_doid_terms, generate_efo_terms, generate_hp_terms
+from .resources import resource_dir
 
 
 indra_module_path = indra.__path__[0]
