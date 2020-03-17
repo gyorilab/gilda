@@ -25,3 +25,21 @@ def test_parse_embedded_parentheses_uniprot_2():
     assert len(syms) == 7, syms
     assert 'Na(+)/H(+) exchange regulatory cofactor NHE-RF1' in syms, syms
 
+
+def test_parse_embedded_parentheses_uniprot_3():
+    txt = ('Solute carrier family 13 member 3 (Na(+)/dicarboxylate ' \
+           'cotransporter 3, NaDC-3, rNaDC3) (Sodium-dependent high-affinity' \
+           ' dicarboxylate transporter 2)')
+    syms = parse_uniprot_synonyms(txt)
+    assert syms == \
+        ['Solute carrier family 13 member 3',
+         'Na(+)/dicarboxylate cotransporter 3, NaDC-3, rNaDC3',
+         'Sodium-dependent high-affinity dicarboxylate transporter 2']
+
+
+def test_parse_parentheses_in_name():
+    txt = 'DNA (cytosine-5)-methyltransferase 1 (EC:2.1.1.37)'
+    syms = parse_uniprot_synonyms(txt)
+    assert syms == ['DNA (cytosine-5)-methyltransferase 1', 'EC:2.1.1.37'], \
+        syms
+

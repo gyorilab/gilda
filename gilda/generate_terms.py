@@ -277,29 +277,37 @@ def generate_uniprot_terms(download=True):
 
 
 def parse_uniprot_synonyms(synonyms_str):
-    synonyms_str = re.sub(r'\[Includes: ([^]])+\]', '', synonyms_str).strip()
-    syns = ['']
-    parentheses_depth = 0
-    start = True
-    for idx, c in enumerate(synonyms_str):
-        if c == '(':
-            if start and synonyms_str[idx-1] == ' ':
-                syns[-1] = syns[-1][:-1]
-                syns.append('')
-                start = False
-            elif parentheses_depth == 0 and synonyms_str[idx-1] == ' ':
-                syns[-1] = syns[-1][:-1]
-                syns.append('')
-            else:
-                syns[-1] += c
-            parentheses_depth += 1
-        elif c == ')':
-            if start or not start and parentheses_depth > 1:
-                syns[-1] += c
-            parentheses_depth -= 1
-        else:
-            syns[-1] += c
-    return syns
+    synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
+                          '', synonyms_str).strip()
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+                          '', synonyms_str).strip()
+
+    def find_block_from_right(s):
+        parentheses_depth = 0
+        assert s.endswith(')')
+        s = s[:-1]
+        block = ''
+        for c in s[::-1]:
+            if c == ')':
+                parentheses_depth += 1
+            elif c == '(':
+                if parentheses_depth > 0:
+                    parentheses_depth -= 1
+                else:
+                    return block
+            block = c + block
+        return block
+
+    syns = []
+    while True:
+        if not synonyms_str:
+            return syns
+        if not synonyms_str.endswith(')'):
+            return [synonyms_str] + syns
+
+        syn = find_block_from_right(synonyms_str)
+        syns = [syn] + syns
+        synonyms_str = synonyms_str[:-len(syn)-3]
 
 
 def generate_adeft_terms():

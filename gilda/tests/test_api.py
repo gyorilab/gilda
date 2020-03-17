@@ -13,3 +13,9 @@ def test_get_models():
     models = get_models()
     assert len(models) > 500
     assert 'STK1' in models
+
+
+def test_get_names():
+    names = get_names('HGNC', '6407')
+    assert len(names) > 5, names
+    assert 'K-Ras' in names
