@@ -262,6 +262,7 @@ MESH	D001278	Atractyloside	CHEBI	CHEBI:2913	Atractyloside
 MESH	D001279	Atracurium	CHEBI	CHEBI:2914	atracurium
 MESH	D001280	Atrazine	CHEBI	CHEBI:15930	atrazine
 MESH	D001285	Atropine	CHEBI	CHEBI:16684	atropine
+MESH	D001343	Autophagy	GO	GO:0006914	autophagy
 MESH	D001374	Azacitidine	CHEBI	CHEBI:2038	5-azacytidine
 MESH	D001375	Azaguanine	CHEBI	CHEBI:63486	8-azaguanine
 MESH	D001380	Azauridine	CHEBI	CHEBI:35668	6-azauridine
@@ -1473,6 +1474,7 @@ MESH	D016899	Interferon-beta	FPLX	IFNB	IFNB
 MESH	D016906	Interleukin-9	HGNC	6029	IL9
 MESH	D016912	Levonorgestrel	CHEBI	CHEBI:6443	levonorgestrel
 MESH	D017026	Swainsonine	CHEBI	CHEBI:9367	swainsonine
+MESH	D017209	Apoptosis	GO	GO:0006915	apoptotic process
 MESH	D017228	Hepatocyte Growth Factor	HGNC	4236	GFER
 MESH	D017239	Paclitaxel	CHEBI	CHEBI:45863	paclitaxel
 MESH	D017245	Foscarnet	CHEBI	CHEBI:127780	phosphonoformic acid

@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
     generate_mesh_terms, generate_uniprot_terms, generate_chebi_terms, \
-    filter_out_duplicates
+    generate_go_terms, filter_out_duplicates
 from indra.databases import mesh_client
 
 
@@ -47,6 +47,9 @@ def get_mesh_mappings(ambigs):
             if len(ambigs_by_db.get('CHEBI', [])) == 1:
                 key = (me.id, 'CHEBI', ambigs_by_db['CHEBI'][0].id)
                 predicted_mappings[key] = (me, ambigs_by_db['CHEBI'][0])
+            elif len(ambigs_by_db.get('GO', [])) == 1:
+                key = (me.id, 'GO', ambigs_by_db['GO'][0].id)
+                predicted_mappings[key] = (me, ambigs_by_db['GO'][0])
     return predicted_mappings
 
 
@@ -64,7 +67,8 @@ def find_ambiguities(terms):
 def get_terms():
     terms = generate_mesh_terms(ignore_mappings=True) + \
         generate_hgnc_terms() + generate_famplex_terms() + \
-        generate_uniprot_terms(download=False) + generate_chebi_terms()
+        generate_uniprot_terms(download=False) + generate_chebi_terms() + \
+        generate_go_terms()
     terms = filter_out_duplicates(terms)
     return terms
 
