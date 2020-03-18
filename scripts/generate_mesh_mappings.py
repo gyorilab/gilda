@@ -27,29 +27,35 @@ def get_ambigs_by_db(ambigs):
     return dict(ambigs_by_db)
 
 
+def add_if_unique(mappings, ambigs_by_db, ns, mesh_constraints=None):
+    me = ambigs_by_db['MESH'][0]
+    if len(ambigs_by_db.get(ns, [])) == 1:
+        if mesh_constraints:
+            if not any(mesh_client.mesh_isa(me.id, mc)
+                       for mc in mesh_constraints):
+                return False
+        key = (me.id, ns, ambigs_by_db[ns][0].id)
+        mappings[key] = (me, ambigs_by_db[ns][0])
+        return True
+    return False
+
+
 def get_mesh_mappings(ambigs):
     predicted_mappings = {}
     for text, ambig_terms in ambigs.items():
         ambigs_by_db = get_ambigs_by_db(ambig_terms)
         if len(ambigs_by_db.get('MESH', [])) != 1:
             continue
-        me = ambigs_by_db['MESH'][0]
-        if (mesh_client.mesh_isa(me.id, mesh_protein) or
-                mesh_client.mesh_isa(me.id, mesh_enzyme)):
-            print('Considering %s' % me.id)
-            if len(ambigs_by_db.get('FPLX', [])) == 1:
-                key = (me.id, 'FPLX', ambigs_by_db['FPLX'][0].id)
-                predicted_mappings[key] = (me, ambigs_by_db['FPLX'][0])
-            elif len(ambigs_by_db.get('HGNC', [])) == 1:
-                key = (me.id, 'HGNC', ambigs_by_db['HGNC'][0].id)
-                predicted_mappings[key] = (me, ambigs_by_db['HGNC'][0])
-        else:
-            if len(ambigs_by_db.get('CHEBI', [])) == 1:
-                key = (me.id, 'CHEBI', ambigs_by_db['CHEBI'][0].id)
-                predicted_mappings[key] = (me, ambigs_by_db['CHEBI'][0])
-            elif len(ambigs_by_db.get('GO', [])) == 1:
-                key = (me.id, 'GO', ambigs_by_db['GO'][0].id)
-                predicted_mappings[key] = (me, ambigs_by_db['GO'][0])
+        print('Considering %s' % ambigs_by_db['MESH'][0].entry_name)
+        order = [('FPLX', (mesh_protein, mesh_enzyme)),
+                 ('HGNC', (mesh_protein, mesh_enzyme)),
+                 ('CHEBI', None),
+                 ('GO', None)]
+        for ns, mesh_constraints in order:
+            added = add_if_unique(predicted_mappings, ambigs_by_db, ns,
+                                  mesh_constraints)
+            if added:
+                break
     return predicted_mappings
 
 
