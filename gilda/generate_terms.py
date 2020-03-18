@@ -140,7 +140,7 @@ def generate_mesh_terms(ignore_mappings=False):
     from .resources import MESH_MAPPINGS_PATH as mesh_mappings_file
     mesh_mappings = {}
     for row in read_csv(mesh_mappings_file, delimiter='\t'):
-        mesh_mappings[row[1]] = (row[3], row[4])
+        mesh_mappings[row[1]] = row[2:]
     # Load MeSH HGNC/FPLX mappings
     mesh_names_file = os.path.join(indra_resources,
                                    'mesh_id_label_mappings.tsv')
@@ -150,12 +150,8 @@ def generate_mesh_terms(ignore_mappings=False):
         text_name = row[1]
         mapping = mesh_mappings.get(db_id)
         if not ignore_mappings and mapping:
-            db, db_id = mapping
+            db, db_id, name = mapping
             status = 'synonym'
-            if db == 'HGNC':
-                name = hgnc_client.get_hgnc_name(db_id)
-            elif db == 'FPLX':
-                name = db_id
         else:
             db = 'MESH'
             status = 'name'
