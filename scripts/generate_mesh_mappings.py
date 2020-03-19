@@ -39,17 +39,6 @@ def get_ambigs_by_db(ambigs):
     return dict(ambigs_by_db)
 
 
-def add_if_unique(mappings, ambigs_by_db, ns, mesh_constraint):
-    me = ambigs_by_db['MESH'][0]
-    if len(ambigs_by_db.get(ns, [])) == 1:
-        if not mesh_constraint(me.id):
-            return False
-        key = (me.id, ns, ambigs_by_db[ns][0].id)
-        mappings[key] = (me, ambigs_by_db[ns][0])
-        return True
-    return False
-
-
 def get_mesh_mappings(ambigs):
     predicted_mappings = {}
     for text, ambig_terms in ambigs.items():
@@ -61,11 +50,12 @@ def get_mesh_mappings(ambigs):
                  ('HGNC', is_protein),
                  ('CHEBI', is_chemical),
                  ('GO', lambda x: True)]
-        for ns, mesh_constraints in order:
-            added = add_if_unique(predicted_mappings, ambigs_by_db, ns,
-                                  mesh_constraints)
-            if added:
-                print('Adding mapping to %s' % ns)
+        me = ambigs_by_db['MESH'][0]
+        for ns, mesh_constraint in order:
+            if len(ambigs_by_db.get(ns, [])) == 1 and mesh_constraint(me.id):
+                key = (me.id, ns, ambigs_by_db[ns][0].id)
+                mappings[key] = (me, ambigs_by_db[ns][0])
+                print('Adding mapping for %s' % ns)
                 break
         print('--------------')
     return predicted_mappings
@@ -79,7 +69,7 @@ def find_ambiguities(terms):
         ambig_entries[term.text].append(term)
     # It's only an ambiguity if there are two entries at least
     ambig_entries = {k: v for k, v in ambig_entries.items() if len(v) >= 2}
-    # We filter out any ambiguities that contain not exactly one MeSH terms
+    # We filter out any ambiguities that contain not exactly one MeSH term
     ambig_entries = {k: v for k, v in ambig_entries.items()
                      if len([e for e in v if e.db == 'MESH']) == 1}
     print('Found a total of %d relevant ambiguities' % len(ambig_entries))
