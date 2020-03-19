@@ -6,10 +6,22 @@ from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
 from indra.databases import mesh_client
 
 
-mesh_protein = 'D000602'
-mesh_enzyme = 'D045762'
 resources = os.path.join(os.path.dirname(__file__), os.path.pardir,
                          'gilda', 'resources')
+
+
+def is_protein(mesh_id):
+    mesh_protein = 'D000602'
+    mesh_enzyme = 'D045762'
+    for parent in [mesh_protein, mesh_enzyme]:
+        if mesh_client.mesh_isa(mesh_id, parent):
+            return True
+    return False
+
+
+def is_chemical(mesh_id):
+    tn = mesh_client.get_mesh_tree_number(mesh_id)
+    return tn.startswith('D')
 
 
 def dump_mappings(mappings, fname):
@@ -27,13 +39,11 @@ def get_ambigs_by_db(ambigs):
     return dict(ambigs_by_db)
 
 
-def add_if_unique(mappings, ambigs_by_db, ns, mesh_constraints=None):
+def add_if_unique(mappings, ambigs_by_db, ns, mesh_constraint):
     me = ambigs_by_db['MESH'][0]
     if len(ambigs_by_db.get(ns, [])) == 1:
-        if mesh_constraints:
-            if not any(mesh_client.mesh_isa(me.id, mc)
-                       for mc in mesh_constraints):
-                return False
+        if not mesh_constraint(me.id):
+            return False
         key = (me.id, ns, ambigs_by_db[ns][0].id)
         mappings[key] = (me, ambigs_by_db[ns][0])
         return True
@@ -44,18 +54,20 @@ def get_mesh_mappings(ambigs):
     predicted_mappings = {}
     for text, ambig_terms in ambigs.items():
         ambigs_by_db = get_ambigs_by_db(ambig_terms)
-        if len(ambigs_by_db.get('MESH', [])) != 1:
-            continue
-        print('Considering %s' % ambigs_by_db['MESH'][0].entry_name)
-        order = [('FPLX', (mesh_protein, mesh_enzyme)),
-                 ('HGNC', (mesh_protein, mesh_enzyme)),
-                 ('CHEBI', None),
-                 ('GO', None)]
+        print('Considering %s' % text)
+        for term in ambig_terms:
+            print('%s:%s %s' % (term.db, term.id, term.entry_name))
+        order = [('FPLX', is_protein),
+                 ('HGNC', is_protein),
+                 ('CHEBI', is_chemical),
+                 ('GO', lambda x: True)]
         for ns, mesh_constraints in order:
             added = add_if_unique(predicted_mappings, ambigs_by_db, ns,
                                   mesh_constraints)
             if added:
+                print('Adding mapping to %s' % ns)
                 break
+        print('--------------')
     return predicted_mappings
 
 
@@ -67,6 +79,10 @@ def find_ambiguities(terms):
         ambig_entries[term.text].append(term)
     # It's only an ambiguity if there are two entries at least
     ambig_entries = {k: v for k, v in ambig_entries.items() if len(v) >= 2}
+    # We filter out any ambiguities that contain not exactly one MeSH terms
+    ambig_entries = {k: v for k, v in ambig_entries.items()
+                     if len([e for e in v if e.db == 'MESH']) == 1}
+    print('Found a total of %d relevant ambiguities' % len(ambig_entries))
     return ambig_entries
 
 
@@ -83,4 +99,4 @@ if __name__ == '__main__':
     terms = get_terms()
     ambigs = find_ambiguities(terms)
     mappings = get_mesh_mappings(ambigs)
-    dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
+    dump_mappings(mappings, os.path.join(resources, '_mesh_mappings.tsv'))
