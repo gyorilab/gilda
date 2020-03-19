@@ -25,14 +25,24 @@ def is_chemical(mesh_id):
 
 
 def dump_mappings(mappings, fname):
+    def render_row(me, te):
+        return '\t'.join([me.db, me.id, me.entry_name,
+                          te.db, te.id, te.entry_name])
     with open(fname, 'w') as fh:
         for mesh_id, maps in sorted(mappings.items(), key=lambda x: x[0]):
             if len(maps) > 1:
-                print('Multiple mappings for %s: %s' % (mesh_id, str(maps)))
-                continue
-            me, te = list(maps.values())[0]
-            fh.write('\t'.join([me.db, me.id, me.entry_name,
-                                te.db, te.id, te.entry_name]) + '\n')
+                for me, te in maps.values():
+                    if me.entry_name.lower() == te.entry_name.lower():
+                        fh.write(render_row(me, te) + '\n')
+                        break
+                else:
+                    print('Choose one if approproate:')
+                    for me, te in maps.values():
+                        print(render_row(me, te))
+                    print('-----')
+            else:
+                me, te = list(maps.values())[0]
+                fh.write(render_row(me, te) + '\n')
 
 
 def get_ambigs_by_db(ambigs):
@@ -93,4 +103,4 @@ if __name__ == '__main__':
     terms = get_terms()
     ambigs = find_ambiguities(terms)
     mappings = get_mesh_mappings(ambigs)
-    dump_mappings(mappings, os.path.join(resources, '_mesh_mappings.tsv'))
+    dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
