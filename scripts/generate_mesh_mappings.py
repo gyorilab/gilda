@@ -25,9 +25,12 @@ def is_chemical(mesh_id):
 
 
 def dump_mappings(mappings, fname):
-    mappings = sorted(mappings.values(), key=lambda x: x[0].id)
     with open(fname, 'w') as fh:
-        for me, te in mappings:
+        for mesh_id, maps in sorted(mappings.items(), key=lambda x: x[0]):
+            if len(maps) > 1:
+                print('Multiple mappings for %s: %s' % (mesh_id, str(maps)))
+                continue
+            me, te = list(maps.values())[0]
             fh.write('\t'.join([me.db, me.id, me.entry_name,
                                 te.db, te.id, te.entry_name]) + '\n')
 
@@ -40,7 +43,7 @@ def get_ambigs_by_db(ambigs):
 
 
 def get_mesh_mappings(ambigs):
-    predicted_mappings = {}
+    mappings_by_mesh_id = defaultdict(dict)
     for text, ambig_terms in ambigs.items():
         ambigs_by_db = get_ambigs_by_db(ambig_terms)
         print('Considering %s' % text)
@@ -53,12 +56,13 @@ def get_mesh_mappings(ambigs):
         me = ambigs_by_db['MESH'][0]
         for ns, mesh_constraint in order:
             if len(ambigs_by_db.get(ns, [])) == 1 and mesh_constraint(me.id):
-                key = (me.id, ns, ambigs_by_db[ns][0].id)
-                mappings[key] = (me, ambigs_by_db[ns][0])
+                mappings_by_mesh_id[me.id][(ambigs_by_db[ns][0].db,
+                                            ambigs_by_db[ns][0].id)] = \
+                        (me, ambigs_by_db[ns][0])
                 print('Adding mapping for %s' % ns)
                 break
         print('--------------')
-    return predicted_mappings
+    return mappings_by_mesh_id
 
 
 def find_ambiguities(terms):
