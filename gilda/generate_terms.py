@@ -140,7 +140,8 @@ def generate_mesh_terms(ignore_mappings=False):
     from .resources import MESH_MAPPINGS_PATH as mesh_mappings_file
     mesh_mappings = {}
     for row in read_csv(mesh_mappings_file, delimiter='\t'):
-        mesh_mappings[row[1]] = row[2:]
+        # We can skip row[2] which is the MeSH standard name for the entry
+        mesh_mappings[row[1]] = row[3:]
     # Load MeSH HGNC/FPLX mappings
     mesh_names_file = os.path.join(indra_resources,
                                    'mesh_id_label_mappings.tsv')
