@@ -1,8 +1,8 @@
 import copy
 import pandas
-import requests
 import itertools
 from indra.databases import chebi_client
+from gilda import ground
 
 service_url = 'http://localhost:8001'
 
@@ -95,19 +95,19 @@ def evaluate_old_grounding(grounding):
 def evaluate_new_grounding(grounding, term):
     """Return status of new grounding by comparing to old grounding."""
     if grounding['text'] in correct_assertions:
-        if term['id'] == correct_assertions[grounding['text']].get(term['db']):
+        if term.id == correct_assertions[grounding['text']].get(term.db):
             return 'correct'
     elif grounding['text'] in incorrect_assertions:
-        if term['id'] == \
-                incorrect_assertions[grounding['text']].get(term['db']):
+        if term.id == \
+                incorrect_assertions[grounding['text']].get(term.db):
             return 'incorrect'
     elif not grounding['correct']:
         # If the grounding matches one of the known incorrect ones
-        if grounding['db_refs'].get(term['db']) == term['id']:
+        if grounding['db_refs'].get(term.db) == term.id:
             return 'incorrect'
     else:
         # If the grounding matches one of the known correct ones
-        if grounding['db_refs'].get(term['db']) == term['id']:
+        if grounding['db_refs'].get(term.db) == term.id:
             return 'correct'
     return 'unknown'
 
@@ -126,15 +126,16 @@ def make_comparison(groundings):
     for idx, grounding in enumerate(groundings):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
-        res = requests.post('%s/ground' % service_url,
-                            json={'text': grounding['text'],
-                                  'context': grounding['context']}).json()
-        if not res:
-            comparison['%s_ungrounded' % old_eval].append((idx, grounding, None))
+        matches = ground(text=grounding['text'],
+                         context=grounding['context'])
+        if not matches:
+            comparison['%s_ungrounded' % old_eval].append((idx, grounding,
+                                                           None))
             continue
-        term = res[0]['term']
+        term = matches[0].term
         new_eval = evaluate_new_grounding(grounding, term)
-        comparison['%s_%s' % (old_eval, new_eval)].append((idx, grounding, term))
+        comparison['%s_%s' % (old_eval, new_eval)].append((idx, grounding,
+                                                           term))
     return comparison
 
 
