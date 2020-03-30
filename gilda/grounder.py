@@ -83,8 +83,8 @@ class Grounder(object):
         # Finally, we attempt to depluralize the word
         depluralized = normalize(depluralize(raw_str)[0])
         lookups.add(depluralized)
-        logger.info('Looking up the following strings: %s' %
-                    ', '.join(lookups))
+        logger.debug('Looking up the following strings: %s' %
+                     ', '.join(lookups))
         return lookups
 
     def ground(self, raw_str, context=None):
@@ -107,8 +107,8 @@ class Grounder(object):
             by decreasing score.
         """
         entries = self.lookup(raw_str)
-        logger.info('Comparing %s with %d entries' %
-                    (raw_str, len(entries)))
+        logger.debug('Comparing %s with %d entries' %
+                     (raw_str, len(entries)))
         # For each entry to compare to, we generate a match data structure
         # describing the comparison of the raw (unnormalized) input string
         # and the entity text corresponding to the matched Term. This match
@@ -165,7 +165,7 @@ class Grounder(object):
         res = self.adeft_disambiguators[raw_str].disambiguate([context])
         # The actual grounding dict is at this index in the result
         grounding_dict = res[0][2]
-        logger.info('Result from Adeft: %s' % str(grounding_dict))
+        logger.debug('Result from Adeft: %s' % str(grounding_dict))
         # We attempt to get the score for the 'ungrounded' entry
         ungrounded_score = grounding_dict.get('ungrounded', 1.0)
         # Now we check if each scored match has a corresponding Adeft
@@ -307,8 +307,8 @@ class ScoredMatch(object):
         return js
 
     def multiply(self, value):
-        logger.info('Multiplying the score of "%s" with %.3f'
-                    % (self.term.entry_name, value))
+        logger.debug('Multiplying the score of "%s" with %.3f'
+                     % (self.term.entry_name, value))
         self.score = self.score * value
 
 
