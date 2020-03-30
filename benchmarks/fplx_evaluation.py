@@ -30,24 +30,32 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'chemokine receptors': {'MESH': 'D019707'},
                       'laminin': {'MESH': 'D007797'},
                       'Tiron': {'CHEBI': 'CHEBI:9607'},
-                      'factor VII': {'MESH': 'D005167'},
+                      'factor VII': {'HGNC': '3544'},
                       'CD73': {'HGNC': '8021'},
                       'SERM': {'MESH': 'D020845'},
                       'angiotensin II': {'CHEBI': 'CHEBI:48432'},
                       'NAPA': {'HGNC': '7641'},
                       'IFN-beta': {'FPLX': 'IFNB'},
-                      'cyclooxygenase-2': {'MESH': 'D051546'},
-                      'Substance P': {'CHEBI': 'CHEBI:80308'},
-                      'progestin': {'CHEBI': 'CHEBI:59826'}}
+                      'cyclooxygenase-2': {'HGNC': '9605'},
+                      'substance P': {'CHEBI': 'CHEBI:80308'},
+                      'progestin': {'CHEBI': 'CHEBI:59826'},
+                      'MiR-125a': {'HGNC': '31505'},
+                      'ROS': {'MESH': 'D017382'},
+                      'PP5': {'HGNC': '9322'},
+                      'aminopeptidases': {'MESH': 'D000626'},
+                      'IMP1': {'HGNC': '28866'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'DHM': {'CHEBI': 'CHEBI:71175'},
                         'SM': {'CHEBI': 'CHEBI:17076'},
-                        'ARs': {'HGNC': '10015'}}
+                        'BMD': {'HGNC': '2928'},
+                        'DC': {'HGNC': '2714'},
+                        'ARs': {'HGNC': '644'},
+                        'BA': {'CHEBI': 'CHEBI:32594'}}
 
 
-def process_fxpl_groundings(df):
+def process_fplx_groundings(df):
     groundings = []
     # Iterate over the rows of the curation table and extract groundings
     for _, row in df.iterrows():
@@ -195,6 +203,6 @@ def print_statistics(comparison):
 
 if __name__ == '__main__':
     df = pandas.read_csv(url)
-    groundings = process_fxpl_groundings(df)
+    groundings = process_fplx_groundings(df)
     comparison = make_comparison(groundings)
     print_statistics(comparison)
