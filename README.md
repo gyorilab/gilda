@@ -4,7 +4,7 @@
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 
 ## Installation
-Gilda is deployed as a web service at http://grounding.indra.bio/ground (see
+Gilda is deployed as a web service at http://grounding.indra.bio/ (see
 Usage instructions below), it only needs to be installed if used locally.
 
 The recommended method to install Gilda is through PyPI as
