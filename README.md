@@ -19,9 +19,20 @@ regenerated locally by running `python -m gilda.generate_terms`.
 ## Usage
 Gilda can either be used as a REST service or programmatically
 via its Python API. An introduction Jupyter notebook for using Gilda as a
-service is available at
+is available at
 https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
+## Use via Python API
+As for using Gilda as a Python package, the documentation at
+http://gilda.readthedocs.org provides detailed descriptions of each module of
+Gilda and their usage. A basic usage example is as follows
+
+```python
+import gilda
+scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
+```
+
+### Use as a web service
 The REST service accepts POST requests with a JSON header on the /ground
 endpoint.  There is a public REST service running on AWS but the service can
 also be run locally as
@@ -44,15 +55,6 @@ requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 
 The above requests can also be used to interact with the public service, by
 using the appropriate URL instead of `localhost:8001`.
-
-As for using Gilda as a Python package, the documentation at
-http://gilda.readthedocs.org provides detailed descriptions of each module of
-Gilda and their usage. A basic usage example is as follows
-
-```python
-import gilda
-scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
-```
 
 ## Funding
 The development of Gilda is funded under the DARPA Communicating with Computers
