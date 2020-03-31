@@ -22,7 +22,7 @@ via its Python API. An introduction Jupyter notebook for using Gilda as a
 is available at
 https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
-## Use via Python API
+### Use via Python API
 As for using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module of
 Gilda and their usage. A basic usage example is as follows
