@@ -30,7 +30,7 @@ def dump_mappings(mappings, fname):
                         fh.write(render_row(me, te) + '\n')
                         break
                 else:
-                    print('Choose one if approproate:')
+                    print('Choose one if appropriate:')
                     for me, te in maps.values():
                         print(render_row(me, te))
                     print('-----')
@@ -96,6 +96,30 @@ def get_terms():
     return terms
 
 
+def manual_go_mappings(terms):
+    td = defaultdict(list)
+    for term in terms:
+        td[(term.db, term.id)].append(term)
+    # Migrated from FamPlex and INDRA
+    map = [
+        ('D002465', 'GO:0048870'),
+        ('D002914', 'GO:0042627'),
+        ('D012374', 'GO:0120200'),
+        ('D014158', 'GO:0006351'),
+        ('D014176', 'GO:0006412'),
+        ('D018919', 'GO:0001525'),
+        ('D048708', 'GO:0016049'),
+        ('D058750', 'GO:0001837'),
+        ('D059767', 'GO:0000725')
+    ]
+    mappings_by_mesh_id = defaultdict(dict)
+    for mid, gid in map:
+        mt = td[('MESH', mid)][0]
+        gt = td[('GO', gid)][0]
+        mappings_by_mesh_id[mid][('GO', gid)] = (mt, gt)
+    return mappings_by_mesh_id
+
+
 if __name__ == '__main__':
     terms = get_terms()
     # General ambiguities
@@ -106,6 +130,10 @@ if __name__ == '__main__':
     ambigs2 = {k: v for k, v in ambigs2.items() if len(k) > 6}
     mappings2 = get_mesh_mappings(ambigs2)
     for k, v in mappings2.items():
+        if k not in mappings:
+            mappings[k] = v
+    mappings3 = manual_go_mappings(terms)
+    for k, v in mappings3.items():
         if k not in mappings:
             mappings[k] = v
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
