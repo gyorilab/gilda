@@ -11,17 +11,11 @@ resources = os.path.join(os.path.dirname(__file__), os.path.pardir,
 
 
 def is_protein(mesh_id):
-    mesh_protein = 'D000602'
-    mesh_enzyme = 'D045762'
-    for parent in [mesh_protein, mesh_enzyme]:
-        if mesh_client.mesh_isa(mesh_id, parent):
-            return True
-    return False
+    return mesh_client.is_protein(mesh_id) or mesh_client.is_enzyme(mesh_id)
 
 
 def is_chemical(mesh_id):
-    tn = mesh_client.get_mesh_tree_number(mesh_id)
-    return tn.startswith('D')
+    return mesh_client.is_molecular(mesh_id)
 
 
 def dump_mappings(mappings, fname):
@@ -75,12 +69,13 @@ def get_mesh_mappings(ambigs):
     return mappings_by_mesh_id
 
 
-def find_ambiguities(terms):
+def find_ambiguities(terms, match_attr='text'):
+    match_fun = lambda x: x.text if match_attr == 'text' else x.norm_text
     ambig_entries = defaultdict(list)
     for term in terms:
         # We consider it an ambiguity if the same text entry appears
         # multiple times
-        ambig_entries[term.text].append(term)
+        ambig_entries[match_fun(term)].append(term)
     # It's only an ambiguity if there are two entries at least
     ambig_entries = {k: v for k, v in ambig_entries.items() if len(v) >= 2}
     # We filter out any ambiguities that contain not exactly one MeSH term
@@ -92,15 +87,25 @@ def find_ambiguities(terms):
 
 def get_terms():
     terms = generate_mesh_terms(ignore_mappings=True) + \
-        generate_hgnc_terms() + generate_famplex_terms() + \
-        generate_uniprot_terms(download=False) + generate_chebi_terms() + \
-        generate_go_terms()
+        generate_go_terms() + \
+        generate_hgnc_terms() + \
+        generate_famplex_terms() + \
+        generate_uniprot_terms(download=False) + \
+        generate_chebi_terms()
     terms = filter_out_duplicates(terms)
     return terms
 
 
 if __name__ == '__main__':
     terms = get_terms()
-    ambigs = find_ambiguities(terms)
+    # General ambiguities
+    ambigs = find_ambiguities(terms, match_attr='text')
     mappings = get_mesh_mappings(ambigs)
+    # Ambiguities that involve long strings but we allow normalized matches
+    ambigs2 = find_ambiguities(terms, match_attr='norm_text')
+    ambigs2 = {k: v for k, v in ambigs2.items() if len(k) > 6}
+    mappings2 = get_mesh_mappings(ambigs2)
+    for k, v in mappings2.items():
+        if k not in mappings:
+            mappings[k] = v
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
