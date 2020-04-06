@@ -383,26 +383,19 @@ def _generate_obo_terms(prefix):
                 # another namespace
                 mesh_mapping = mesh_mappings.get(mesh_id)
                 db, db_id, name = mesh_mapping if mesh_mapping else \
-                    ('MESH', id, mesh_name)
+                    ('MESH', db_id, mesh_name)
         # Next we look at mappings to DOID
         # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
         # cannot be mapped further to MeSH per the DOID resource file?
         elif 'DOID' in xref_dict:
-            if not xref_db_id.startswith('DOID:'):
-                xref_db_id = 'DOID:' + xref_db_id
-            doid_name = doid_client.get_doid_name_from_doid_id(xref_db_id)
-            if doid_name is None:
-                import ipdb; ipdb.set_trace()
-                doid_canonical_id = \
-                    doid_client.get_doid_id_from_doid_alt_id(xref_db_id)
-                if doid_canonical_id is not None:
-                    doid_name = \
-                        doid_client.get_doid_name_from_doid_id(
-                            doid_canonical_id)
-            if doid_name is not None:
-                db, db_id, name = 'DOID', xref_db_id, doid_name
-            else:
-                logger.info('Could not find DOID xref %s', xref_db_id)
+            doid = xref_dict['DOID']
+            if not doid.startswith('DOID:'):
+                doid = 'DOID:' + doid
+            doid_prim_id = doid_client.get_doid_id_from_doid_alt_id(doid)
+            if doid_prim_id:
+                doid = doid_prim_id
+            doid_name = doid_client.get_doid_name_from_doid_id(doid)
+            db, db_id, name = 'DOID', doid, doid_name
 
         # Add a term for the name first
         name_term = Term(
@@ -415,6 +408,8 @@ def _generate_obo_terms(prefix):
             source=prefix,
         )
         terms.append(name_term)
+
+        # Then add all the synonyms
         for synonym in set(entry['synonyms']):
             synonym_term = Term(
                 norm_text=normalize(synonym),
