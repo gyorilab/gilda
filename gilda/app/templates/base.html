@@ -1,0 +1,47 @@
+{% extends "bootstrap/base.html" %}
+
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+{% import "bootstrap/utils.html" as util %}
+
+{% block content %}
+
+<div class="container">
+  <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
+    <div class="panel panel-info">
+      <div class="panel-heading">
+        <h2>Gilda grounding service</h2>
+      </div>
+      <div class="panel-body">
+        <p>
+          This is version {{ version }} of the Gilda grounding service.
+        For interactive use, enter an entity text (example: k-ras)
+        to ground in the form below. You can optionally provide additional
+        context (e.g., the sentence in which the entity text appeared) to help
+        disambiguation.
+      </p>
+      <p>
+        For programmatic acces, POST requests to the <code>/ground</code>
+        endpoint. See the
+        <a href="https://github.com/indralab/gilda/blob/master/README.md">documentation</a>
+        for more information.
+      </p>
+      </div>
+    </div>
+    <div class="panel panel-default">
+      {% block gcontent %}{% endblock %}
+    </div>
+    <div class="well">
+      <p>Gilda is developed by <a href="https://indralab.github.io"
+          target="_blank">INDRA labs</a> which is part of the <a
+          href="http://hits.harvard.edu" target="_blank">Harvard Program in
+      Therapeutic Science (HiTS)</a>. The development of Gilda is funded under
+      the DARPA Communicating with Computers program (ARO grant W911NF-15-1-0544).
+      Point of contact: Benjamin M. Gyori (benjamin_gyori [AT]
+      hms.harvard.edu).
+      </p>
+    </small>
+    </div>
+  </div>
+</div>
+{% endblock %}
