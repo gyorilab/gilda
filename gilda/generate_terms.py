@@ -377,13 +377,17 @@ def _generate_obo_terms(prefix):
         # Handle MeSH mappings first
         if 'MESH' in xref_dict or 'MSH' in xref_dict:
             mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
-            mesh_name = mesh_client.get_mesh_name(mesh_id)
-            if mesh_name:
-                # Here we need to check if we further map the MeSH ID to
-                # another namespace
-                mesh_mapping = mesh_mappings.get(mesh_id)
-                db, db_id, name = mesh_mapping if mesh_mapping else \
-                    ('MESH', db_id, mesh_name)
+            # Since we currently only include regular MeSH terms (which start
+            # with D), we only need to do the mapping if that's the case.
+            # We don't map any supplementary terms that start with C.
+            if mesh_id.startswith('D'):
+                mesh_name = mesh_client.get_mesh_name(mesh_id)
+                if mesh_name:
+                    # Here we need to check if we further map the MeSH ID to
+                    # another namespace
+                    mesh_mapping = mesh_mappings.get(mesh_id)
+                    db, db_id, name = mesh_mapping if mesh_mapping else \
+                        ('MESH', mesh_id, mesh_name)
         # Next we look at mappings to DOID
         # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
         # cannot be mapped further to MeSH per the DOID resource file?
