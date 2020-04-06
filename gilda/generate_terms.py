@@ -415,6 +415,9 @@ def _generate_obo_terms(prefix):
 
         # Then add all the synonyms
         for synonym in set(entry['synonyms']):
+            # Some synonyms are tagged as ambiguous, we remove these
+            if 'ambiguous' in synonym.lower():
+                continue
             # Some synonyms contain a "formerly" clause, we remove these
             match = re.match(r'(.+) \(formerly', synonym)
             if match:
