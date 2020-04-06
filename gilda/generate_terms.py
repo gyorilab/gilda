@@ -158,7 +158,8 @@ def generate_mesh_terms(ignore_mappings=False):
         db_id = row[0]
         text_name = row[1]
         mapping = mesh_mappings.get(db_id)
-        if not ignore_mappings and mapping:
+        if not ignore_mappings and mapping and mapping[0] \
+                not in {'EFO', 'HP', 'DOID'}:
             db, db_id, name = mapping
             status = 'synonym'
         else:
@@ -391,7 +392,8 @@ def _generate_obo_terms(prefix):
                     # Here we need to check if we further map the MeSH ID to
                     # another namespace
                     mesh_mapping = mesh_mappings.get(mesh_id)
-                    db, db_id, name = mesh_mapping if mesh_mapping else \
+                    db, db_id, name = mesh_mapping if (mesh_mapping and \
+                            mesh_mapping[0] not in {'EFO', 'HP', 'DOID'}) else \
                         ('MESH', mesh_id, mesh_name)
         # Next we look at mappings to DOID
         # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
