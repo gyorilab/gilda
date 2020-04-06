@@ -149,12 +149,6 @@ def generate_chebi_terms():
 
 
 def generate_mesh_terms(ignore_mappings=False):
-    # Load MeSH ID/label mappings
-    from .resources import MESH_MAPPINGS_PATH as mesh_mappings_file
-    mesh_mappings = {}
-    for row in read_csv(mesh_mappings_file, delimiter='\t'):
-        # We can skip row[2] which is the MeSH standard name for the entry
-        mesh_mappings[row[1]] = row[3:]
     # Load MeSH HGNC/FPLX mappings
     mesh_names_file = os.path.join(indra_resources,
                                    'mesh_id_label_mappings.tsv')
@@ -241,8 +235,10 @@ def generate_famplex_terms():
                         go_client.get_go_label(id), 'assertion', 'famplex')
         elif 'MESH' in groundings:
             id = groundings['MESH']
-            term = Term(norm_txt, txt, 'MESH', id,
-                        mesh_client.get_mesh_name(id), 'assertion', 'famplex')
+            mesh_mapping = mesh_mappings.get(id)
+            db, db_id, name = mesh_mapping if mesh_mapping else \
+                ('MESH', id, mesh_client.get_mesh_name(id))
+            term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -368,65 +364,64 @@ def generate_hp_terms():
 
 
 def _generate_obo_terms(prefix):
-    filename = os.path.join(indra_resources,
-                            '{prefix}.json'.format(prefix=prefix))
+    filename = os.path.join(indra_resources, '%s.json' % prefix)
     logger.info('Loading %s', filename)
     with open(filename) as file:
         entries = json.load(file)
 
     terms = []
     for entry in entries:
-        db, db_id, db_name = prefix.upper(), entry['id'], entry['name']
+        db, db_id, name = prefix.upper(), entry['id'], entry['name']
+        # We first need to decide if we prioritize another name space
+        xref_dict = {xr['namespace']: xr['id'] for xr in entry['xrefs']}
+        # Handle MeSH mappings first
+        if 'MESH' in xref_dict or 'MSH' in xref_dict:
+            mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
+            mesh_name = mesh_client.get_mesh_name(mesh_id)
+            if mesh_name:
+                # Here we need to check if we further map the MeSH ID to
+                # another namespace
+                mesh_mapping = mesh_mappings.get(mesh_id)
+                db, db_id, name = mesh_mapping if mesh_mapping else \
+                    ('MESH', id, mesh_name)
+        # Next we look at mappings to DOID
+        # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
+        # cannot be mapped further to MeSH per the DOID resource file?
+        elif 'DOID' in xref_dict:
+            if not xref_db_id.startswith('DOID:'):
+                xref_db_id = 'DOID:' + xref_db_id
+            doid_name = doid_client.get_doid_name_from_doid_id(xref_db_id)
+            if doid_name is None:
+                import ipdb; ipdb.set_trace()
+                doid_canonical_id = \
+                    doid_client.get_doid_id_from_doid_alt_id(xref_db_id)
+                if doid_canonical_id is not None:
+                    doid_name = \
+                        doid_client.get_doid_name_from_doid_id(
+                            doid_canonical_id)
+            if doid_name is not None:
+                db, db_id, name = 'DOID', xref_db_id, doid_name
+            else:
+                logger.info('Could not find DOID xref %s', xref_db_id)
+
+        # Add a term for the name first
         name_term = Term(
-            norm_text=normalize(db_name),
-            text=db_name,
+            norm_text=normalize(name),
+            text=name,
             db=db,
             id=db_id,
-            entry_name=db_name,
+            entry_name=name,
             status='name',
             source=prefix,
         )
         terms.append(name_term)
-
-        entities = [
-            (db, db_id, db_name),
-        ]
-        # TODO add more entities based on xrefs?
-        for xref in entry['xrefs']:
-            xref_db, xref_db_id = xref['namespace'], xref['id']
-            if xref_db_id == 'NoID':
-                continue
-            if xref_db in {'MESH', 'MSH'}:
-                mesh_name = mesh_client.get_mesh_name(xref_db_id, offline=True)
-                if mesh_name is not None:
-                    entities.append(('MESH', xref_db_id, mesh_name))
-                else:
-                    logger.info('Could not find MESH xref %s', xref_db_id)
-            elif xref_db == 'DOID':
-                if not xref_db_id.startswith('DOID:'):
-                    xref_db_id = 'DOID:' + xref_db_id
-                doid_name = doid_client.get_doid_name_from_doid_id(xref_db_id)
-                if doid_name is None:
-                    doid_canonical_id = \
-                        doid_client.get_doid_id_from_doid_alt_id(xref_db_id)
-                    if doid_canonical_id is not None:
-                        doid_name = \
-                            doid_client.get_doid_name_from_doid_id(
-                                doid_canonical_id)
-                if doid_name is not None:
-                    entities.append(('DOID', xref_db_id, doid_name))
-                else:
-                    logger.info('Could not find DOID xref %s', xref_db_id)
-
-        synonyms = set(entry['synonyms'])
-        for synonym, (db, db_id, db_name) in \
-                itertools.product(synonyms, entities):
+        for synonym in set(entry['synonyms']):
             synonym_term = Term(
                 norm_text=normalize(synonym),
                 text=synonym,
                 db=db,
                 id=db_id,
-                entry_name=db_name,
+                entry_name=name,
                 status='synonym',
                 source=prefix,
             )
@@ -434,6 +429,19 @@ def _generate_obo_terms(prefix):
 
     logger.info('Loaded %d terms from %s', len(terms), prefix)
     return terms
+
+
+def _make_mesh_mappings():
+    # Load MeSH ID/label mappings
+    from .resources import MESH_MAPPINGS_PATH
+    mesh_mappings = {}
+    for row in read_csv(MESH_MAPPINGS_PATH, delimiter='\t'):
+        # We can skip row[2] which is the MeSH standard name for the entry
+        mesh_mappings[row[1]] = row[3:]
+    return mesh_mappings
+
+
+mesh_mappings = _make_mesh_mappings()
 
 
 def filter_out_duplicates(terms):
