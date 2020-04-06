@@ -2,19 +2,9 @@
 
 {% block gcontent %}
 <div class="panel-heading">
-    <h3 class="panel-title">Gilda</h3>
+    <h3 class="panel-title">Gilda grounding input</h3>
 </div>
 <div class="panel-body">
-    <p>
-        This is the Gilda grounding service.
-    </p>
-    <p>
-        Please POST to the <code>/ground</code> endpoint for
-        grounding or use the form below. See the
-        <a href="http://github.com/indralab/gilda">documentation</a>
-        for more information.
-    </p>
-
     {{ wtf.quick_form(form, form_type='horizontal') }}
 </div>
 {% endblock %}
