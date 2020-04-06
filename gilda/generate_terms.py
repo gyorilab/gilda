@@ -24,10 +24,6 @@ indra_resources = os.path.join(indra_module_path, 'resources')
 logger = logging.getLogger('gilda.generate_terms')
 
 
-CHEBI_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chebi/' \
-            'Flat_file_tab_delimited/names_3star.tsv.gz'
-
-
 def read_csv(fname, header=False, delimiter='\t'):
     with open(fname, 'r') as fh:
         reader = csv.reader(fh, delimiter=delimiter)
@@ -115,7 +111,12 @@ def generate_chebi_terms():
     fname = os.path.join(indra_resources, 'names_3star.tsv')
     if not os.path.exists(fname):
         import pandas as pd
-        df = pd.read_csv(CHEBI_URL, sep='\t')
+        chebi_url = 'ftp://ftp.ebi.ac.uk/pub/databases/chebi/' \
+                    'Flat_file_tab_delimited/names_3star.tsv.gz'
+        logger.info('Loading %s into memory. You can download and decompress'
+                    ' it in the indra/resources folder for faster access.'
+                    % chebi_url)
+        df = pd.read_csv(chebi_url, sep='\t')
         rows = (row for _, row in df.iterrows())
     else:
         rows = read_csv(fname, header=True, delimiter='\t')
@@ -246,9 +247,9 @@ def generate_famplex_terms():
     return terms
 
 
-def generate_uniprot_terms(reload=False):
+def generate_uniprot_terms(download=False):
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
-    if not os.path.exists(path) or reload:
+    if not os.path.exists(path) or download:
         url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
                'genes(PREFERRED),protein%20names&sort=score&'
                'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
