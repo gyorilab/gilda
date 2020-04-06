@@ -411,6 +411,18 @@ def _generate_obo_terms(prefix):
 
         # Then add all the synonyms
         for synonym in set(entry['synonyms']):
+            # Some synonyms contain a "formerly" clause, we remove these
+            match = re.match(r'(.+) \(formerly', synonym)
+            if match:
+                synonym = match.groups()[0]
+            # Some synonyms contain additional annotations
+            # e.g. Hyperplasia of facial adipose tissue" NARROW
+            # [ORCID:0000-0001-5889-4463]
+            # If this is the case, we strip these off
+            match = re.match(r'([^"]+)', synonym)
+            if match:
+                synonym = match.groups()[0]
+
             synonym_term = Term(
                 norm_text=normalize(synonym),
                 text=synonym,
