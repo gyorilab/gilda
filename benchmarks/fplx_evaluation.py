@@ -19,7 +19,7 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'Aminopeptidases': {'MESH': 'D000626'},
                       'NF-AT proteins': {'MESH': 'D050778'},
                       'LTbetaR': {'HGNC': '6718'},
-                      'RNAi': {'MESH': 'D034622'},
+                      'RNAi': {'MESH': 'D034622', 'GO': 'GO:0016246'},
                       'Chaetocin': {'CHEBI': 'CHEBI:68747'},
                       'BAY11-7082': {'CHEBI': 'CHEBI:85928'},
                       'Toll-like receptors': {'MESH': 'D051193'},
@@ -43,7 +43,8 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'ROS': {'MESH': 'D017382'},
                       'PP5': {'HGNC': '9322'},
                       'aminopeptidases': {'MESH': 'D000626'},
-                      'IMP1': {'HGNC': '28866'}}
+                      'IMP1': {'HGNC': '28866'},
+                      '293T': {'EFO': '0001082'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
@@ -191,6 +192,9 @@ def print_statistics(comparison):
     old_prec = old_correct / (old_correct + old_incorrect)
     old_recall = old_correct / (old_correct + old_ungrounded)
     old_fscore = 2 * old_prec * old_recall / (old_prec + old_recall)
+
+    for k, v in comparison.items():
+        print('%s: %s' % (k, len(v)))
 
     print('The reference statistics were:')
     print('- Precision: %.3f\n- Recall: %.3f\n- F-score: %.3f' %

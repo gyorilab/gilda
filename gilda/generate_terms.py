@@ -5,15 +5,17 @@ to be available locally."""
 import re
 import os
 import csv
+import json
 import logging
 import requests
 import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client
+    go_client, mesh_client, doid_client
 from .term import Term
 from .process import normalize
+from .resources import resource_dir
 
 
 indra_module_path = indra.__path__[0]
@@ -107,8 +109,20 @@ def generate_chebi_terms():
     # tab_delimited/names_3star.tsv.gz, it needs to be decompressed
     # into the INDRA resources folder.
     fname = os.path.join(indra_resources, 'names_3star.tsv')
+    if not os.path.exists(fname):
+        import pandas as pd
+        chebi_url = 'ftp://ftp.ebi.ac.uk/pub/databases/chebi/' \
+                    'Flat_file_tab_delimited/names_3star.tsv.gz'
+        logger.info('Loading %s into memory. You can download and decompress'
+                    ' it in the indra/resources folder for faster access.'
+                    % chebi_url)
+        df = pd.read_csv(chebi_url, sep='\t')
+        rows = (row for _, row in df.iterrows())
+    else:
+        rows = read_csv(fname, header=True, delimiter='\t')
+
     added = set()
-    for row in read_csv(fname, header=True, delimiter='\t'):
+    for row in rows:
         chebi_id = chebi_client.get_primary_id(str(row['COMPOUND_ID']))
         if not chebi_id:
             logger.info('Could not get valid CHEBI ID for %s' %
@@ -136,12 +150,6 @@ def generate_chebi_terms():
 
 
 def generate_mesh_terms(ignore_mappings=False):
-    # Load MeSH ID/label mappings
-    from .resources import MESH_MAPPINGS_PATH as mesh_mappings_file
-    mesh_mappings = {}
-    for row in read_csv(mesh_mappings_file, delimiter='\t'):
-        # We can skip row[2] which is the MeSH standard name for the entry
-        mesh_mappings[row[1]] = row[3:]
     # Load MeSH HGNC/FPLX mappings
     mesh_names_file = os.path.join(indra_resources,
                                    'mesh_id_label_mappings.tsv')
@@ -228,8 +236,10 @@ def generate_famplex_terms():
                         go_client.get_go_label(id), 'assertion', 'famplex')
         elif 'MESH' in groundings:
             id = groundings['MESH']
-            term = Term(norm_txt, txt, 'MESH', id,
-                        mesh_client.get_mesh_name(id), 'assertion', 'famplex')
+            mesh_mapping = mesh_mappings.get(id)
+            db, db_id, name = mesh_mapping if mesh_mapping else \
+                ('MESH', id, mesh_client.get_mesh_name(id))
+            term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -237,18 +247,19 @@ def generate_famplex_terms():
     return terms
 
 
-def generate_uniprot_terms(download=True):
-    if download:
+def generate_uniprot_terms(download=False):
+    path = os.path.join(resource_dir, 'up_synonyms.tsv')
+    if not os.path.exists(path) or download:
         url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
                'genes(PREFERRED),protein%20names&sort=score&'
                'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
                '%20AND%20reviewed:yes')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
-        with open('up_synonyms.tsv', 'w') as fh:
+        with open(path, 'w') as fh:
             fh.write(res.text)
     terms = []
-    for row in read_csv('up_synonyms.tsv', delimiter='\t', header=True):
+    for row in read_csv(path, delimiter='\t', header=True):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
         standard_name = row['Gene names  (primary )']
@@ -341,6 +352,113 @@ def generate_adeft_terms():
     return terms
 
 
+def generate_doid_terms():
+    return _generate_obo_terms('doid')
+
+
+def generate_efo_terms():
+    return _generate_obo_terms('efo')
+
+
+def generate_hp_terms():
+    return _generate_obo_terms('hp')
+
+
+def _generate_obo_terms(prefix):
+    filename = os.path.join(indra_resources, '%s.json' % prefix)
+    logger.info('Loading %s', filename)
+    with open(filename) as file:
+        entries = json.load(file)
+
+    terms = []
+    for entry in entries:
+        db, db_id, name = prefix.upper(), entry['id'], entry['name']
+        # We first need to decide if we prioritize another name space
+        xref_dict = {xr['namespace']: xr['id'] for xr in entry['xrefs']}
+        # Handle MeSH mappings first
+        if 'MESH' in xref_dict or 'MSH' in xref_dict:
+            mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
+            # Since we currently only include regular MeSH terms (which start
+            # with D), we only need to do the mapping if that's the case.
+            # We don't map any supplementary terms that start with C.
+            if mesh_id.startswith('D'):
+                mesh_name = mesh_client.get_mesh_name(mesh_id)
+                if mesh_name:
+                    # Here we need to check if we further map the MeSH ID to
+                    # another namespace
+                    mesh_mapping = mesh_mappings.get(mesh_id)
+                    db, db_id, name = mesh_mapping if mesh_mapping else \
+                        ('MESH', mesh_id, mesh_name)
+        # Next we look at mappings to DOID
+        # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
+        # cannot be mapped further to MeSH per the DOID resource file?
+        elif 'DOID' in xref_dict:
+            doid = xref_dict['DOID']
+            if not doid.startswith('DOID:'):
+                doid = 'DOID:' + doid
+            doid_prim_id = doid_client.get_doid_id_from_doid_alt_id(doid)
+            if doid_prim_id:
+                doid = doid_prim_id
+            doid_name = doid_client.get_doid_name_from_doid_id(doid)
+            db, db_id, name = 'DOID', doid, doid_name
+
+        # Add a term for the name first
+        name_term = Term(
+            norm_text=normalize(name),
+            text=name,
+            db=db,
+            id=db_id,
+            entry_name=name,
+            status='name',
+            source=prefix,
+        )
+        terms.append(name_term)
+
+        # Then add all the synonyms
+        for synonym in set(entry['synonyms']):
+            # Some synonyms are tagged as ambiguous, we remove these
+            if 'ambiguous' in synonym.lower():
+                continue
+            # Some synonyms contain a "formerly" clause, we remove these
+            match = re.match(r'(.+) \(formerly', synonym)
+            if match:
+                synonym = match.groups()[0]
+            # Some synonyms contain additional annotations
+            # e.g. Hyperplasia of facial adipose tissue" NARROW
+            # [ORCID:0000-0001-5889-4463]
+            # If this is the case, we strip these off
+            match = re.match(r'([^"]+)', synonym)
+            if match:
+                synonym = match.groups()[0]
+
+            synonym_term = Term(
+                norm_text=normalize(synonym),
+                text=synonym,
+                db=db,
+                id=db_id,
+                entry_name=name,
+                status='synonym',
+                source=prefix,
+            )
+            terms.append(synonym_term)
+
+    logger.info('Loaded %d terms from %s', len(terms), prefix)
+    return terms
+
+
+def _make_mesh_mappings():
+    # Load MeSH ID/label mappings
+    from .resources import MESH_MAPPINGS_PATH
+    mesh_mappings = {}
+    for row in read_csv(MESH_MAPPINGS_PATH, delimiter='\t'):
+        # We can skip row[2] which is the MeSH standard name for the entry
+        mesh_mappings[row[1]] = row[3:]
+    return mesh_mappings
+
+
+mesh_mappings = _make_mesh_mappings()
+
+
 def filter_out_duplicates(terms):
     logger.info('Filtering %d terms for uniqueness...' % len(terms))
     term_key = lambda term: (term.db, term.id, term.text)
@@ -357,19 +475,33 @@ def filter_out_duplicates(terms):
 
 
 def get_all_terms():
-    terms = generate_famplex_terms()
-    terms += generate_hgnc_terms()
-    terms += generate_chebi_terms()
-    terms += generate_go_terms()
-    terms += generate_mesh_terms()
-    terms += generate_uniprot_terms()
-    terms += generate_adeft_terms()
+    terms = []
+
+    generated_term_groups = [
+        generate_famplex_terms(),
+        generate_hgnc_terms(),
+        generate_chebi_terms(),
+        generate_go_terms(),
+        generate_mesh_terms(),
+        generate_uniprot_terms(),
+        generate_adeft_terms(),
+        generate_doid_terms(),
+        generate_hp_terms(),
+        generate_efo_terms(),
+    ]
+    for generated_terms in generated_term_groups:
+        terms += generated_terms
+
     terms = filter_out_duplicates(terms)
     return terms
 
 
-if __name__ == '__main__':
+def main():
     terms = get_all_terms()
     from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
     write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
+
+
+if __name__ == '__main__':
+    main()

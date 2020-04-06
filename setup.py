@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='gilda',
-      version='0.2.3',
+      version='0.3.0',
       description=('Grounding for biomedical entities with contextual '
                    'disambiguation'),
       long_description=long_description,
@@ -25,7 +25,7 @@ setup(name='gilda',
       ],
       packages=find_packages(),
       install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask',
-                        'flask-wtf', 'flask-bootstrap'],
+                        'flask-wtf', 'flask-bootstrap', 'obonet'],
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra'],
                       'benchmarks': ['pandas', 'requests']},

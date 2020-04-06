@@ -37,7 +37,7 @@ def test_grounder_num_entries():
     entries = gr.lookup('NPM1')
     assert len(entries) == 1, entries
     entries = gr.lookup('H4')
-    assert len(entries) == 4, entries
+    assert len(entries) == 5, entries
 
 
 def test_grounder_depluralize():
