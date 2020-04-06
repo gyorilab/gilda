@@ -5,6 +5,7 @@ from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired
 
 from gilda.api import *
+from gilda import __version__ as version
 
 app = Flask(__name__)
 app.config['WTF_CSRF_ENABLED'] = False
@@ -25,8 +26,9 @@ def info():
     form = GroundForm()
     if form.validate_on_submit():
         matches = form.get_matches()
-        return render_template('matches.html', matches=matches, form=form)
-    return render_template('home.html', form=form)
+        return render_template('matches.html', matches=matches, form=form,
+                               version=version)
+    return render_template('home.html', form=form, version=version)
 
 
 @app.route('/ground', methods=['POST'])
