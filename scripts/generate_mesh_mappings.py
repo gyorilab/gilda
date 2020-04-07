@@ -29,27 +29,26 @@ def get_nonambiguous(maps):
                         if me.entry_name.lower() == te.entry_name.lower()]
         # If we still have ambiguity, we print to the user
         if not name_matches or len(name_matches) > 1:
-            print('Choose one if appropriate:')
-            for me, te in maps:
-                print(render_row(me, te))
-            print('-----')
-            return None
+            return None, maps
         # Otherwise. we add the single name matches mapping
         else:
-            return name_matches[0]
+            return name_matches[0], []
     # If we map to only one thing, we keep that mapping
     else:
-        return list(maps)[0]
+        return list(maps)[0], []
 
 
 def resolve_duplicates(mappings):
     keep_mappings = []
+    all_ambigs = []
     # First we deal with mappings from MESH
     for maps in mappings.values():
         maps_list = maps.values()
-        res = get_nonambiguous(maps_list)
-        if res:
-            keep_mappings.append(res)
+        keep, ambigs = get_nonambiguous(maps_list)
+        if keep:
+            keep_mappings.append(keep)
+        if ambigs:
+            all_ambigs += ambigs
 
     # Next we deal with mappings to MESH
     reverse_mappings = defaultdict(list)
@@ -58,11 +57,13 @@ def resolve_duplicates(mappings):
                                                                  other_term))
     keep_mappings = []
     for maps in reverse_mappings.values():
-        res = get_nonambiguous(maps)
-        if res:
-            keep_mappings.append(res)
+        keep, ambigs = get_nonambiguous(maps)
+        if keep:
+            keep_mappings.append(keep)
+        if ambigs:
+            all_ambigs += ambigs
 
-    return keep_mappings
+    return keep_mappings, all_ambigs
 
 
 def dump_mappings(mappings, fname):
@@ -174,5 +175,7 @@ if __name__ == '__main__':
     for k, v in mappings3.items():
         if k not in mappings:
             mappings[k] = v
-    mappings = resolve_duplicates(mappings)
+    mappings, mapping_ambigs = resolve_duplicates(mappings)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
+    dump_mappings(mapping_ambigs,
+                  os.path.join(resources, 'mesh_ambig_mappings.tsv'))
