@@ -238,6 +238,16 @@ def score_status(term):
     return scores[term.status]
 
 
+def score_namespace(term):
+    """Note: this is currently not included as an explicit score term.
+    It is just used to rank identically scored entries."""
+    order = ['FPLX', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'DOID', 'HP', 'EFO']
+    try:
+        return len(order) - order.index(term.db)
+    except ValueError:
+        return 0
+
+
 def score(match, term):
     string_match_score = score_string_match(match)
     status_score = score_status(term)
