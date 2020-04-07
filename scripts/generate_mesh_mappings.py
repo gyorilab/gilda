@@ -16,25 +16,59 @@ def is_chemical(mesh_id):
     return mesh_client.is_molecular(mesh_id)
 
 
+def render_row(me, te):
+    return '\t'.join([me.db, me.id, me.entry_name,
+                      te.db, te.id, te.entry_name])
+
+
+def get_nonambiguous(maps):
+    # If there are more than one mappings from MESH
+    if len(maps) > 1:
+        # We see if there are any name-level matches
+        name_matches = [(me, te) for me, te in maps
+                        if me.entry_name.lower() == te.entry_name.lower()]
+        # If we still have ambiguity, we print to the user
+        if not name_matches or len(name_matches) > 1:
+            print('Choose one if appropriate:')
+            for me, te in maps:
+                print(render_row(me, te))
+            print('-----')
+            return None
+        # Otherwise. we add the single name matches mapping
+        else:
+            return name_matches[0]
+    # If we map to only one thing, we keep that mapping
+    else:
+        return list(maps)[0]
+
+
+def resolve_duplicates(mappings):
+    keep_mappings = []
+    # First we deal with mappings from MESH
+    for maps in mappings.values():
+        maps_list = maps.values()
+        res = get_nonambiguous(maps_list)
+        if res:
+            keep_mappings.append(res)
+
+    # Next we deal with mappings to MESH
+    reverse_mappings = defaultdict(list)
+    for mesh_term, other_term in keep_mappings:
+        reverse_mappings[(other_term.db, other_term.id)].append((mesh_term,
+                                                                 other_term))
+    keep_mappings = []
+    for maps in reverse_mappings.values():
+        res = get_nonambiguous(maps)
+        if res:
+            keep_mappings.append(res)
+
+    return keep_mappings
+
+
 def dump_mappings(mappings, fname):
-    def render_row(me, te):
-        return '\t'.join([me.db, me.id, me.entry_name,
-                          te.db, te.id, te.entry_name])
     with open(fname, 'w') as fh:
-        for mesh_id, maps in sorted(mappings.items(), key=lambda x: x[0]):
-            if len(maps) > 1:
-                for me, te in maps.values():
-                    if me.entry_name.lower() == te.entry_name.lower():
-                        fh.write(render_row(me, te) + '\n')
-                        break
-                else:
-                    print('Choose one if appropriate:')
-                    for me, te in maps.values():
-                        print(render_row(me, te))
-                    print('-----')
-            else:
-                me, te = list(maps.values())[0]
-                fh.write(render_row(me, te) + '\n')
+        for mesh_term, other_term in sorted(mappings, key=lambda x: x[0].id):
+            fh.write(render_row(mesh_term, other_term) + '\n')
 
 
 def get_ambigs_by_db(ambigs):
@@ -140,4 +174,5 @@ if __name__ == '__main__':
     for k, v in mappings3.items():
         if k not in mappings:
             mappings[k] = v
+    mappings = resolve_duplicates(mappings)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
