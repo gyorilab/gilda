@@ -70,4 +70,8 @@ def test_disambiguate_gilda():
             assert match.disambiguation['score'] > 0.99
         if match.term.db == 'HGNC' and match.term.id == '7679':
             assert match.disambiguation['score'] < 0.01
-        print(match)
+
+
+def test_rank_namespace():
+    matches = gr.ground('interferon-gamma')
+    assert matches[0].term.db == 'HGNC'

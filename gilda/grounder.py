@@ -9,7 +9,7 @@ from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
-from .scorer import generate_match, score
+from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
 
 
@@ -134,8 +134,8 @@ class Grounder(object):
             unique_scores = self.disambiguate(raw_str, unique_scores, context)
 
         # Then sort by decreasing score
-        unique_scores = sorted(unique_scores, key=lambda x: x.score,
-                               reverse=True)
+        rank_fun = lambda x: (x.score, score_namespace(x.term))
+        unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
 
         return unique_scores
 

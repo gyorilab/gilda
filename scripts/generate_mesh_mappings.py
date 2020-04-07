@@ -1,8 +1,6 @@
 import os
 from collections import defaultdict
-from gilda.generate_terms import generate_famplex_terms, generate_hgnc_terms, \
-    generate_mesh_terms, generate_uniprot_terms, generate_chebi_terms, \
-    generate_go_terms, filter_out_duplicates
+from gilda.generate_terms import *
 from indra.databases import mesh_client
 
 
@@ -56,7 +54,10 @@ def get_mesh_mappings(ambigs):
         order = [('FPLX', is_protein),
                  ('HGNC', is_protein),
                  ('CHEBI', is_chemical),
-                 ('GO', lambda x: True)]
+                 ('GO', lambda x: True),
+                 ('DOID', lambda x: True),
+                 ('HP', lambda x: True),
+                 ('EFO', lambda x: True)]
         me = ambigs_by_db['MESH'][0]
         for ns, mesh_constraint in order:
             if len(ambigs_by_db.get(ns, [])) == 1 and mesh_constraint(me.id):
@@ -91,7 +92,10 @@ def get_terms():
         generate_hgnc_terms() + \
         generate_famplex_terms() + \
         generate_uniprot_terms(download=False) + \
-        generate_chebi_terms()
+        generate_chebi_terms() + \
+        generate_efo_terms() + \
+        generate_hp_terms() + \
+        generate_doid_terms()
     terms = filter_out_duplicates(terms)
     return terms
 

@@ -158,7 +158,8 @@ def generate_mesh_terms(ignore_mappings=False):
         db_id = row[0]
         text_name = row[1]
         mapping = mesh_mappings.get(db_id)
-        if not ignore_mappings and mapping:
+        if not ignore_mappings and mapping and mapping[0] \
+                not in {'EFO', 'HP', 'DOID'}:
             db, db_id, name = mapping
             status = 'synonym'
         else:
@@ -376,7 +377,11 @@ def _generate_obo_terms(prefix):
         # We first need to decide if we prioritize another name space
         xref_dict = {xr['namespace']: xr['id'] for xr in entry['xrefs']}
         # Handle MeSH mappings first
-        if 'MESH' in xref_dict or 'MSH' in xref_dict:
+        auto_mesh_mapping = mesh_mappings_reverse.get((db, db_id))
+        if auto_mesh_mapping:
+            db, db_id, name = ('MESH', auto_mesh_mapping[0],
+                               auto_mesh_mapping[1])
+        elif 'MESH' in xref_dict or 'MSH' in xref_dict:
             mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
             # Since we currently only include regular MeSH terms (which start
             # with D), we only need to do the mapping if that's the case.
@@ -387,7 +392,8 @@ def _generate_obo_terms(prefix):
                     # Here we need to check if we further map the MeSH ID to
                     # another namespace
                     mesh_mapping = mesh_mappings.get(mesh_id)
-                    db, db_id, name = mesh_mapping if mesh_mapping else \
+                    db, db_id, name = mesh_mapping if (mesh_mapping and \
+                            mesh_mapping[0] not in {'EFO', 'HP', 'DOID'}) else \
                         ('MESH', mesh_id, mesh_name)
         # Next we look at mappings to DOID
         # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
@@ -450,13 +456,15 @@ def _make_mesh_mappings():
     # Load MeSH ID/label mappings
     from .resources import MESH_MAPPINGS_PATH
     mesh_mappings = {}
+    mesh_mappings_reverse = {}
     for row in read_csv(MESH_MAPPINGS_PATH, delimiter='\t'):
         # We can skip row[2] which is the MeSH standard name for the entry
         mesh_mappings[row[1]] = row[3:]
-    return mesh_mappings
+        mesh_mappings_reverse[(row[3], row[4])] = [row[1], row[2]]
+    return mesh_mappings, mesh_mappings_reverse
 
 
-mesh_mappings = _make_mesh_mappings()
+mesh_mappings, mesh_mappings_reverse = _make_mesh_mappings()
 
 
 def filter_out_duplicates(terms):
