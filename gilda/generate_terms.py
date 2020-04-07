@@ -213,7 +213,7 @@ def generate_go_terms():
     return terms
 
 
-def generate_famplex_terms():
+def generate_famplex_terms(ignore_mappings=False):
     fname = os.path.join(indra_resources, 'famplex', 'grounding_map.csv')
     logger.info('Loading %s' % fname)
     terms = []
@@ -254,7 +254,8 @@ def generate_famplex_terms():
         elif 'MESH' in groundings:
             id = groundings['MESH']
             mesh_mapping = mesh_mappings.get(id)
-            db, db_id, name = mesh_mapping if mesh_mapping else \
+            db, db_id, name = mesh_mapping if (mesh_mapping
+                                               and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
             term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
         else:

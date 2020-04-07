@@ -124,12 +124,12 @@ def get_terms():
     terms = generate_mesh_terms(ignore_mappings=True) + \
         generate_go_terms() + \
         generate_hgnc_terms() + \
-        generate_famplex_terms() + \
+        generate_famplex_terms(ignore_mappings=True) + \
         generate_uniprot_terms(download=False) + \
         generate_chebi_terms() + \
-        generate_efo_terms() + \
-        generate_hp_terms() + \
-        generate_doid_terms()
+        generate_efo_terms(ignore_mappings=True) + \
+        generate_hp_terms(ignore_mappings=True) + \
+        generate_doid_terms(ignore_mappings=True)
     terms = filter_out_duplicates(terms)
     return terms
 
