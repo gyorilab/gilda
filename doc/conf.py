@@ -15,18 +15,18 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-
+from gilda import __version__ as gilda_version
 
 # -- Project information -----------------------------------------------------
 
 project = 'gilda'
-copyright = '2019, Benjamin M. Gyori'
+copyright = '2020, Benjamin M. Gyori'
 author = 'Benjamin M. Gyori'
 
 # The short X.Y version
-version = '0.3'
+version = '.'.join(gilda_version.split('.')[:1])
 # The full version, including alpha/beta/rc tags
-release = '0.3.1'
+release = gilda_version
 
 
 # -- General configuration ---------------------------------------------------
