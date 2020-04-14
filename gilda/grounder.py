@@ -140,17 +140,17 @@ class Grounder(object):
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
-        logger.info('Running disambiguation for %s' % raw_str)
-
         # If we don't have a disambiguator for this string, we return with
         # the original scores intact. Otherwise, we attempt to disambiguate.
         if raw_str in self.adeft_disambiguators:
+            logger.info('Running Adeft disambiguation for %s' % raw_str)
             try:
                 scored_matches = \
                     self.disambiguate_adeft(raw_str, scored_matches, context)
             except Exception as e:
                 logger.exception(e)
         elif raw_str in self.gilda_disambiguators:
+            logger.info('Running Gilda disambiguation for %s' % raw_str)
             try:
                 scored_matches = \
                     self.disambiguate_gilda(raw_str, scored_matches, context)
