@@ -1,15 +1,26 @@
+import re
 from os import path
 from setuptools import setup, find_packages
 
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+with open(path.join(here, 'README.md'), encoding='utf-8') as fh:
+    long_description = fh.read()
+
+with open(path.join(here, 'gilda', '__init__.py'), 'r') as fh:
+    for line in fh.readlines():
+        match = re.match(r'__version__ = \'(.+)\'', line)
+        if match:
+            gilda_version = match.groups()[0]
+            break
+    else:
+        raise ValueError('Could not get version from gilda/__init__.py')
+
 
 
 setup(name='gilda',
-      version='0.3.1',
+      version=gilda_version,
       description=('Grounding for biomedical entities with contextual '
                    'disambiguation'),
       long_description=long_description,
