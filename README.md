@@ -3,6 +3,9 @@
 [![Build](https://travis-ci.org/indralab/gilda.svg)](https://travis-ci.org/indralab/gilda)
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 
+Gilda is a Python package and REST service that grounds (i.e., finds
+appropriate identifiers in namespaces for) named entities in biomedical text.
+
 ## Installation
 Gilda is deployed as a web service at http://grounding.indra.bio/ (see
 Usage instructions below), it only needs to be installed if used locally.
@@ -17,8 +20,8 @@ Given some additional dependencies, the grounding resource file can also be
 regenerated locally by running `python -m gilda.generate_terms`.
 
 ## Usage
-Gilda can either be used as a REST service or programmatically
-via its Python API. An introduction Jupyter notebook for using Gilda as a
+Gilda can either be used as a REST service or used programmatically
+via its Python API. An introduction Jupyter notebook for using Gilda
 is available at
 https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
