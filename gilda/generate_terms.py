@@ -140,7 +140,7 @@ def generate_chebi_terms():
         # We skip entries of the form Glu-Lys with synonyms like EK since
         # there are highly ambiguous with other acronyms, and are unlikely
         # to be used in practice.
-        if is_aa_sequence(chebi_name) and re.match(r'(^[A-Z]+$)', name):
+        if is_aa_sequence(chebi_name) and re.match(r'(^[A-Z-]+$)', name):
             continue
 
         term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
