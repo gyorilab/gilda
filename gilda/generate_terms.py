@@ -13,6 +13,7 @@ import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
+from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
 from .resources import resource_dir
@@ -136,6 +137,11 @@ def generate_chebi_terms():
         if chebi_name is None:
             logger.info('Could not get valid name for %s' % chebi_id)
             continue
+        # We skip entries of the form Glu-Lys with synonyms like EK since
+        # there are highly ambiguous with other acronyms, and are unlikely
+        # to be used in practice.
+        if is_aa_sequence(chebi_name) and re.match(r'(^[A-Z-]+$)', name):
+            continue
 
         term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
                      'chebi')
@@ -147,6 +153,16 @@ def generate_chebi_terms():
             added.add(term_args)
     logger.info('Loaded %d terms' % len(terms))
     return terms
+
+
+def is_aa_sequence(txt):
+    """Return True if the given text is a sequence of amino acids like Tyr-Glu.
+    """
+    return ('-' in txt) and (all(part in aa_abbrevs
+                                 for part in txt.split('-')))
+
+
+aa_abbrevs = {aa['short_name'].capitalize() for aa in amino_acids.values()}
 
 
 def generate_mesh_terms(ignore_mappings=False):
