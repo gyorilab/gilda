@@ -75,3 +75,11 @@ def test_disambiguate_gilda():
 def test_rank_namespace():
     matches = gr.ground('interferon-gamma')
     assert matches[0].term.db == 'HGNC'
+
+
+def test_aa_synonym():
+    matches = gr.ground('WN')
+    assert '141447' not in {m.term.id for m in matches}
+
+    matches = gr.ground('W-N')
+    assert '141447' not in {m.term.id for m in matches}
