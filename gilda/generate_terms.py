@@ -213,7 +213,7 @@ def generate_go_terms():
     return terms
 
 
-def generate_famplex_terms():
+def generate_famplex_terms(ignore_mappings=False):
     fname = os.path.join(indra_resources, 'famplex', 'grounding_map.csv')
     logger.info('Loading %s' % fname)
     terms = []
@@ -254,7 +254,8 @@ def generate_famplex_terms():
         elif 'MESH' in groundings:
             id = groundings['MESH']
             mesh_mapping = mesh_mappings.get(id)
-            db, db_id, name = mesh_mapping if mesh_mapping else \
+            db, db_id, name = mesh_mapping if (mesh_mapping
+                                               and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
             term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
         else:
@@ -369,19 +370,19 @@ def generate_adeft_terms():
     return terms
 
 
-def generate_doid_terms():
-    return _generate_obo_terms('doid')
+def generate_doid_terms(ignore_mappings=False):
+    return _generate_obo_terms('doid', ignore_mappings)
 
 
-def generate_efo_terms():
-    return _generate_obo_terms('efo')
+def generate_efo_terms(ignore_mappings=False):
+    return _generate_obo_terms('efo', ignore_mappings)
 
 
-def generate_hp_terms():
-    return _generate_obo_terms('hp')
+def generate_hp_terms(ignore_mappings=False):
+    return _generate_obo_terms('hp', ignore_mappings)
 
 
-def _generate_obo_terms(prefix):
+def _generate_obo_terms(prefix, ignore_mappings=False):
     filename = os.path.join(indra_resources, '%s.json' % prefix)
     logger.info('Loading %s', filename)
     with open(filename) as file:
@@ -394,7 +395,7 @@ def _generate_obo_terms(prefix):
         xref_dict = {xr['namespace']: xr['id'] for xr in entry['xrefs']}
         # Handle MeSH mappings first
         auto_mesh_mapping = mesh_mappings_reverse.get((db, db_id))
-        if auto_mesh_mapping:
+        if auto_mesh_mapping and not ignore_mappings:
             db, db_id, name = ('MESH', auto_mesh_mapping[0],
                                auto_mesh_mapping[1])
         elif 'MESH' in xref_dict or 'MSH' in xref_dict:

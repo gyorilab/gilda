@@ -16,25 +16,60 @@ def is_chemical(mesh_id):
     return mesh_client.is_molecular(mesh_id)
 
 
+def render_row(me, te):
+    return '\t'.join([me.db, me.id, me.entry_name,
+                      te.db, te.id, te.entry_name])
+
+
+def get_nonambiguous(maps):
+    # If there are more than one mappings from MESH
+    if len(maps) > 1:
+        # We see if there are any name-level matches
+        name_matches = [(me, te) for me, te in maps
+                        if me.entry_name.lower() == te.entry_name.lower()]
+        # If we still have ambiguity, we print to the user
+        if not name_matches or len(name_matches) > 1:
+            return None, maps
+        # Otherwise. we add the single name matches mapping
+        else:
+            return name_matches[0], []
+    # If we map to only one thing, we keep that mapping
+    else:
+        return list(maps)[0], []
+
+
+def resolve_duplicates(mappings):
+    keep_mappings = []
+    all_ambigs = []
+    # First we deal with mappings from MESH
+    for maps in mappings.values():
+        maps_list = maps.values()
+        keep, ambigs = get_nonambiguous(maps_list)
+        if keep:
+            keep_mappings.append(keep)
+        if ambigs:
+            all_ambigs += ambigs
+
+    # Next we deal with mappings to MESH
+    reverse_mappings = defaultdict(list)
+    for mesh_term, other_term in keep_mappings:
+        reverse_mappings[(other_term.db, other_term.id)].append((mesh_term,
+                                                                 other_term))
+    keep_mappings = []
+    for maps in reverse_mappings.values():
+        keep, ambigs = get_nonambiguous(maps)
+        if keep:
+            keep_mappings.append(keep)
+        if ambigs:
+            all_ambigs += ambigs
+
+    return keep_mappings, all_ambigs
+
+
 def dump_mappings(mappings, fname):
-    def render_row(me, te):
-        return '\t'.join([me.db, me.id, me.entry_name,
-                          te.db, te.id, te.entry_name])
     with open(fname, 'w') as fh:
-        for mesh_id, maps in sorted(mappings.items(), key=lambda x: x[0]):
-            if len(maps) > 1:
-                for me, te in maps.values():
-                    if me.entry_name.lower() == te.entry_name.lower():
-                        fh.write(render_row(me, te) + '\n')
-                        break
-                else:
-                    print('Choose one if appropriate:')
-                    for me, te in maps.values():
-                        print(render_row(me, te))
-                    print('-----')
-            else:
-                me, te = list(maps.values())[0]
-                fh.write(render_row(me, te) + '\n')
+        for mesh_term, other_term in sorted(mappings, key=lambda x: x[0].id):
+            fh.write(render_row(mesh_term, other_term) + '\n')
 
 
 def get_ambigs_by_db(ambigs):
@@ -90,12 +125,12 @@ def get_terms():
     terms = generate_mesh_terms(ignore_mappings=True) + \
         generate_go_terms() + \
         generate_hgnc_terms() + \
-        generate_famplex_terms() + \
+        generate_famplex_terms(ignore_mappings=True) + \
         generate_uniprot_terms(download=False) + \
         generate_chebi_terms() + \
-        generate_efo_terms() + \
-        generate_hp_terms() + \
-        generate_doid_terms()
+        generate_efo_terms(ignore_mappings=True) + \
+        generate_hp_terms(ignore_mappings=True) + \
+        generate_doid_terms(ignore_mappings=True)
     terms = filter_out_duplicates(terms)
     return terms
 
@@ -140,4 +175,7 @@ if __name__ == '__main__':
     for k, v in mappings3.items():
         if k not in mappings:
             mappings[k] = v
+    mappings, mapping_ambigs = resolve_duplicates(mappings)
     dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
+    dump_mappings(mapping_ambigs,
+                  os.path.join(resources, 'mesh_ambig_mappings.tsv'))
