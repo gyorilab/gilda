@@ -197,18 +197,23 @@ def generate_mesh_terms(ignore_mappings=False):
 
 
 def generate_go_terms():
-    # TODO: add synonyms for GO terms here
-    fname = os.path.join(indra_resources, 'go_id_label_mappings.tsv')
+    fname = os.path.join(indra_resources, 'go.json')
     logger.info('Loading %s' % fname)
+    with open(fname, 'r') as fh:
+        entries = json.load(fh)
     terms = []
-    for row in read_csv(fname, delimiter='\t'):
-        if not row[0].startswith('GO'):
-            continue
-        if 'obsolete' in row[1]:
-            continue
-        term = Term(normalize(row[1]), row[1], 'GO', row[0], row[1],
-                    'name', 'go')
+    for entry in entries:
+        go_id = entry['id']
+        name = entry['name']
+        # First handle the name term
+        term = Term(normalize(name), name, 'GO', go_id, name, 'name', 'go')
         terms.append(term)
+        # Next look at synonyms, sometimes those match the name so we
+        # deduplicate
+        for synonym in set(entry['synonyms']) - {name}:
+            term = Term(normalize(synonym), synonym, 'GO', go_id, name,
+                        'synonym', 'go')
+            terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
     return terms
 
@@ -423,7 +428,10 @@ def _generate_obo_terms(prefix, ignore_mappings=False):
             if doid_prim_id:
                 doid = doid_prim_id
             doid_name = doid_client.get_doid_name_from_doid_id(doid)
-            db, db_id, name = 'DOID', doid, doid_name
+            # If we don't get a name here, it's likely because an entry is
+            # obsolete so we don't do the mapping
+            if doid_name:
+                db, db_id, name = 'DOID', doid, doid_name
 
         # Add a term for the name first
         name_term = Term(
