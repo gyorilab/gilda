@@ -43,6 +43,17 @@ def ground_endpoint():
     return jsonify(res)
 
 
+@app.route('/get_names', methods=['POST'])
+def get_names_endpoint():
+    if request.json is None:
+        abort(Response('Missing application/json header.', 415))
+    # Get input parameters
+    kwargs = {key: request.json.get(key) for key in {'db', 'id', 'status',
+                                                     'source'}}
+    names = get_names(**kwargs)
+    return jsonify(names)
+
+
 @app.route('/models', methods=['GET', 'POST'])
 def models():
     return jsonify(get_models())
