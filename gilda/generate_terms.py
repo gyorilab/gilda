@@ -210,7 +210,7 @@ def generate_go_terms():
         terms.append(term)
         # Next look at synonyms, sometimes those match the name so we
         # deduplicate
-        for synonym in set(entry['synonyms']) - {name}:
+        for synonym in set(entry.get('synonyms', [])) - {name}:
             term = Term(normalize(synonym), synonym, 'GO', go_id, name,
                         'synonym', 'go')
             terms.append(term)
@@ -387,92 +387,98 @@ def generate_hp_terms(ignore_mappings=False):
     return _generate_obo_terms('hp', ignore_mappings)
 
 
+def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False):
+    terms = []
+    db, db_id, name = prefix.upper(), entry['id'], entry['name']
+    # We first need to decide if we prioritize another name space
+    xref_dict = {xr['namespace']: xr['id'] for xr in entry.get('xrefs', [])}
+    # Handle MeSH mappings first
+    auto_mesh_mapping = mesh_mappings_reverse.get((db, db_id))
+    if auto_mesh_mapping and not ignore_mappings:
+        db, db_id, name = ('MESH', auto_mesh_mapping[0],
+                           auto_mesh_mapping[1])
+    elif 'MESH' in xref_dict or 'MSH' in xref_dict:
+        mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
+        # Since we currently only include regular MeSH terms (which start
+        # with D), we only need to do the mapping if that's the case.
+        # We don't map any supplementary terms that start with C.
+        if mesh_id.startswith('D'):
+            mesh_name = mesh_client.get_mesh_name(mesh_id)
+            if mesh_name:
+                # Here we need to check if we further map the MeSH ID to
+                # another namespace
+                mesh_mapping = mesh_mappings.get(mesh_id)
+                db, db_id, name = mesh_mapping if \
+                    (mesh_mapping and (mesh_mapping[0]
+                                       not in {'EFO', 'HP', 'DOID'})) \
+                    else ('MESH', mesh_id, mesh_name)
+    # Next we look at mappings to DOID
+    # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
+    # cannot be mapped further to MeSH per the DOID resource file?
+    elif 'DOID' in xref_dict:
+        doid = xref_dict['DOID']
+        if not doid.startswith('DOID:'):
+            doid = 'DOID:' + doid
+        doid_prim_id = doid_client.get_doid_id_from_doid_alt_id(doid)
+        if doid_prim_id:
+            doid = doid_prim_id
+        doid_name = doid_client.get_doid_name_from_doid_id(doid)
+        # If we don't get a name here, it's likely because an entry is
+        # obsolete so we don't do the mapping
+        if doid_name:
+            db, db_id, name = 'DOID', doid, doid_name
+
+    # Add a term for the name first
+    name_term = Term(
+        norm_text=normalize(name),
+        text=name,
+        db=db,
+        id=db_id,
+        entry_name=name,
+        status='name',
+        source=prefix,
+    )
+    terms.append(name_term)
+
+    # Then add all the synonyms
+    for synonym in set(entry.get('synonyms', [])):
+        # Some synonyms are tagged as ambiguous, we remove these
+        if 'ambiguous' in synonym.lower():
+            continue
+        # Some synonyms contain a "formerly" clause, we remove these
+        match = re.match(r'(.+) \(formerly', synonym)
+        if match:
+            synonym = match.groups()[0]
+        # Some synonyms contain additional annotations
+        # e.g. Hyperplasia of facial adipose tissue" NARROW
+        # [ORCID:0000-0001-5889-4463]
+        # If this is the case, we strip these off
+        match = re.match(r'([^"]+)', synonym)
+        if match:
+            synonym = match.groups()[0]
+
+        synonym_term = Term(
+            norm_text=normalize(synonym),
+            text=synonym,
+            db=db,
+            id=db_id,
+            entry_name=name,
+            status='synonym',
+            source=prefix,
+        )
+        terms.append(synonym_term)
+    return terms
+
+
 def _generate_obo_terms(prefix, ignore_mappings=False):
     filename = os.path.join(indra_resources, '%s.json' % prefix)
     logger.info('Loading %s', filename)
     with open(filename) as file:
         entries = json.load(file)
-
     terms = []
     for entry in entries:
-        db, db_id, name = prefix.upper(), entry['id'], entry['name']
-        # We first need to decide if we prioritize another name space
-        xref_dict = {xr['namespace']: xr['id'] for xr in entry['xrefs']}
-        # Handle MeSH mappings first
-        auto_mesh_mapping = mesh_mappings_reverse.get((db, db_id))
-        if auto_mesh_mapping and not ignore_mappings:
-            db, db_id, name = ('MESH', auto_mesh_mapping[0],
-                               auto_mesh_mapping[1])
-        elif 'MESH' in xref_dict or 'MSH' in xref_dict:
-            mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
-            # Since we currently only include regular MeSH terms (which start
-            # with D), we only need to do the mapping if that's the case.
-            # We don't map any supplementary terms that start with C.
-            if mesh_id.startswith('D'):
-                mesh_name = mesh_client.get_mesh_name(mesh_id)
-                if mesh_name:
-                    # Here we need to check if we further map the MeSH ID to
-                    # another namespace
-                    mesh_mapping = mesh_mappings.get(mesh_id)
-                    db, db_id, name = mesh_mapping if (mesh_mapping and \
-                            mesh_mapping[0] not in {'EFO', 'HP', 'DOID'}) else \
-                        ('MESH', mesh_id, mesh_name)
-        # Next we look at mappings to DOID
-        # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
-        # cannot be mapped further to MeSH per the DOID resource file?
-        elif 'DOID' in xref_dict:
-            doid = xref_dict['DOID']
-            if not doid.startswith('DOID:'):
-                doid = 'DOID:' + doid
-            doid_prim_id = doid_client.get_doid_id_from_doid_alt_id(doid)
-            if doid_prim_id:
-                doid = doid_prim_id
-            doid_name = doid_client.get_doid_name_from_doid_id(doid)
-            # If we don't get a name here, it's likely because an entry is
-            # obsolete so we don't do the mapping
-            if doid_name:
-                db, db_id, name = 'DOID', doid, doid_name
-
-        # Add a term for the name first
-        name_term = Term(
-            norm_text=normalize(name),
-            text=name,
-            db=db,
-            id=db_id,
-            entry_name=name,
-            status='name',
-            source=prefix,
-        )
-        terms.append(name_term)
-
-        # Then add all the synonyms
-        for synonym in set(entry['synonyms']):
-            # Some synonyms are tagged as ambiguous, we remove these
-            if 'ambiguous' in synonym.lower():
-                continue
-            # Some synonyms contain a "formerly" clause, we remove these
-            match = re.match(r'(.+) \(formerly', synonym)
-            if match:
-                synonym = match.groups()[0]
-            # Some synonyms contain additional annotations
-            # e.g. Hyperplasia of facial adipose tissue" NARROW
-            # [ORCID:0000-0001-5889-4463]
-            # If this is the case, we strip these off
-            match = re.match(r'([^"]+)', synonym)
-            if match:
-                synonym = match.groups()[0]
-
-            synonym_term = Term(
-                norm_text=normalize(synonym),
-                text=synonym,
-                db=db,
-                id=db_id,
-                entry_name=name,
-                status='synonym',
-                source=prefix,
-            )
-            terms.append(synonym_term)
-
+        terms += terms_from_obo_json_entry(entry, prefix=prefix,
+                                           ignore_mappings=ignore_mappings)
     logger.info('Loaded %d terms from %s', len(terms), prefix)
     return terms
 
