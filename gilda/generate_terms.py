@@ -387,7 +387,10 @@ def generate_hp_terms(ignore_mappings=False):
     return _generate_obo_terms('hp', ignore_mappings)
 
 
-def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False):
+def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
+                              map_to_ns=None):
+    if map_to_ns is None:
+        map_to_ns = {'MESH', 'DOID'}
     terms = []
     db, db_id, name = prefix.upper(), entry['id'], entry['name']
     # We first need to decide if we prioritize another name space
@@ -397,7 +400,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False):
     if auto_mesh_mapping and not ignore_mappings:
         db, db_id, name = ('MESH', auto_mesh_mapping[0],
                            auto_mesh_mapping[1])
-    elif 'MESH' in xref_dict or 'MSH' in xref_dict:
+    elif 'MESH' in map_to_ns and ('MESH' in xref_dict or 'MSH' in xref_dict):
         mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
         # Since we currently only include regular MeSH terms (which start
         # with D), we only need to do the mapping if that's the case.
@@ -415,7 +418,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False):
     # Next we look at mappings to DOID
     # TODO: are we sure that the DOIDs that we get here (from e.g., EFO)
     # cannot be mapped further to MeSH per the DOID resource file?
-    elif 'DOID' in xref_dict:
+    elif 'DOID' in map_to_ns and 'DOID' in xref_dict:
         doid = xref_dict['DOID']
         if not doid.startswith('DOID:'):
             doid = 'DOID:' + doid
@@ -470,7 +473,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False):
     return terms
 
 
-def _generate_obo_terms(prefix, ignore_mappings=False):
+def _generate_obo_terms(prefix, ignore_mappings=False, map_to_ns=None):
     filename = os.path.join(indra_resources, '%s.json' % prefix)
     logger.info('Loading %s', filename)
     with open(filename) as file:
@@ -478,7 +481,8 @@ def _generate_obo_terms(prefix, ignore_mappings=False):
     terms = []
     for entry in entries:
         terms += terms_from_obo_json_entry(entry, prefix=prefix,
-                                           ignore_mappings=ignore_mappings)
+                                           ignore_mappings=ignore_mappings,
+                                           map_to_ns=map_to_ns)
     logger.info('Loaded %d terms from %s', len(terms), prefix)
     return terms
 
@@ -511,6 +515,20 @@ def filter_out_duplicates(terms):
     new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
     logger.info('Got %d unique terms...' % len(new_terms))
     return new_terms
+
+
+def terms_from_obo_url(url, prefix, ignore_mappings=False, map_to_ns=None):
+    """Return terms extracted directly from an OBO given as a URL."""
+    import obonet
+    from indra.databases.obo_client import OboClient
+    g = obonet.read_obo(url)
+    entries = OboClient.entries_from_graph(g, prefix=prefix)
+    terms = []
+    for entry in entries:
+        terms += terms_from_obo_json_entry(entry, prefix=prefix,
+                                           ignore_mappings=ignore_mappings,
+                                           map_to_ns=map_to_ns)
+    return terms
 
 
 def get_all_terms():
