@@ -40,8 +40,7 @@ class GroundingEvaluator(object):
         gold standard grounding y if x isa y or y isa x. Default: None
     """
     def __init__(self, bioid_data_path, grounder=None,
-                 equivalences=None, isa_relations=None,
-                 correct_assertions=None, incorrect_assertions=None):
+                 equivalences=None, isa_relations=None):
         if grounder is None:
             grounder = Grounder()
         if equivalences is None:
@@ -54,35 +53,37 @@ class GroundingEvaluator(object):
         self.equivalences = equivalences
         self.available_namespaces = available_namespaces
         self.bioid_data_path = bioid_data_path
-        self._processed_data = self._process_annotations_table()
+        self.processed_data = self._process_annotations_table()
 
     def _process_annotations_table(self):
         """Extract relevant information from annotations table."""
-        annotations = pd.read_csv(os.path.join(self.bioid_data_path,
-                                               'annotations.csv'),
-                                  sep=',', low_memory=False)
+        df = pd.read_csv(os.path.join(self.bioid_data_path,
+                                      'annotations.csv'),
+                         sep=',', low_memory=False)
         # Split entries with multiple groundings
-        annotations.loc[:, 'obj'] = annotations['obj'].\
+        df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: x.split('|'))
         # Create column for entity type
-        annotations['entity_type'] = annotations['obj'].\
+        df['entity_type'] = df['obj'].\
             apply(lambda x: self._get_entity_type(x))
         # Normalize ids
-        annotations.loc[:, 'obj'] = annotations['obj'].\
+        df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: [self._normalize_id(y) for y in x])
-        processed_data = annotations[['text', 'obj',
-                                      'entity_type', 'don_article']]
-        return processed_data
-
-    def _apply_gilda_groundings(self):
-        df = self._processed_data
-        df['gilda_groundings_no_context'] = df['text'].\
+        # Add synonyms of gold standard groundings to help match more things
+        df['obj_synonyms'] = df['obj'].\
+            apply(lambda x: self.get_synonym_set(x))
+        # Find gilda groundings for entity text with and without context
+        df['gilda_groundings_no_context'] = df.text.\
             apply(lambda x: self._get_grounding_list(x))
         df['gilda_groundings'] = df.\
             apply(lambda row:
                   self._get_grounding_list(
                       row.text,
                       context=self._get_plaintext(row.don_article)), axis=1)
+        processed_data = df[['text', 'obj', 'obj_synonyms', 'entity_type',
+                             'don_article', 'gilda_groundings_no_context',
+                             'gilda_groundings']]
+        return processed_data
 
     def _get_plaintext(self, don_article):
         """Get plaintext content from XML file in BioID corpus
@@ -163,8 +164,8 @@ class GroundingEvaluator(object):
         """
         output = set(id_)
         db, value = id_.split(':', maxsplit=1)
-        if id_ in self.equiv_map:
-            output.update(self.equiv_map[id_])
+        if id_ in self.equivalences:
+            output.update(self.equivalences[id_])
         hgnc_id = None
         if db == 'NCBI gene':
             hgnc_id = get_hgnc_from_entrez(value)
