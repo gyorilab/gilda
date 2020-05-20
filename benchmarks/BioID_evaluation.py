@@ -60,18 +60,51 @@ class GroundingEvaluator(object):
 
     def get_table_of_applied_mappings(self):
         """Get table showing how goldstandard groundings are being mapped
+
+        Namespaces used in the Bioc dataset may only partially overlap with
+        those used by Gilda. Users may pass in a dictionary of equivalences
+        mapping groundings used in the Bioc dataset to Gilda's namespaces.
+        This method generated tables showing how groundings used in the
+        dataset project onto Gilda's namespaces through these equivalences.
+
+        Returns
+        -------
+        mapping_table : py:class`pandas.DataFrame`
+        Rows correspond to namespaces used in the Bioc dataset, columns
+        to namespaces used in Gilda (automatically populated based on a
+        Gilda Grounders entries attribute). There is also a row Total
+        containing the sum of values for all other rows. There are columns
+        Count, and Total Mapped, showing the total count of entries for
+        each row namespace, and the total count of entries that could be
+        mapped to a Gilda namespace respectively.
+
+        The same row namespace can be mapped to multiple column namespaces,
+        causing values in them Total Mapped column to be less than the sum of
+        values of other columns in the same row. Additionally, in some cases
+        an entry in the Bioc dataset has multiple curated groundings, causing
+        the counts not to add up to the number of entries in the dataset.
+
+        mapping_table_unique : py:class`pandas.DataFrame`
+        Similar to mapping table, but counts are given for unique named
+        entity groundings, ignoring duplication of groundings between rows
+        in the Bioc dataset.
         """
+        # Namespaces used in Bioc dataset after standardization
         bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
                          'CL', 'CVCL', 'UBERON', 'NCBI taxon']
+        # Mapping of namespaces to row and column names. Namespaces not included
+        # will be used as row and column names unmodifed.
         nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
                                 'PubChem': 'PubChem', 'CL': 'Cell Ontology',
                                 'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
                                 'FPLX': 'Famplex'}
 
         def get_display_name(ns):
+            """Gets row/column name associated to a namespace"""
             return nmspace_displaynames[ns] \
                 if ns in nmspace_displaynames else ns
-
+        # Build dataframes for storing information. Values will be filled in
+        # by looping through rows of the dataset.
         index = [get_display_name(ns) for ns in bioc_nmspaces] + ['Total']
         columns = (['Count'] +
                    [get_display_name(ns) for ns in self.available_namespaces] +
@@ -80,42 +113,80 @@ class GroundingEvaluator(object):
         mapping_table.fillna(0, inplace=True)
         mapping_table_unique = pd.DataFrame(index=index, columns=columns)
         mapping_table_unique.fillna(0, inplace=True)
+
+        # Maps row namespaces to sets of associated grounding ids
         nmspace_ids = defaultdict(set)
+        # Maps row namespaces to to set of Gilda grounding ids that have
+        # been mapped to from them
         mapped_to_nmspace_ids = defaultdict(set)
+        # Maps row namespaces to sets of associated grounding ids, but
+        # only in cases where some mapping exists to a Gilda grounding
         mapped_from_nmspace_ids = defaultdict(set)
+        # Looping through dataframe is costly. There may be a way to write
+        # this with a clever series of groupbys
         for _, row in self.processed_data.iterrows():
+            # For each row loop through goldstandard groundings. There can
+            # be more than one
             for g1 in row.obj:
+                # Get the namespace. If it is not one of the namespaces used
+                # in evaluation, discard and continue to the next iteration
+                # of the loop
                 nmspace1 = g1.split(':', maxsplit=1)[0]
                 if nmspace1 not in bioc_nmspaces:
                     continue
+                # Increment total count for this namespace
                 mapping_table.loc[get_display_name(nmspace1), 'Count'] += 1
+                # If this particular grounding has not been seen before for
+                # this namespace increment unique count and mark grounding
+                # as having been seen
                 if g1 not in nmspace_ids[nmspace1]:
                     mapping_table_unique.loc[get_display_name(nmspace1),
                                              'Count'] += 1
                     nmspace_ids[nmspace1].add(g1)
+                # Get all of the synonyms that grounding can be mapped to.
+                # This includes the grounding itself. If a row namespace is
+                # also a column namespace, we consider this to be a valid
+                # mapping
                 synonyms = self.get_synonym_set([g1])
+                # Track which namespaces have been used so we don't overcount
+                # when the same grounding can be mapped to multiple groundings
+                # in the same namespace
                 used_namespaces = set()
                 for g2 in synonyms:
                     nmspace2 = g2.split(':', maxsplit=1)[0]
+                    # If a namespace mapped to is not available in Gilda
+                    # or if we have already tallied a mapping to this namespace
+                    # for this particular row, discard and continue
                     if nmspace2 not in self.available_namespaces or \
                        nmspace2 in used_namespaces:
                         continue
+                    # If Gilda namespace has not been mapped to in the curent
+                    # row increment the count of entries in the namespace with
+                    # a mapping to a Gilda namespace
                     if not used_namespaces:
                         mapping_table.loc[get_display_name(nmspace1),
                                           'Total Mapped'] += 1
                     used_namespaces.add(nmspace2)
+                    # If the grounding g1 has never been mapped to a Gilda
+                    # namespace increment the unique count
                     if g1 not in mapped_from_nmspace_ids[nmspace1]:
                         mapping_table_unique.\
                             loc[get_display_name(nmspace1),
                                 'Total Mapped'] += 1
                         mapped_from_nmspace_ids[nmspace1].add(g1)
+                    # Increment count for mapping of row namespace to
+                    # column namespace
                     mapping_table.loc[get_display_name(nmspace1),
                                       get_display_name(nmspace2)] += 1
+                    # If the grounding in column namespace has not been mapped
+                    # to by the grounding in row namespace, increment unique
+                    # count
                     if g2 not in mapped_to_nmspace_ids[nmspace1]:
                         mapping_table_unique.\
                             loc[get_display_name(nmspace1),
                                 get_display_name(nmspace2)] += 1
                         mapped_to_nmspace_ids[nmspace1].add(g2)
+        # Generate total rows
         mapping_table.loc['Total', :] = mapping_table.sum()
         mapping_table_unique.loc['Total', :] = mapping_table_unique.sum()
         return mapping_table, mapping_table_unique
