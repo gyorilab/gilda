@@ -2,6 +2,9 @@ import pandas as pd
 
 import os
 import lxml.etree as etree
+from functools import lru_cache
+from collections import defaultdict
+
 
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.databases.hgnc_client import get_hgnc_from_entrez
@@ -51,9 +54,71 @@ class GroundingEvaluator(object):
                 available_namespaces.add(term.db)
         self.grounder = grounder
         self.equivalences = equivalences
-        self.available_namespaces = available_namespaces
+        self.available_namespaces = list(available_namespaces)
         self.bioid_data_path = bioid_data_path
         self.processed_data = self._process_annotations_table()
+
+    def get_table_of_applied_mappings(self):
+        """Get table showing how goldstandard groundings are being mapped
+        """
+        bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
+                         'CL', 'CVCL', 'UBERON', 'NCBI taxon']
+        nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
+                                'PubChem': 'PubChem', 'CL': 'Cell Ontology',
+                                'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
+                                'FPLX': 'Famplex'}
+
+        def get_display_name(ns):
+            return nmspace_displaynames[ns] \
+                if ns in nmspace_displaynames else ns
+
+        index = [get_display_name(ns) for ns in bioc_nmspaces] + ['Total']
+        columns = (['Count'] +
+                   [get_display_name(ns) for ns in self.available_namespaces] +
+                   ['Total Mapped'])
+        mapping_table = pd.DataFrame(index=index, columns=columns)
+        mapping_table.fillna(0, inplace=True)
+        mapping_table_unique = pd.DataFrame(index=index, columns=columns)
+        mapping_table_unique.fillna(0, inplace=True)
+        nmspace_ids = defaultdict(set)
+        mapped_to_nmspace_ids = defaultdict(set)
+        mapped_from_nmspace_ids = defaultdict(set)
+        for _, row in self.processed_data.iterrows():
+            for g1 in row.obj:
+                nmspace1 = g1.split(':', maxsplit=1)[0]
+                if nmspace1 not in bioc_nmspaces:
+                    continue
+                mapping_table.loc[get_display_name(nmspace1), 'Count'] += 1
+                if g1 not in nmspace_ids[nmspace1]:
+                    mapping_table_unique.loc[get_display_name(nmspace1),
+                                             'Count'] += 1
+                    nmspace_ids[nmspace1].add(g1)
+                synonyms = self.get_synonym_set([g1])
+                used_namespaces = set()
+                for g2 in synonyms:
+                    nmspace2 = g2.split(':', maxsplit=1)[0]
+                    if nmspace2 not in self.available_namespaces or \
+                       nmspace2 in used_namespaces:
+                        continue
+                    if not used_namespaces:
+                        mapping_table.loc[get_display_name(nmspace1),
+                                          'Total Mapped'] += 1
+                    used_namespaces.add(nmspace2)
+                    if g1 not in mapped_from_nmspace_ids[nmspace1]:
+                        mapping_table_unique.\
+                            loc[get_display_name(nmspace1),
+                                'Total Mapped'] += 1
+                        mapped_from_nmspace_ids[nmspace1].add(g1)
+                    mapping_table.loc[get_display_name(nmspace1),
+                                      get_display_name(nmspace2)] += 1
+                    if g2 not in mapped_to_nmspace_ids[nmspace1]:
+                        mapping_table_unique.\
+                            loc[get_display_name(nmspace1),
+                                get_display_name(nmspace2)] += 1
+                        mapped_to_nmspace_ids[nmspace1].add(g2)
+        mapping_table.loc['Total', :] = mapping_table.sum()
+        mapping_table_unique.loc['Total', :] = mapping_table_unique.sum()
+        return mapping_table, mapping_table_unique
 
     def _process_annotations_table(self):
         """Extract relevant information from annotations table."""
@@ -162,7 +227,7 @@ class GroundingEvaluator(object):
         Uses set of equivalences in self.equiv_map as well as those
         available in indra's hgnc, uniprot, and chebi clients.
         """
-        output = set(id_)
+        output = set([id_])
         db, value = id_.split(':', maxsplit=1)
         if id_ in self.equivalences:
             output.update(self.equivalences[id_])
@@ -178,3 +243,5 @@ class GroundingEvaluator(object):
             if chebi_id is not None:
                 output.add(f'CHEBI:CHEBI:{chebi_id}')
         return output
+
+
