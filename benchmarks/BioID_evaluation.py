@@ -638,9 +638,9 @@ if __name__ == '__main__':
     Table 5:
     Comparison of results with and without context based disambiguation."""
     table5 = make_table_printable(disamb_table)
-    output = '\n'.join([caption1, table1, caption2, table2,
-                        caption3, table3, caption4, table4,
-                        caption5, table5])
+    output = '\n\n'.join([caption1, table1, caption2, table2,
+                          caption3, table3, caption4, table4,
+                          caption5, table5])
     time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
     outname = f'benchmark_{time}'
     with open(os.path.join(results_path, outname), 'w') as f:
