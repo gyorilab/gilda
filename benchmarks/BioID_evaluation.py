@@ -445,13 +445,10 @@ class GroundingEvaluator(object):
             apply(lambda row: exists_correct_loose(row, False), axis=1)
         df['Has Grounding'] = df.groundings.apply(lambda x: len(x) > 0)
 
-    def get_results_table(self, match='loose', with_context=True,
-                          entries='precision_recall'):
+    def get_results_table(self, match='loose', with_context=True):
         if match not in ['strict', 'w_fplex', 'loose']:
             raise ValueError("match must be one of 'strict', 'w_famplex', or"
                              " 'loose'.")
-        if entries not in ['precision_recall', 'counts']:
-            raise("entries must be one of 'precision_recall' or 'counts'")
         df = self.processed_data
         if 'top_correct' not in df.columns:
             raise RuntimeError('Gilda groundings have not been computed')
@@ -480,4 +477,22 @@ class GroundingEvaluator(object):
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
                             'Has Grounding', 'Total']
         results_table.columns = new_column_names
-        return results_table
+
+        precision_recall = pd.DataFrame(index=stats.index,
+                                        columns=['Entity Type',
+                                                 'Precision',
+                                                 'Exists Correct PR',
+                                                 'Recall',
+                                                 'Exists Correct RC'])
+        precision_recall.loc[:, 'Entity Type'] = results_table['Entity Type']
+        precision_recall.loc[:, 'Precision'] = \
+            round(results_table['Correct'] /
+                  results_table['Has Grounding'], 3)
+        precision_recall.loc[:, 'Exists Correct PR'] = \
+            round(results_table['Exists Correct'] /
+                  results_table['Has Grounding'], 3)
+        precision_recall.loc[:, 'Recall'] = round(results_table['Correct'] /
+                                                  results_table['Total'], 3)
+        precision_recall.loc[:, 'Exists Correct RC'] = \
+            round(results_table['Exists Correct'] / results_table['Total'], 3)
+        return results_table, precision_recall
