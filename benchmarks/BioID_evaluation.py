@@ -44,7 +44,8 @@ class BioIDBenchmarker(object):
         such strings such that if y = isa_relations[x] then x isa y holds.
         Users have the option of considering a Gilda grounding x to match a
         gold standard grounding y if x isa y or y isa x. Default: None
-    godag : Optional[py:class:`networkx.
+    godag : Optional[py:class:`networkx.MultiDiGraph`]
+        Networkx graph of go network taken from file go.obo
     """
     def __init__(self, bioid_data_path, grounder=None,
                  equivalences=None, isa_relations=None, godag=None):
@@ -466,12 +467,11 @@ class BioIDBenchmarker(object):
                      'exists_correct', 'top_correct_w_fplx',
                      'top_correct_w_fplx_no_context', 'exists_correct_w_fplx',
                      'top_correct_loose', 'top_correct_loose_no_context',
-                     'exists_correct_loose', 'Has Grounding']]
+                     'exists_correct_loose', 'Has Grounding']].copy()
         res_df.loc[:, 'Total'] = True
         total = res_df.drop('entity_type', axis=1).sum()
         total = total.to_frame().transpose()
         total.loc[:, 'entity_type'] = 'Total'
-
         stats = res_df.groupby('entity_type', as_index=False).sum()
         stats = stats[stats['entity_type'] != 'unknown']
         stats = stats.append(total, ignore_index=True)
@@ -487,7 +487,6 @@ class BioIDBenchmarker(object):
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
                             'Has Grounding', 'Total']
         results_table.columns = new_column_names
-
         precision_recall = pd.DataFrame(index=stats.index,
                                         columns=['Entity Type',
                                                  'Precision',
@@ -505,7 +504,13 @@ class BioIDBenchmarker(object):
                                                   results_table['Total'], 3)
         precision_recall.loc[:, 'Exists Correct RC'] = \
             round(results_table['Exists Correct'] / results_table['Total'], 3)
-        return results_table, precision_recall
+        cols = ['entity_type', 'top_correct_loose_no_context',
+                'top_correct_loose', 'exists_correct', 'Total']
+        new_column_names = ['Entity Type', 'Correct', 'Correct (disamb)',
+                            'Exists Correct', 'Total']
+        disamb_table = stats[cols]
+        disamb_table.columns = new_column_names
+        return results_table, precision_recall, disamb_table
 
 
 def make_table_printable(df):
@@ -522,6 +527,13 @@ def make_table_printable(df):
 
 
 if __name__ == '__main__':
+    """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
+
+    It has two optional arguments, --datapath and --resultspath that specify
+    the path to the directory with necessary data and the path to the
+    directory where results will be stored. Results files will be added to
+    the results directory in timestamped files.
+    """
     path = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='Benchmark gilda on BioID'
                                      ' corpus.')
@@ -545,52 +557,56 @@ if __name__ == '__main__':
     except FileNotFoundError:
         isa_relations = {}
     godag = read_obo('data/go.obo')
-    benchmarker = BioIDBenchmarker('data/BioIDtraining_2',
+    benchmarker = BioIDBenchmarker(os.path.join(data_path, 'BioIDtraining_2'),
                                    equivalences=equivalences,
                                    isa_relations=isa_relations,
                                    godag=godag)
     benchmarker.ground_entities_with_gilda()
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
-    counts, precision_recall = benchmarker.get_results_tables()
+    counts, precision_recall, disamb_table = benchmarker.get_results_tables()
     try:
         _ = precision_recall.to_markdown()
     except ImportError:
-        print("Install tabulate with 'pip install tabulate' to pretty print"
+        print("Install tabulate with `pip install tabulate` to pretty print"
               " table output.")
     print(make_table_printable(precision_recall))
-
     # Generate output document
-    caption1 = """Table 1:
+    caption1 = """
+    Table 1:
     Mapping of groundings for entities in BioID corpus into namespaces used by
     Gilda. Count is by entries in corpus with groundings being counted multiple
-    times if the occur in more than one entry.
-    """
+    times if they occur in more than one entry."""
     table1 = make_table_printable(mappings_table)
-    caption2 = """Table 2:
+    caption2 = """
+    Table 2:
     Mapping of groundings for entities in BioID corpus into Namespaces used by
-    Gilda. Each grounding is only counted once regardless of how many entries
-    in which it appears.
-    """
-    table2 = make_table_printable(mappings_table)
-    caption3 = """Table 3:
+    Gilda. Count is by unique groundings, with the same grounding only being
+    counted once even if it appears in many entries."""
+    table2 = make_table_printable(mappings_table_unique)
+    caption3 = """
+    Table 3:
     Counts of number of entries in corpus for each entity type, along with
     number of entries where Gilda's top grounding is correct, the number
     where one of Gilda's groundings is correct, and the number of entries
-    where Gilda produced some grounding. Contextual disambiguation is
+    where Gilda produced some grounding. Context based disambiguation is
     applied and Gilda's groundings are considered correct if there is
     an isa relation between the goldstandard grounding and Gilda's or
-    vice versa.
-    """
+    vice versa."""
     table3 = make_table_printable(counts)
-    caption4 = """Table 4:
+    caption4 = """
+    Table 4:
     Precision and recall values for Gilda performance by entity type. Values
     are given both for the case where Gilda is considered correct only if the
     top grounding matches and the case where Gilda is considered correct if
-    any of its groundings match.
-    """
+    any of its groundings match."""
     table4 = make_table_printable(precision_recall)
-    output = '\n'.join([caption1, table1, '\n', caption2, table2, '\n',
-                        caption3, table3, '\n', caption4, table4])
+    caption5 = """
+    Table 5:
+    Comparison of results with and without context based disambiguation."""
+    table5 = make_table_printable(disamb_table)
+    output = '\n'.join([caption1, table1, caption2, table2,
+                        caption3, table3, caption4, table4,
+                        caption5, table5])
     time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
     outname = f'benchmark_{time}'
     with open(os.path.join(results_path, outname), 'w') as f:
