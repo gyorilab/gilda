@@ -1,7 +1,9 @@
 import os
+import json
 import pandas as pd
 import networkx as nx
 import lxml.etree as etree
+from obonet import read_obo
 from collections import defaultdict
 
 from indra.databases.mesh_client import mesh_isa
@@ -14,7 +16,7 @@ from gilda.grounder import logger, Grounder
 logger.setLevel('WARNING')
 
 
-class GroundingEvaluator(object):
+class BioIDBenchmarker(object):
     """Used for evaluating gilda using data from BioCreative VI BioID track
 
     Parameters
@@ -61,7 +63,7 @@ class GroundingEvaluator(object):
         self.processed_data = self._process_annotations_table()
         self.godag = godag
 
-    def get_table_of_mappings(self):
+    def get_mappings_tables(self):
         """Get table showing how goldstandard groundings are being mapped
 
         Namespaces used in the Bioc dataset may only partially overlap with
@@ -221,8 +223,12 @@ class GroundingEvaluator(object):
                                         != 'unknown']
         return processed_data
 
-    def apply_gilda(self):
-        # Find gilda groundings for entity text with and without context
+    def ground_entities_with_gilda(self):
+        """Compute gilda groundings of entity texts in corpus
+
+        Adds two columns to the internal dataframe for groundings with
+        and without context based disambiguation.
+        """
         df = self.processed_data
         df['groundings_no_context'] = df.text.\
             apply(lambda x: self._get_grounding_list(x))
@@ -496,3 +502,19 @@ class GroundingEvaluator(object):
         precision_recall.loc[:, 'Exists Correct RC'] = \
             round(results_table['Exists Correct'] / results_table['Total'], 3)
         return results_table, precision_recall
+
+
+if __name__ == '__main__':
+    with open('data/equivalences.json') as f:
+        equivalences = json.load(f)
+    with open('data/isa_relations.json') as f:
+        isa_relations = json.load(f)
+    godag = read_obo('data/go.obo')
+    benchmarker = BioIDBenchmarker('data/BioIDtraining_2',
+                                   equivalences=equivalences,
+                                   isa_relations=isa_relations,
+                                   godag=godag)
+    benchmarker.ground_entities_with_gilda()
+    mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
+    counts, precision_recall = benchmarker.get_results_tables()
+    print(precision_recall.to_markdown())
