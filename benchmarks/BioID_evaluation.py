@@ -61,7 +61,7 @@ class GroundingEvaluator(object):
         self.processed_data = self._process_annotations_table()
         self.godag = godag
 
-    def get_table_of_applied_mappings(self):
+    def get_table_of_mappings(self):
         """Get table showing how goldstandard groundings are being mapped
 
         Namespaces used in the Bioc dataset may only partially overlap with
@@ -445,7 +445,7 @@ class GroundingEvaluator(object):
             apply(lambda row: exists_correct_loose(row, False), axis=1)
         df['Has Grounding'] = df.groundings.apply(lambda x: len(x) > 0)
 
-    def get_results_table(self, match='loose', with_context=True):
+    def get_results_tables(self, match='loose', with_context=True):
         if match not in ['strict', 'w_fplex', 'loose']:
             raise ValueError("match must be one of 'strict', 'w_famplex', or"
                              " 'loose'.")
