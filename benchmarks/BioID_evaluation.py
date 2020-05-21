@@ -613,7 +613,9 @@ if __name__ == '__main__':
     Table 1:
     Mapping of groundings for entities in BioID corpus into namespaces used by
     Gilda. Count is by entries in corpus with groundings being counted multiple
-    times if they occur in more than one entry."""
+    times if they occur in more than one entry. Some entries contain multiple
+    equivalent curated groundings, leading to a discrepancy between the counts
+    shown here and those in the other tables."""
     table1 = make_table_printable(mappings_table)
     caption2 = """
     Table 2:
