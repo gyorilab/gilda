@@ -1,9 +1,11 @@
 import os
 import json
+import argparse
 import pandas as pd
 import networkx as nx
 import lxml.etree as etree
 from obonet import read_obo
+from datetime import datetime
 from collections import defaultdict
 
 from indra.databases.mesh_client import mesh_isa
@@ -42,6 +44,7 @@ class BioIDBenchmarker(object):
         such strings such that if y = isa_relations[x] then x isa y holds.
         Users have the option of considering a Gilda grounding x to match a
         gold standard grounding y if x isa y or y isa x. Default: None
+    godag : Optional[py:class:`networkx.
     """
     def __init__(self, bioid_data_path, grounder=None,
                  equivalences=None, isa_relations=None, godag=None):
@@ -194,6 +197,10 @@ class BioIDBenchmarker(object):
         # Generate total rows
         mapping_table.loc['Total', :] = mapping_table.sum()
         mapping_table_unique.loc['Total', :] = mapping_table_unique.sum()
+        mapping_table.reset_index(inplace=True)
+        mapping_table.rename({'index': 'Namespace'}, inplace=True)
+        mapping_table_unique.reset_index(inplace=True)
+        mapping_table_unique.rename({'index': 'Namespace'}, inplace=True)
         return mapping_table, mapping_table_unique
 
     def _process_annotations_table(self):
@@ -208,10 +215,10 @@ class BioIDBenchmarker(object):
         df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: [self._normalize_id(y) for y in x])
         # Add synonyms of gold standard groundings to help match more things
-        df['obj_synonyms'] = df['obj'].\
+        df.loc[:, 'obj_synonyms'] = df['obj'].\
             apply(lambda x: self.get_synonym_set(x))
         # Create column for entity type
-        df['entity_type'] = df.\
+        df.loc[:, 'entity_type'] = df.\
             apply(lambda row: self._get_entity_type(row.obj)
                   if self._get_entity_type(row.obj) != 'Gene' else
                   'Human Gene' if any([y.startswith('HGNC') for y in
@@ -230,9 +237,9 @@ class BioIDBenchmarker(object):
         and without context based disambiguation.
         """
         df = self.processed_data
-        df['groundings_no_context'] = df.text.\
+        df.loc[:, 'groundings_no_context'] = df.text.\
             apply(lambda x: self._get_grounding_list(x))
-        df['groundings'] = df.\
+        df.loc[:, 'groundings'] = df.\
             apply(lambda row:
                   self._get_grounding_list(
                       row.text,
@@ -431,25 +438,22 @@ class BioIDBenchmarker(object):
                         for y in groundings])
 
         df = self.processed_data
-        df['top_correct'] = df.apply(top_correct, axis=1)
-        df['top_correct_w_fplx'] = df.apply(top_correct_w_fplx, axis=1)
-        df['top_correct_loose'] = df.apply(top_correct_loose, axis=1)
-        df['exists_correct'] = df.apply(exists_correct, axis=1)
-        df['exists_correct_w_fplx'] = df.apply(exists_correct_w_fplx, axis=1)
-        df['exists_correct_loose'] = df.apply(exists_correct_loose, axis=1)
-        df['top_correct_no_context'] = df.\
+        df.loc[:, 'top_correct'] = df.apply(top_correct, axis=1)
+        df.loc[:, 'top_correct_w_fplx'] = df.apply(top_correct_w_fplx, axis=1)
+        df.loc[:, 'top_correct_loose'] = df.apply(top_correct_loose, axis=1)
+        df.loc[:, 'exists_correct'] = df.apply(exists_correct, axis=1)
+        df.loc[:, 'exists_correct_w_fplx'] = df.\
+            apply(exists_correct_w_fplx, axis=1)
+        df.loc[:, 'exists_correct_loose'] = df.\
+            apply(exists_correct_loose, axis=1)
+        df.loc[:, 'top_correct_no_context'] = df.\
             apply(lambda row: top_correct(row, False), axis=1)
-        df['top_correct_w_fplx_no_context'] = df.\
+        df.loc[:, 'top_correct_w_fplx_no_context'] = df.\
             apply(lambda row: top_correct_w_fplx(row, False), axis=1)
-        df['top_correct_loose_no_context'] = df.\
+        df.loc[:, 'top_correct_loose_no_context'] = df.\
             apply(lambda row: top_correct_loose(row, False), axis=1)
-        df['exists_correct_no_context'] = df.\
-            apply(lambda row: exists_correct(row, False), axis=1)
-        df['exists_correct_w_fplx_no_context'] = df.\
-            apply(lambda row: exists_correct_w_fplx(row, False), axis=1)
-        df['exists_correct_loose_no_context'] = df.\
-            apply(lambda row: exists_correct_loose(row, False), axis=1)
-        df['Has Grounding'] = df.groundings.apply(lambda x: len(x) > 0)
+        df.loc[:, 'Has Grounding'] = df.groundings.\
+            apply(lambda x: len(x) > 0)
 
     def get_results_tables(self, match='loose', with_context=True):
         if match not in ['strict', 'w_fplex', 'loose']:
@@ -466,7 +470,7 @@ class BioIDBenchmarker(object):
         res_df.loc[:, 'Total'] = True
         total = res_df.drop('entity_type', axis=1).sum()
         total = total.to_frame().transpose()
-        total['entity_type'] = 'Total'
+        total.loc[:, 'entity_type'] = 'Total'
 
         stats = res_df.groupby('entity_type', as_index=False).sum()
         stats = stats[stats['entity_type'] != 'unknown']
@@ -504,11 +508,42 @@ class BioIDBenchmarker(object):
         return results_table, precision_recall
 
 
+def make_table_printable(df):
+    """Return table in printable format
+
+    Output to markdown if tabulate is installed, otherwise just convert
+    to string.
+    """
+    try:
+        output = df.to_markdown(showindex=False)
+    except ImportError:
+        output = df.to_string(index=False)
+    return output
+
+
 if __name__ == '__main__':
-    with open('data/equivalences.json') as f:
-        equivalences = json.load(f)
-    with open('data/isa_relations.json') as f:
-        isa_relations = json.load(f)
+    path = os.path.dirname(os.path.abspath(__file__))
+    parser = argparse.ArgumentParser(description='Benchmark gilda on BioID'
+                                     ' corpus.')
+    parser.add_argument('--datapath', type=str,
+                        default=os.path.join(path, 'data'))
+    parser.add_argument('--resultspath', type=str,
+                        default=os.path.join(path, 'results'))
+    args = parser.parse_args()
+    data_path = args.datapath
+    data_path = os.path.expandvars(os.path.expanduser(data_path))
+    results_path = args.resultspath
+    results_path = os.path.expandvars(os.path.expanduser(results_path))
+    try:
+        with open(os.path.join(data_path, 'equivalences.json')) as f:
+            equivalences = json.load(f)
+    except FileNotFoundError:
+        equivalences = {}
+    try:
+        with open(os.path.join(data_path, 'isa_relations.json')) as f:
+            isa_relations = json.load(f)
+    except FileNotFoundError:
+        isa_relations = {}
     godag = read_obo('data/go.obo')
     benchmarker = BioIDBenchmarker('data/BioIDtraining_2',
                                    equivalences=equivalences,
@@ -517,4 +552,46 @@ if __name__ == '__main__':
     benchmarker.ground_entities_with_gilda()
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
     counts, precision_recall = benchmarker.get_results_tables()
-    print(precision_recall.to_markdown())
+    try:
+        _ = precision_recall.to_markdown()
+    except ImportError:
+        print("Install tabulate with 'pip install tabulate' to pretty print"
+              " table output.")
+    print(make_table_printable(precision_recall))
+
+    # Generate output document
+    caption1 = """Table 1:
+    Mapping of groundings for entities in BioID corpus into namespaces used by
+    Gilda. Count is by entries in corpus with groundings being counted multiple
+    times if the occur in more than one entry.
+    """
+    table1 = make_table_printable(mappings_table)
+    caption2 = """Table 2:
+    Mapping of groundings for entities in BioID corpus into Namespaces used by
+    Gilda. Each grounding is only counted once regardless of how many entries
+    in which it appears.
+    """
+    table2 = make_table_printable(mappings_table)
+    caption3 = """Table 3:
+    Counts of number of entries in corpus for each entity type, along with
+    number of entries where Gilda's top grounding is correct, the number
+    where one of Gilda's groundings is correct, and the number of entries
+    where Gilda produced some grounding. Contextual disambiguation is
+    applied and Gilda's groundings are considered correct if there is
+    an isa relation between the goldstandard grounding and Gilda's or
+    vice versa.
+    """
+    table3 = make_table_printable(counts)
+    caption4 = """Table 4:
+    Precision and recall values for Gilda performance by entity type. Values
+    are given both for the case where Gilda is considered correct only if the
+    top grounding matches and the case where Gilda is considered correct if
+    any of its groundings match.
+    """
+    table4 = make_table_printable(precision_recall)
+    output = '\n'.join([caption1, table1, '\n', caption2, table2, '\n',
+                        caption3, table3, '\n', caption4, table4])
+    time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
+    outname = f'benchmark_{time}'
+    with open(os.path.join(results_path, outname), 'w') as f:
+        f.write(output)
