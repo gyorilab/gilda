@@ -281,6 +281,8 @@ class BioIDBenchmarker(object):
         return id_
 
     def _get_entity_type(self, bioc_groundings):
+        """Get entity type based on entity groundings of text in corpus.
+        """
         if any([x.startswith('NCBI gene')
                 or x.startswith('UP') for x in bioc_groundings]):
             result = 'Gene'
@@ -303,6 +305,7 @@ class BioIDBenchmarker(object):
         return result
 
     def _get_grounding_list(self, text, context=None):
+        """Run gilda on a text and extract list of result-score tuples."""
         groundings = self.grounder.ground(text, context=context)
         result = []
         for grounding in groundings:
@@ -362,6 +365,12 @@ class BioIDBenchmarker(object):
             fplx_id in self.isa_relations[hgnc_id]
 
     def isa(self, id1, id2):
+        """True if id1 satisfies isa relationship with id2
+
+        Is aware of MESH, GO, and any isa relationships provided in
+        isa_relations dict. At this time only looks at parents and children
+        in isa_relations dict, does not follow paths.
+        """
         if id1.startswith('MESH') and id2.startswith('MESH'):
             return mesh_isa(id1, id2)
         elif id1.startswith('GO') and id2.startswith('GO'):
@@ -375,7 +384,10 @@ class BioIDBenchmarker(object):
             return id1 in self.isa_relations and id2 in self.isa_relations[id1]
 
     def _evaluate_gilda_performance(self):
+        """Calculate statistics showing Gilda's performance on corpus
 
+        Directly updates internal dataframe
+        """
         def top_correct(row, disamb=True):
             groundings = row.groundings if disamb \
                 else row.groundings_no_context
@@ -457,6 +469,28 @@ class BioIDBenchmarker(object):
             apply(lambda x: len(x) > 0)
 
     def get_results_tables(self, match='loose', with_context=True):
+        """Get tables of results
+
+        Parameters
+        ----------
+        match : Optional[str]
+            One of 'strict', 'w_fplex', or 'loose'. 'strict' only counts
+            a Gilda grounding as a match if it is an exact match or equivalent
+            to at least one of the curated groundings for the entry
+            (some entries have multiple equivalent curated groundings).
+            'w_fplex' also counts a Gilda grounding as a match if the curated
+            grounding has an HGNC equivalent and satisfies and isa relationship
+            with the Gilda grounding. 'loose' counts the pair x, y of a curated
+            grounding and a Gilda groundings as a match if x isa y or y isa x
+            within the FPLX, MESH, and GO ontologies, or within the dictionary
+            of isa_relations.
+
+        Returns
+        -------
+        counts_table : py:class:`pandas.DataFrame`
+        precision_recall : py:class:`pandas.DataFrame`
+        disamb_table : py:class:`pandas.DataFrame`
+        """
         if match not in ['strict', 'w_fplex', 'loose']:
             raise ValueError("match must be one of 'strict', 'w_famplex', or"
                              " 'loose'.")
@@ -483,34 +517,34 @@ class BioIDBenchmarker(object):
         if not with_context:
             score_cols[0] = score_cols[0] + ['_no_context']
         cols = ['entity_type'] + score_cols + ['Has Grounding', 'Total']
-        results_table = stats[cols]
+        counts_table = stats[cols]
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
                             'Has Grounding', 'Total']
-        results_table.columns = new_column_names
+        counts_table.columns = new_column_names
         precision_recall = pd.DataFrame(index=stats.index,
                                         columns=['Entity Type',
                                                  'Precision',
                                                  'Exists Correct PR',
                                                  'Recall',
                                                  'Exists Correct RC'])
-        precision_recall.loc[:, 'Entity Type'] = results_table['Entity Type']
+        precision_recall.loc[:, 'Entity Type'] = counts_table['Entity Type']
         precision_recall.loc[:, 'Precision'] = \
-            round(results_table['Correct'] /
-                  results_table['Has Grounding'], 3)
+            round(counts_table['Correct'] /
+                  counts_table['Has Grounding'], 3)
         precision_recall.loc[:, 'Exists Correct PR'] = \
-            round(results_table['Exists Correct'] /
-                  results_table['Has Grounding'], 3)
-        precision_recall.loc[:, 'Recall'] = round(results_table['Correct'] /
-                                                  results_table['Total'], 3)
+            round(counts_table['Exists Correct'] /
+                  counts_table['Has Grounding'], 3)
+        precision_recall.loc[:, 'Recall'] = round(counts_table['Correct'] /
+                                                  counts_table['Total'], 3)
         precision_recall.loc[:, 'Exists Correct RC'] = \
-            round(results_table['Exists Correct'] / results_table['Total'], 3)
+            round(counts_table['Exists Correct'] / counts_table['Total'], 3)
         cols = ['entity_type', 'top_correct_loose_no_context',
                 'top_correct_loose', 'exists_correct', 'Total']
         new_column_names = ['Entity Type', 'Correct', 'Correct (disamb)',
                             'Exists Correct', 'Total']
         disamb_table = stats[cols]
         disamb_table.columns = new_column_names
-        return results_table, precision_recall, disamb_table
+        return counts_table, precision_recall, disamb_table
 
 
 def make_table_printable(df):
