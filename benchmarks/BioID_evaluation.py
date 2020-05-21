@@ -594,7 +594,7 @@ if __name__ == '__main__':
             isa_relations = json.load(f)
     except FileNotFoundError:
         isa_relations = {}
-    godag = read_obo('data/go.obo')
+    godag = read_obo(os.path.join(data_path, 'go.obo'))
     benchmarker = BioIDBenchmarker(os.path.join(data_path, 'BioIDtraining_2'),
                                    equivalences=equivalences,
                                    isa_relations=isa_relations,
