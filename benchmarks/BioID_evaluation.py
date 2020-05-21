@@ -1,11 +1,10 @@
-import pandas as pd
-
 import os
+import pandas as pd
+import networkx as nx
 import lxml.etree as etree
-from functools import lru_cache
 from collections import defaultdict
 
-
+from indra.databases.mesh_client import mesh_isa
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
@@ -43,20 +42,24 @@ class GroundingEvaluator(object):
         gold standard grounding y if x isa y or y isa x. Default: None
     """
     def __init__(self, bioid_data_path, grounder=None,
-                 equivalences=None, isa_relations=None):
+                 equivalences=None, isa_relations=None, godag=None):
         if grounder is None:
             grounder = Grounder()
         if equivalences is None:
             equivalences = {}
+        if isa_relations is None:
+            isa_relations = {}
         available_namespaces = set()
         for terms in grounder.entries.values():
             for term in terms:
                 available_namespaces.add(term.db)
         self.grounder = grounder
         self.equivalences = equivalences
+        self.isa_relations = isa_relations
         self.available_namespaces = list(available_namespaces)
         self.bioid_data_path = bioid_data_path
         self.processed_data = self._process_annotations_table()
+        self.godag = godag
 
     def get_table_of_applied_mappings(self):
         """Get table showing how goldstandard groundings are being mapped
@@ -92,8 +95,8 @@ class GroundingEvaluator(object):
         # Namespaces used in Bioc dataset after standardization
         bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
                          'CL', 'CVCL', 'UBERON', 'NCBI taxon']
-        # Mapping of namespaces to row and column names. Namespaces not included
-        # will be used as row and column names unmodifed.
+        # Mapping of namespaces to row and column names. Namespaces not
+        # included will be used as row and column names unmodifed.
         nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
                                 'PubChem': 'PubChem', 'CL': 'Cell Ontology',
                                 'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
@@ -199,27 +202,36 @@ class GroundingEvaluator(object):
         # Split entries with multiple groundings
         df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: x.split('|'))
-        # Create column for entity type
-        df['entity_type'] = df['obj'].\
-            apply(lambda x: self._get_entity_type(x))
         # Normalize ids
         df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: [self._normalize_id(y) for y in x])
         # Add synonyms of gold standard groundings to help match more things
         df['obj_synonyms'] = df['obj'].\
             apply(lambda x: self.get_synonym_set(x))
+        # Create column for entity type
+        df['entity_type'] = df.\
+            apply(lambda row: self._get_entity_type(row.obj)
+                  if self._get_entity_type(row.obj) != 'Gene' else
+                  'Human Gene' if any([y.startswith('HGNC') for y in
+                                       row.obj_synonyms]) else
+                  'Nonhuman Gene', axis=1)
+        processed_data = df[['text', 'obj', 'obj_synonyms', 'entity_type',
+                             'don_article']]
+        processed_data = processed_data[processed_data.entity_type
+                                        != 'unknown']
+        return processed_data
+
+    def apply_gilda(self):
         # Find gilda groundings for entity text with and without context
-        df['gilda_groundings_no_context'] = df.text.\
+        df = self.processed_data
+        df['groundings_no_context'] = df.text.\
             apply(lambda x: self._get_grounding_list(x))
-        df['gilda_groundings'] = df.\
+        df['groundings'] = df.\
             apply(lambda row:
                   self._get_grounding_list(
                       row.text,
                       context=self._get_plaintext(row.don_article)), axis=1)
-        processed_data = df[['text', 'obj', 'obj_synonyms', 'entity_type',
-                             'don_article', 'gilda_groundings_no_context',
-                             'gilda_groundings']]
-        return processed_data
+        self._evaluate_gilda_performance()
 
     def _get_plaintext(self, don_article):
         """Get plaintext content from XML file in BioID corpus
@@ -256,7 +268,7 @@ class GroundingEvaluator(object):
 
     def _get_entity_type(self, bioc_groundings):
         if any([x.startswith('NCBI gene')
-                or x.startswith('Uniprot') for x in bioc_groundings]):
+                or x.startswith('UP') for x in bioc_groundings]):
             result = 'Gene'
         elif any([x.startswith('Rfam') for x in bioc_groundings]):
             result = 'miRNA'
@@ -268,7 +280,7 @@ class GroundingEvaluator(object):
         elif any([x.startswith('CVCL') or x.startswith('CL')
                   for x in bioc_groundings]):
             result = 'Cell types/Cell lines'
-        elif any([x.startswith('Uberon') for x in bioc_groundings]):
+        elif any([x.startswith('UBERON') for x in bioc_groundings]):
             result = 'Tissue/Organ'
         elif any([x.startswith('NCBI taxon') for x in bioc_groundings]):
             result = 'Taxon'
@@ -315,4 +327,157 @@ class GroundingEvaluator(object):
                 output.add(f'CHEBI:CHEBI:{chebi_id}')
         return output
 
+    def famplex_isa(self, hgnc_id, fplx_id):
+        """Check if hgnc entity satisfies and isa relation with famplex entity
 
+        Parameters
+        ----------
+        hgnc_id : str
+            String of the form f'{namespace}:{id}'
+        fplx_id : str
+            String of the form f'{namespace}:{id}'
+
+        Returns
+        -------
+        bool
+            True if hgnc_id corresponds to a valid HGNC grounding,
+            fplx_id corresponds to a valid Famplex grounding and the
+            former isa the later.
+        """
+        return hgnc_id in self.isa_relations and \
+            fplx_id in self.isa_relations[hgnc_id]
+
+    def isa(self, id1, id2):
+        if id1.startswith('MESH') and id2.startswith('MESH'):
+            return mesh_isa(id1, id2)
+        elif id1.startswith('GO') and id2.startswith('GO'):
+            id1 = id1.split(':', maxsplit=1)[1]
+            id2 = id2.split(':', maxsplit=1)[1]
+            try:
+                return nx.has_path(self.godag, id1, id2)
+            except Exception:
+                return False
+        else:
+            return id1 in self.isa_relations and id2 in self.isa_relations[id1]
+
+    def _evaluate_gilda_performance(self):
+
+        def top_correct(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            top_grounding = groundings[0]
+            return set([top_grounding]) <= set(row.obj_synonyms)
+
+        def exists_correct(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            return len(set(groundings) & set(row.obj_synonyms)) > 0
+
+        def top_correct_w_fplx(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            top_grounding = groundings[0]
+            return any([x == top_grounding or
+                        self.famplex_isa(x, top_correct)
+                        for x in row.obj_synonyms])
+
+        def exists_correct_w_fplx(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            return any([x == y or self.famplex_isa(x, y)
+                        for x in row.obj_synonyms
+                        for y in groundings])
+
+        def top_correct_loose(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            top_grounding = groundings[0]
+            return any([x == top_grounding or
+                        self.isa(x, top_grounding) or
+                        self.isa(top_grounding, x)
+                        for x in row.obj_synonyms])
+
+        def exists_correct_loose(row, disamb=True):
+            groundings = row.groundings if disamb \
+                else row.groundings_no_context
+            if not groundings:
+                return False
+            groundings = [g[0] for g in groundings]
+            return any([x == y or
+                        self.isa(x, y) or
+                        self.isa(y, x)
+                        for x in row.obj_synonyms
+                        for y in groundings])
+
+        df = self.processed_data
+        df['top_correct'] = df.apply(top_correct, axis=1)
+        df['top_correct_w_fplx'] = df.apply(top_correct_w_fplx, axis=1)
+        df['top_correct_loose'] = df.apply(top_correct_loose, axis=1)
+        df['exists_correct'] = df.apply(exists_correct, axis=1)
+        df['exists_correct_w_fplx'] = df.apply(exists_correct_w_fplx, axis=1)
+        df['exists_correct_loose'] = df.apply(exists_correct_loose, axis=1)
+        df['top_correct_no_context'] = df.\
+            apply(lambda row: top_correct(row, False), axis=1)
+        df['top_correct_w_fplx_no_context'] = df.\
+            apply(lambda row: top_correct_w_fplx(row, False), axis=1)
+        df['top_correct_loose_no_context'] = df.\
+            apply(lambda row: top_correct_loose(row, False), axis=1)
+        df['exists_correct_no_context'] = df.\
+            apply(lambda row: exists_correct(row, False), axis=1)
+        df['exists_correct_w_fplx_no_context'] = df.\
+            apply(lambda row: exists_correct_w_fplx(row, False), axis=1)
+        df['exists_correct_loose_no_context'] = df.\
+            apply(lambda row: exists_correct_loose(row, False), axis=1)
+        df['Has Grounding'] = df.groundings.apply(lambda x: len(x) > 0)
+
+    def get_results_table(self, match='loose', with_context=True,
+                          entries='precision_recall'):
+        if match not in ['strict', 'w_fplex', 'loose']:
+            raise ValueError("match must be one of 'strict', 'w_famplex', or"
+                             " 'loose'.")
+        if entries not in ['precision_recall', 'counts']:
+            raise("entries must be one of 'precision_recall' or 'counts'")
+        df = self.processed_data
+        if 'top_correct' not in df.columns:
+            raise RuntimeError('Gilda groundings have not been computed')
+        res_df = df[['entity_type', 'top_correct', 'top_correct_no_context',
+                     'exists_correct', 'top_correct_w_fplx',
+                     'top_correct_w_fplx_no_context', 'exists_correct_w_fplx',
+                     'top_correct_loose', 'top_correct_loose_no_context',
+                     'exists_correct_loose', 'Has Grounding']]
+        res_df.loc[:, 'Total'] = True
+        total = res_df.drop('entity_type', axis=1).sum()
+        total = total.to_frame().transpose()
+        total['entity_type'] = 'Total'
+
+        stats = res_df.groupby('entity_type', as_index=False).sum()
+        stats = stats[stats['entity_type'] != 'unknown']
+        stats = stats.append(total, ignore_index=True)
+        stats.loc[:, stats.columns[1:]] = stats[stats.columns[1:]].astype(int)
+        if match == 'strict':
+            score_cols = ['top_correct', 'exists_correct']
+        else:
+            score_cols = [f'top_correct_{match}', f'exists_correct_{match}']
+        if not with_context:
+            score_cols[0] = score_cols[0] + ['_no_context']
+        cols = ['entity_type'] + score_cols + ['Has Grounding', 'Total']
+        results_table = stats[cols]
+        new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
+                            'Has Grounding', 'Total']
+        results_table.columns = new_column_names
+        return results_table
