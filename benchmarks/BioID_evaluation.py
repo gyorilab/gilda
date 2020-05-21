@@ -565,8 +565,12 @@ if __name__ == '__main__':
 
     It has two optional arguments, --datapath and --resultspath that specify
     the path to the directory with necessary data and the path to the
-    directory where results will be stored. Results files will be added to
-    the results directory in timestamped files.
+    directory where results will be stored. The directory at datapath must
+    contain a folder BIoIDtraining_2 containing the BIoID training corpus,
+    and can optionally contain files equivalences.json and isa_relations.json
+    serializing dictionaries of equivalence and isa relations between
+    groundings. Results files will be added to the results directory in
+    timestamped files.
     """
     path = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='Benchmark gilda on BioID'
