@@ -3,6 +3,7 @@ import json
 import argparse
 import pandas as pd
 import networkx as nx
+from tqdm import tqdm
 import lxml.etree as etree
 from obonet import read_obo
 from datetime import datetime
@@ -16,6 +17,9 @@ from indra.databases.chebi_client import get_chebi_id_from_pubchem
 from gilda.grounder import logger, Grounder
 
 logger.setLevel('WARNING')
+
+
+tqdm.pandas()
 
 
 class BioIDBenchmarker(object):
@@ -49,6 +53,7 @@ class BioIDBenchmarker(object):
     """
     def __init__(self, bioid_data_path, grounder=None,
                  equivalences=None, isa_relations=None, godag=None):
+        print("Instantiating benchmarker...")
         if grounder is None:
             grounder = Grounder()
         if equivalences is None:
@@ -206,6 +211,7 @@ class BioIDBenchmarker(object):
 
     def _process_annotations_table(self):
         """Extract relevant information from annotations table."""
+        print("Extracting information from annotations table...")
         df = pd.read_csv(os.path.join(self.bioid_data_path,
                                       'annotations.csv'),
                          sep=',', low_memory=False)
@@ -238,13 +244,16 @@ class BioIDBenchmarker(object):
         and without context based disambiguation.
         """
         df = self.processed_data
+        print("Grounding no-context corpus with Gilda...")
         df.loc[:, 'groundings_no_context'] = df.text.\
-            apply(lambda x: self._get_grounding_list(x))
+            progress_apply(lambda x: self._get_grounding_list(x))
+        print("Grounding with-context corpus with Gilda...")
         df.loc[:, 'groundings'] = df.\
-            apply(lambda row:
+            progress_apply(lambda row:
                   self._get_grounding_list(
                       row.text,
                       context=self._get_plaintext(row.don_article)), axis=1)
+        print("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
 
     def _get_plaintext(self, don_article):
@@ -449,7 +458,7 @@ class BioIDBenchmarker(object):
                         self.isa(y, x)
                         for x in row.obj_synonyms
                         for y in groundings])
-
+        print("Evaluating performance...")
         df = self.processed_data
         df.loc[:, 'top_correct'] = df.apply(top_correct, axis=1)
         df.loc[:, 'top_correct_w_fplx'] = df.apply(top_correct_w_fplx, axis=1)
@@ -467,6 +476,7 @@ class BioIDBenchmarker(object):
             apply(lambda row: top_correct_loose(row, False), axis=1)
         df.loc[:, 'Has Grounding'] = df.groundings.\
             apply(lambda x: len(x) > 0)
+        print("Finished evaluating performance...")
 
     def get_results_tables(self, match='loose', with_context=True):
         """Get tables of results
@@ -600,7 +610,9 @@ if __name__ == '__main__':
                                    isa_relations=isa_relations,
                                    godag=godag)
     benchmarker.ground_entities_with_gilda()
+    print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
+    print("Constructing results table...")
     counts, precision_recall, disamb_table = benchmarker.get_results_tables()
     try:
         _ = precision_recall.to_markdown()
