@@ -175,7 +175,10 @@ class Grounder(object):
         for match in scored_matches:
             has_adeft_grounding = False
             for grounding, score in grounding_dict.items():
-                if grounding == 'ungrounded':
+                # There is a corner case here where grounding is
+                # some name other than 'ungrounded' but is not a proper
+                # ns:id pair.
+                if grounding == 'ungrounded' or ':' not in grounding:
                     continue
                 db, id = grounding.split(':', maxsplit=1)
                 if match.term.db == db and match.term.id == id:
