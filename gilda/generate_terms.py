@@ -93,16 +93,9 @@ def generate_hgnc_terms():
 
 
 def generate_chebi_terms():
-    fname = os.path.join(indra_resources, 'chebi_entries.tsv')
-    logger.info('Loading %s' % fname)
-    terms = []
-    for row in read_csv(fname, header=True, delimiter='\t'):
-        db = 'CHEBI'
-        id = 'CHEBI:' + row['CHEBI_ID']
-        name = row['NAME']
-        term = Term(normalize(name), name, db, id, name, 'name', 'chebi')
-        terms.append(term)
-    logger.info('Loaded %d terms' % len(terms))
+    # We can get standard names directly from the OBO
+    terms = _generate_obo_terms('chebi', ignore_mappings=True,
+                                map_to_ns={})
 
     # Now we add synonyms
     # NOTE: this file is not in version control. The file is available
@@ -130,7 +123,6 @@ def generate_chebi_terms():
                         row['COMPOUND_ID'])
             continue
         db = 'CHEBI'
-        id = 'CHEBI:%s' % chebi_id
         name = str(row['NAME'])
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
@@ -143,7 +135,7 @@ def generate_chebi_terms():
         if is_aa_sequence(chebi_name) and re.match(r'(^[A-Z-]+$)', name):
             continue
 
-        term_args = (normalize(name), name, db, id, chebi_name, 'synonym',
+        term_args = (normalize(name), name, db, chebi_id, chebi_name, 'synonym',
                      'chebi')
         if term_args in added:
             continue
