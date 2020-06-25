@@ -158,33 +158,34 @@ aa_abbrevs = {aa['short_name'].capitalize() for aa in amino_acids.values()}
 
 
 def generate_mesh_terms(ignore_mappings=False):
-    # Load MeSH HGNC/FPLX mappings
-    mesh_names_file = os.path.join(indra_resources,
-                                   'mesh_id_label_mappings.tsv')
+    mesh_name_files = ['mesh_id_label_mappings.tsv',
+                       'mesh_supp_id_label_mappings.tsv']
     terms = []
-    for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
-        db_id = row[0]
-        text_name = row[1]
-        mapping = mesh_mappings.get(db_id)
-        if not ignore_mappings and mapping and mapping[0] \
-                not in {'EFO', 'HP', 'DOID'}:
-            db, db_id, name = mapping
-            status = 'synonym'
-        else:
-            db = 'MESH'
-            status = 'name'
-            name = text_name
-        term = Term(normalize(text_name), text_name, db, db_id, name,
-                    status, 'mesh')
-        terms.append(term)
-        synonyms = row[2]
-        if row[2]:
-            synonyms = synonyms.split('|')
-            for synonym in synonyms:
-                term = Term(normalize(synonym), synonym, db, db_id, name,
-                            'synonym', 'mesh')
-                terms.append(term)
-    logger.info('Loaded %d terms' % len(terms))
+    for fname in mesh_name_files:
+        mesh_names_file = os.path.join(indra_resources, fname)
+        for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
+            db_id = row[0]
+            text_name = row[1]
+            mapping = mesh_mappings.get(db_id)
+            if not ignore_mappings and mapping and mapping[0] \
+                    not in {'EFO', 'HP', 'DOID'}:
+                db, db_id, name = mapping
+                status = 'synonym'
+            else:
+                db = 'MESH'
+                status = 'name'
+                name = text_name
+            term = Term(normalize(text_name), text_name, db, db_id, name,
+                        status, 'mesh')
+            terms.append(term)
+            synonyms = row[2]
+            if row[2]:
+                synonyms = synonyms.split('|')
+                for synonym in synonyms:
+                    term = Term(normalize(synonym), synonym, db, db_id, name,
+                                'synonym', 'mesh')
+                    terms.append(term)
+        logger.info('Loaded %d terms' % len(terms))
     return terms
 
 
