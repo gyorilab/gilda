@@ -7,6 +7,7 @@ def test_api_ground():
     assert appreq(scores[0].score, 0.9845), scores
     scores = ground('ROS', 'reactive oxygen')
     assert scores[0].term.db == 'MESH'
+    assert scores[0].url == 'https://identifiers.org/mesh:D017382'
 
 
 def test_get_models():
