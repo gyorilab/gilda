@@ -63,5 +63,5 @@ def get_identifiers_url(db, id):
     id_parts = id.split(':')
     if len(id_parts) == 1:
         return url_pattern.format(db=db.lower(), id=id)
-    else:
-        return url_pattern.format(db=db.lower(), id=id_parts[-1])
+    elif len(id_parts) == 2:
+        return url_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
