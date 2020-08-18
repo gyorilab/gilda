@@ -286,6 +286,7 @@ class ScoredMatch(object):
     """
     def __init__(self, term, score, match, disambiguation=None):
         self.term = term
+        self.url = term.get_idenfiers_url()
         self.score = score
         self.match = match
         self.disambiguation = disambiguation
@@ -302,6 +303,7 @@ class ScoredMatch(object):
     def to_json(self):
         js = {
             'term': self.term.to_json(),
+            'url': self.url,
             'score': self.score,
             'match': self.match.to_json()
         }

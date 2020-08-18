@@ -51,3 +51,17 @@ class Term(object):
         """Return the term serialized into a list of strings."""
         return [self.norm_text, self.text, self.db, self.id,
                 self.entry_name, self.status, self.source]
+
+    def get_idenfiers_url(self):
+        return get_identifiers_url(self.db, self.id)
+
+
+def get_identifiers_url(db, id):
+    url_pattern = 'https://identifiers.org/{db}:{id}'
+    if db == 'UP':
+        db = 'uniprot'
+    id_parts = id.split(':')
+    if len(id_parts) == 1:
+        return url_pattern.format(db=db.lower(), id=id)
+    elif len(id_parts) == 2:
+        return url_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
