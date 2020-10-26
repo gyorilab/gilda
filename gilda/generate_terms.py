@@ -12,7 +12,7 @@ import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client, doid_client
+    go_client, mesh_client, doid_client, identifiers
 from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
@@ -44,8 +44,9 @@ def generate_hgnc_terms():
     rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
     id_name_map = {r['HGNC ID'].split(':')[1]: r['Approved symbol']
                    for r in rows}
+    db = 'hgnc'
     for row in rows:
-        db, id = row['HGNC ID'].split(':')
+        _, id = row['HGNC ID'].split(':')
         name = row['Approved symbol']
         # Special handling for rows representing withdrawn symbols
         if row['Status'] == 'Symbol Withdrawn':
@@ -122,7 +123,7 @@ def generate_chebi_terms():
             logger.info('Could not get valid CHEBI ID for %s' %
                         row['COMPOUND_ID'])
             continue
-        db = 'CHEBI'
+        db = 'chebi'
         name = str(row['NAME'])
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
@@ -170,9 +171,10 @@ def generate_mesh_terms(ignore_mappings=False):
             if not ignore_mappings and mapping and mapping[0] \
                     not in {'EFO', 'HP', 'DOID'}:
                 db, db_id, name = mapping
+                db = identifiers.get_identifiers_ns(db)
                 status = 'synonym'
             else:
-                db = 'MESH'
+                db = 'mesh'
                 status = 'name'
                 name = text_name
             term = Term(normalize(text_name), text_name, db, db_id, name,
@@ -199,12 +201,12 @@ def generate_go_terms():
         go_id = entry['id']
         name = entry['name']
         # First handle the name term
-        term = Term(normalize(name), name, 'GO', go_id, name, 'name', 'go')
+        term = Term(normalize(name), name, 'go', go_id, name, 'name', 'go')
         terms.append(term)
         # Next look at synonyms, sometimes those match the name so we
         # deduplicate
         for synonym in set(entry.get('synonyms', [])) - {name}:
-            term = Term(normalize(synonym), synonym, 'GO', go_id, name,
+            term = Term(normalize(synonym), synonym, 'go', go_id, name,
                         'synonym', 'go')
             terms.append(term)
     logger.info('Loaded %d terms' % len(terms))
@@ -221,13 +223,13 @@ def generate_famplex_terms(ignore_mappings=False):
         groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if (k and v)}
         if 'FPLX' in groundings:
             id = groundings['FPLX']
-            term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion', 'famplex')
+            term = Term(norm_txt, txt, 'fplx', id, id, 'assertion', 'famplex')
         elif 'HGNC' in groundings:
             id = groundings['HGNC']
-            term = Term(norm_txt, txt, 'HGNC', hgnc_client.get_hgnc_id(id), id,
+            term = Term(norm_txt, txt, 'hgnc', hgnc_client.get_hgnc_id(id), id,
                         'assertion', 'famplex')
         elif 'UP' in groundings:
-            db = 'UP'
+            db = 'uniprot'
             id = groundings['UP']
             name = id
             if uniprot_client.is_human(id):
@@ -235,7 +237,7 @@ def generate_famplex_terms(ignore_mappings=False):
                 if hgnc_id:
                     name = hgnc_client.get_hgnc_name(hgnc_id)
                     if hgnc_id:
-                        db = 'HGNC'
+                        db = 'hgnc'
                         id = hgnc_id
                 else:
                     logger.warning('No gene name for %s' % id)
@@ -243,18 +245,19 @@ def generate_famplex_terms(ignore_mappings=False):
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
             name = chebi_client.get_chebi_name_from_id(id[6:])
-            term = Term(norm_txt, txt, 'CHEBI', id, name, 'assertion',
+            term = Term(norm_txt, txt, 'chebi', id, name, 'assertion',
                         'famplex')
         elif 'GO' in groundings:
             id = groundings['GO']
-            term = Term(norm_txt, txt, 'GO', id,
+            term = Term(norm_txt, txt, 'go', id,
                         go_client.get_go_label(id), 'assertion', 'famplex')
         elif 'MESH' in groundings:
             id = groundings['MESH']
             mesh_mapping = mesh_mappings.get(id)
             db, db_id, name = mesh_mapping if (mesh_mapping
                                                and not ignore_mappings) else \
-                ('MESH', id, mesh_client.get_mesh_name(id))
+                ('mesh', id, mesh_client.get_mesh_name(id))
+            db = identifiers.get_identifiers_ns(db)
             term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
@@ -279,7 +282,7 @@ def generate_uniprot_terms(download=False):
         names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
         standard_name = row['Gene names  (primary )']
-        ns = 'UP'
+        ns = 'uniprot'
         id = row['Entry']
         # We skip a small number of not critical entries that don't have
         # standard names
@@ -287,7 +290,7 @@ def generate_uniprot_terms(download=False):
             continue
         hgnc_id = uniprot_client.get_hgnc_id(up_id)
         if hgnc_id:
-            ns = 'HGNC'
+            ns = 'hgnc'
             id = hgnc_id
             standard_name = hgnc_client.get_hgnc_name(hgnc_id)
         for name in names:
@@ -360,6 +363,7 @@ def generate_adeft_terms():
                 logger.warning('Unknown grounding namespace from Adeft: %s' %
                                db_ns)
                 continue
+            db_ns = identifiers.get_identifiers_ns(db_ns)
             term_args = (normalize(shortform), shortform, db_ns, db_id,
                          standard_name, 'synonym', 'adeft')
             all_term_args.add(term_args)
@@ -423,6 +427,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         # obsolete so we don't do the mapping
         if doid_name:
             db, db_id, name = 'DOID', doid, doid_name
+
+    db = identifiers.get_identifiers_ns(db)
 
     # Add a term for the name first
     name_term = Term(
