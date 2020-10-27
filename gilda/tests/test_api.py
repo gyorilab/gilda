@@ -20,3 +20,12 @@ def test_get_names():
     names = get_names('HGNC', '6407')
     assert len(names) > 5, names
     assert 'K-Ras' in names
+
+
+def test_api_use_indra_ns():
+    matches = ground('mek')
+    assert matches[0].term.db == 'fplx'
+    matches = ground('mek', use_indra_ns=False)
+    assert matches[0].term.db == 'fplx'
+    matches = ground('mek', use_indra_ns=True)
+    assert matches[0].term.db == 'FPLX'

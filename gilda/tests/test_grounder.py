@@ -81,8 +81,9 @@ def test_disambiguate_adeft():
         assert match.disambiguation['type'] == 'adeft'
         assert match.disambiguation['match'] in ('grounded', 'ungrounded')
         assert match.disambiguation['score'] is not None
-        if match.term.db == 'HGNC' and match.term.id == '6091':
-            assert match.disambiguation['match'] == 'grounded'
+        if match.term.db == 'hgnc' and match.term.id == '6091':
+            assert match.disambiguation['match'] == 'grounded', \
+                match.disambiguation
             assert match.disambiguation['score'] == 1.0
 
 
@@ -92,15 +93,15 @@ def test_disambiguate_gilda():
     for match in matches:
         assert match.disambiguation['type'] == 'gilda'
         assert match.disambiguation['match'] == 'grounded'
-        if match.term.db == 'HGNC' and match.term.id == '17847':
+        if match.term.db == 'hgnc' and match.term.id == '17847':
             assert match.disambiguation['score'] > 0.99
-        if match.term.db == 'HGNC' and match.term.id == '7679':
+        if match.term.db == 'hgnc' and match.term.id == '7679':
             assert match.disambiguation['score'] < 0.01
 
 
 def test_rank_namespace():
     matches = gr.ground('interferon-gamma')
-    assert matches[0].term.db == 'HGNC'
+    assert matches[0].term.db == 'hgnc', matches[0]
 
 
 def test_aa_synonym():
@@ -109,3 +110,12 @@ def test_aa_synonym():
 
     matches = gr.ground('W-N')
     assert '141447' not in {m.term.id for m in matches}
+
+
+def test_use_indra_ns():
+    matches = gr.ground('mek')
+    assert matches[0].term.db == 'fplx'
+    matches = gr.ground('mek', use_indra_ns=False)
+    assert matches[0].term.db == 'fplx'
+    matches = gr.ground('mek', use_indra_ns=True)
+    assert matches[0].term.db == 'FPLX'

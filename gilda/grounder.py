@@ -11,7 +11,8 @@ from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
 from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
-from .util import apply_indra_ns
+from .util import apply_indra_ns, indra_namespace_reverse, \
+    indra_namespace_mappings
 
 
 logger = logging.getLogger(__name__)
@@ -184,7 +185,8 @@ class Grounder(object):
                 if grounding == 'ungrounded' or ':' not in grounding:
                     continue
                 db, id = grounding.split(':', maxsplit=1)
-                if match.term.db == db and match.term.id == id:
+                if match.term.db == indra_namespace_reverse[db] \
+                        and match.term.id == id:
                     match.disambiguation = {'type': 'adeft',
                                             'score': score,
                                             'match': 'grounded'}
@@ -204,7 +206,8 @@ class Grounder(object):
             raise ValueError('No result from disambiguation.')
         grounding_dict = res[0]
         for match in scored_matches:
-            key = '%s:%s' % (match.term.db, match.term.id)
+            key = '%s:%s' % (indra_namespace_mappings[match.term.db],
+                             match.term.id)
             score_entry = grounding_dict.get(key, None)
             score = score_entry if score_entry is not None else 0.0
             match.disambiguation = {'type': 'gilda',
