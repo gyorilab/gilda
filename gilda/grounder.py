@@ -11,6 +11,7 @@ from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, depluralize
 from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
+from .util import apply_indra_ns
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None):
+    def ground(self, raw_str, context=None, use_indra_ns=False):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -136,7 +137,9 @@ class Grounder(object):
         # Then sort by decreasing score
         rank_fun = lambda x: (x.score, score_namespace(x.term))
         unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
-
+        if use_indra_ns:
+            unique_scores = [apply_indra_ns(scored_match) for scored_match in
+                             unique_scores]
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
@@ -332,6 +335,7 @@ def load_terms_file(terms_file):
         A lookup dictionary whose keys are normalized entity texts, and values
         are lists of Terms with that normalized entity text.
     """
+    logger.info('Loading Gilda grounding terms...')
     with open(terms_file, 'r') as fh:
         entries = {}
         for row in csv.reader(fh, delimiter='\t'):
@@ -341,6 +345,7 @@ def load_terms_file(terms_file):
                 entries[row[0]].append(entry)
             else:
                 entries[row[0]] = [entry]
+        logger.info('Loaded Gilda grounding terms.')
         return entries
 
 
