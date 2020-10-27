@@ -1,8 +1,34 @@
+import re
+import logging
+import requests
 from gilda.grounder import Grounder
 from . import appreq
 
 
+logger = logging.getLogger(__name__)
+
+
 gr = Grounder()
+
+
+def test_validate_entries():
+    logger.info('Getting identifiers registry...')
+    url = ('https://registry.api.identifiers.org/resolutionApi/'
+           'getResolverDataset')
+    res = requests.get(url)
+    identifiers_registry = {
+        entry['prefix']: entry for entry in
+        res.json()['payload']['namespaces']
+    }
+    logger.info('Got %d entries from identifiers registry...' %
+                len(identifiers_registry))
+    for terms in gr.entries.values():
+        for term in terms:
+            assert term.db in identifiers_registry,\
+                '%s is not a valida namespace' % term.db
+            assert re.match(identifiers_registry[term.db]['pattern'], term.id),\
+                '%s is not a valid entry in the %s namespace' % \
+                (term.id, term.db)
 
 
 def test_grounder():
