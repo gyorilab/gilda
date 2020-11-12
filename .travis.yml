@@ -8,7 +8,7 @@ before_install:
   - pip install nose coverage python-coveralls
 install:
   - pip install .[test]
-  - pip install indra
+  - pip install git+https://github.com/sorgerlab/indra.git
   - python -m adeft.download
 script:
   - nosetests gilda -v --with-coverage --cover-inclusive --cover-package=gilda
