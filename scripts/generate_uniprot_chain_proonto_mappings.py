@@ -8,7 +8,9 @@ from gilda.grounder import Grounder, normalize
 # source of pre-processed synonyms
 UNIPROT = '/Users/ben/src/bioresources/kb/uniprot-proteins.tsv'
 PROONTO = '/Users/ben/src/bioresources/kb/protein-ontology-fragments.tsv'
-PROONTO_OBO = '/Users/ben/src/bioresorces/scripts/pro_reasoned.obo'
+PROONTO_OBO = '/Users/ben/src/bioresources/scripts/pro_reasoned.obo'
+BIOMAPPINGS = '/Users/ben/Dropbox/postdoc/darpa/src/biomappings/'\
+    'predictions.tsv'
 
 
 if __name__ == '__main__':
@@ -40,4 +42,26 @@ if __name__ == '__main__':
             matches = grounder.ground(synonym)
             if matches:
                 matches_per_id[id] += matches
-    # 4. Dump spreadsheet with non-ambiguous equivalences in BioMappings formas
+    # 4. Dump spreadsheet with non-ambiguous equivalences in BioMappings format
+    # source prefix, source identifier, source name, relation
+    # target prefix, target identifier, target name, type, source
+    source_prefix = 'pr'
+    target_prefix = 'uniprot.chain'
+    relation = 'skos:exactMatch'
+    source = 'https://github.com/indralab/gilda/blob/master/scripts/' \
+        'generate_uniprot_chain_proonto_mappings.py'
+    match_type = 'lexical'
+    rows = []
+    for pro_id, matches in matches_per_id.items():
+        if len(matches) > 1:
+            print(matches)
+            continue
+        target_id = matches[0].term.id
+        target_name = matches[0].term.entry_name
+        source_name = pro.nodes[pro_id]['name']
+        row = [source_prefix, pro_id, source_name, relation,
+               target_prefix, target_id, target_name, match_type,
+               source]
+        rows.append(row)
+    with open(BIOMAPPINGS, 'a') as fh:
+        fh.write('\n'.join(['\t'.join(row) for row in rows]))
