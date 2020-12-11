@@ -269,7 +269,7 @@ def generate_famplex_terms(ignore_mappings=False):
     return terms
 
 
-def generate_uniprot_terms(download=True, organisms=None):
+def generate_uniprot_terms(download=False, organisms=None):
     if not organisms:
         organisms = popular_organisms
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
@@ -289,6 +289,7 @@ def generate_uniprot_terms(download=True, organisms=None):
         standard_name = row['Gene names  (primary )']
         ns = 'UP'
         id = row['Entry']
+        organism = row['Organism ID']
         # We skip a small number of not critical entries that don't have
         # standard names
         if not standard_name:
@@ -303,7 +304,8 @@ def generate_uniprot_terms(download=True, organisms=None):
             if name.startswith('EC '):
                 continue
             term = Term(normalize(name), name, ns, id,
-                        standard_name, 'synonym', 'uniprot')
+                        standard_name, 'synonym', 'uniprot',
+                        organism)
             terms.append(term)
     return terms
 
