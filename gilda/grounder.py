@@ -87,7 +87,7 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None):
+    def ground(self, raw_str, context=None, organisms=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -106,6 +106,8 @@ class Grounder(object):
             A list of ScoredMatch objects representing the groundings sorted
             by decreasing score.
         """
+        if not organisms:
+            organisms = ['9606']
         entries = self.lookup(raw_str)
         logger.debug('Comparing %s with %d entries' %
                      (raw_str, len(entries)))
@@ -342,6 +344,21 @@ def load_terms_file(terms_file):
             else:
                 entries[row[0]] = [entry]
         return entries
+
+
+def filter_for_organism(terms, organisms):
+    # We take everything that doesn't have organism information
+    filtered_terms = [t for t in terms if t.organism is None]
+    # We then filter out any proteins whose organism isn't in the list
+    # and then sort the remaining ones for priority in the organism list
+    org_terms = sorted([t for t in terms if t.organism is not None
+                        and t in organisms],
+                       key=lambda t: t.organism.index(t))
+    # If there are any organism-specific proteins, we add the top one
+    # to the list
+    if org_terms:
+        filtered_terms.append(org_terms[0])
+    return filtered_terms
 
 
 def load_adeft_models():
