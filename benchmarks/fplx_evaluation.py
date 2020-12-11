@@ -3,6 +3,7 @@ import pandas
 import itertools
 from indra.databases import chebi_client
 from gilda import ground
+from gilda.resources import popular_organisms
 
 service_url = 'http://localhost:8001'
 
@@ -44,7 +45,10 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'PP5': {'HGNC': '9322'},
                       'aminopeptidases': {'MESH': 'D000626'},
                       'IMP1': {'HGNC': '28866'},
-                      '293T': {'EFO': '0001082'}}
+                      '293T': {'EFO': '0001082'},
+                      'GR': {'HGNC': '7978'},
+                      'integrin alpha': {'FPLX': 'ITGA'},
+                      'DC': {'MESH': 'D003713'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
@@ -53,7 +57,13 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'BMD': {'HGNC': '2928'},
                         'DC': {'HGNC': '2714'},
                         'ARs': {'HGNC': '644'},
-                        'BA': {'CHEBI': 'CHEBI:32594'}}
+                        'BA': {'CHEBI': 'CHEBI:32594'},
+                        'HP1': {'HGNC': '1555'},
+                        'PRF': {'UP': 'Q6P3D7'},
+                        'CUL4': {'UP': 'Q17392'},
+                        'MEKK3': {'GO': 'GO:0004709'},
+                        'Hrs': {'GO': 'GO:0000725'},
+                        'thioredoxin-1': {'UP': 'P47938'}}
 
 
 def process_fplx_groundings(df):
@@ -86,7 +96,7 @@ def process_fplx_groundings(df):
             if k == 'PUBCHEM':
                 chebi_id = chebi_client.get_chebi_id_from_pubchem(v)
                 if chebi_id:
-                    grounding['db_refs']['CHEBI'] = 'CHEBI:%s' % chebi_id
+                    grounding['db_refs']['CHEBI'] = chebi_id
         groundings.append(grounding)
     return groundings
 
@@ -136,7 +146,8 @@ def make_comparison(groundings):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
         matches = ground(text=grounding['text'],
-                         context=grounding['context'])
+                         context=grounding['context'],
+                         organisms=popular_organisms)
         if not matches:
             comparison['%s_ungrounded' % old_eval].append((idx, grounding,
                                                            None))
