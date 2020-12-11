@@ -267,9 +267,8 @@ def generate_uniprot_terms(download=False):
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
     if not os.path.exists(path) or download:
         url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
-               'genes(PREFERRED),protein%20names&sort=score&'
-               'fil=organism:"Homo%20sapiens%20(Human)%20[9606]"'
-               '%20AND%20reviewed:yes')
+               'genes(PREFERRED),protein%20names,organism-id&sort=score&'
+               'query=reviewed:yes')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
         with open(path, 'w') as fh:
