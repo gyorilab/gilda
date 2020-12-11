@@ -42,8 +42,11 @@ def test_grounder_num_entries():
 
 
 def test_grounder_depluralize():
+    # Note that lookup returns all matches with no de-duplication
+    # or filtering so we get two identical FPLX entries and a yeast protein
+    # entry here.
     entries = gr.lookup('RAFs')
-    assert len(entries) == 2, entries
+    assert len(entries) == 3, entries
     for entry in entries:
         assert entry.norm_text == 'raf'
 
