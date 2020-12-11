@@ -1,4 +1,5 @@
-from gilda.grounder import Grounder
+from gilda.term import Term
+from gilda.grounder import Grounder, filter_for_organism
 from . import appreq
 
 
@@ -83,3 +84,22 @@ def test_aa_synonym():
 
     matches = gr.ground('W-N')
     assert '141447' not in {m.term.id for m in matches}
+
+
+def test_organism_filter():
+    t1 = Term('x', None, None, None, None, None, None, '9606')
+    t2 = Term('x', None, None, None, None, None, None, '10090')
+    t3 = Term('x', None, None, None, None, None, None, None)
+    terms = filter_for_organism([t1, t2, t3],
+                                organisms=['9606'])
+    assert len(terms) == 2, terms
+
+
+def test_organisms():
+    matches = gr.ground('Raf1')
+    assert len(matches) == 5, len(matches)
+    organisms = [match.term.organism for match in matches]
+    print(organisms)
+    for match in matches:
+        print(match.term)
+    assert False

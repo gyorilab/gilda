@@ -352,8 +352,8 @@ def filter_for_organism(terms, organisms):
     # We then filter out any proteins whose organism isn't in the list
     # and then sort the remaining ones for priority in the organism list
     org_terms = sorted([t for t in terms if t.organism is not None
-                        and t in organisms],
-                       key=lambda t: t.organism.index(t))
+                        and t.organism in organisms],
+                       key=lambda t: organisms.index(t.organism))
     # If there are any organism-specific proteins, we add the top one
     # to the list
     if org_terms:

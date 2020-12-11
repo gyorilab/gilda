@@ -30,9 +30,9 @@ class Term(object):
         self.organism = organism
 
     def __str__(self):
-        return 'Term(%s,%s,%s,%s,%s,%s,%s)' % (
+        return 'Term(%s,%s,%s,%s,%s,%s,%s,%s)' % (
             self.norm_text, self.text, self.db, self.id, self.entry_name,
-            self.status, self.source)
+            self.status, self.source, self.organism)
 
     def __repr__(self):
         return str(self)
