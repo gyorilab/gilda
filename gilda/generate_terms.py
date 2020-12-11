@@ -233,7 +233,7 @@ def generate_famplex_terms(ignore_mappings=False):
         elif 'HGNC' in groundings:
             id = groundings['HGNC']
             term = Term(norm_txt, txt, 'HGNC', hgnc_client.get_hgnc_id(id), id,
-                        'assertion', 'famplex')
+                        'assertion', 'famplex', '9606')
         elif 'UP' in groundings:
             db = 'UP'
             id = groundings['UP']
@@ -247,6 +247,7 @@ def generate_famplex_terms(ignore_mappings=False):
                         id = hgnc_id
                 else:
                     logger.warning('No gene name for %s' % id)
+            # TODO: should we add organism info here?
             term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']

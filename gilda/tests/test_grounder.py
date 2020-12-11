@@ -111,8 +111,20 @@ def test_organism_filter():
 def test_organisms():
     matches = gr.ground('Raf1')
     assert len(matches) == 2, len(matches)
-    assert {match.term.organism for match in matches}
-    print(organisms)
-    for match in matches:
-        print(match.term)
-    assert False
+    organisms = {match.term.organism for match in matches}
+    assert organisms == {'9606', None}, organisms
+
+    matches = gr.ground('Raf1', organisms=['10090'])
+    assert len(matches) == 2, len(matches)
+    organisms = {match.term.organism for match in matches}
+    assert organisms == {'10090', None}
+
+    matches = gr.ground('Raf1', organisms=['9606', '10090'])
+    assert len(matches) == 2, len(matches)
+    organisms = {match.term.organism for match in matches}
+    assert organisms == {'9606', None}
+
+    matches = gr.ground('Raf1', organisms=['10090', '9606'])
+    assert len(matches) == 2, len(matches)
+    organisms = {match.term.organism for match in matches}
+    assert organisms == {'10090', None}
