@@ -3,6 +3,7 @@ import json
 import pickle
 import logging
 import itertools
+from collections import defaultdict
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -347,18 +348,22 @@ def load_terms_file(terms_file):
 
 
 def filter_for_organism(terms, organisms):
-    # We take everything that doesn't have organism information
-    filtered_terms = [t for t in terms if t.organism is None]
-    # We then filter out any proteins whose organism isn't in the list
-    # and then sort the remaining ones for priority in the organism list
-    org_terms = sorted([t for t in terms if t.organism is not None
-                        and t.organism in organisms],
-                       key=lambda t: organisms.index(t.organism))
-    # If there are any organism-specific proteins, we add the top one
-    # to the list
-    if org_terms:
-        filtered_terms.append(org_terms[0])
-    return filtered_terms
+    # First we organize terms by organism, including None
+    terms_by_organism = defaultdict(list)
+    for term in terms:
+        # We filter out any organisms that aren't in the list provided
+        if term.organism is not None and term.organism not in organisms:
+            continue
+        terms_by_organism[term.organism].append(term)
+    # We now find the top organism for which we have at least
+    # one term
+    top_organism = min(set(terms_by_organism) - {None},
+                       key=lambda x: organisms.index(x))
+    # We then take any terms that either don't have an organism
+    # or are from the top organism
+    all_terms = terms_by_organism.get(None, []) + \
+        terms_by_organism.get(top_organism, [])
+    return all_terms
 
 
 def load_adeft_models():
