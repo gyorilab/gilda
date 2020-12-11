@@ -93,12 +93,25 @@ def test_organism_filter():
     terms = filter_for_organism([t1, t2, t3],
                                 organisms=['9606'])
     assert len(terms) == 2, terms
+    assert {t.organism for t in terms} == {None, '9606'}
+    terms = filter_for_organism([t1, t2, t3],
+                                organisms=['10090'])
+    assert len(terms) == 2, terms
+    assert {t.organism for t in terms} == {None, '10090'}
+    terms = filter_for_organism([t1, t2, t3],
+                                organisms=['10090', '9606'])
+    assert len(terms) == 2, terms
+    assert {t.organism for t in terms} == {None, '10090'}
+    terms = filter_for_organism([t1, t2, t3],
+                                organisms=['9606', '10090'])
+    assert len(terms) == 2, terms
+    assert {t.organism for t in terms} == {None, '9606'}
 
 
 def test_organisms():
     matches = gr.ground('Raf1')
-    assert len(matches) == 5, len(matches)
-    organisms = [match.term.organism for match in matches]
+    assert len(matches) == 2, len(matches)
+    organisms = {match.term.organism for match in matches}
     print(organisms)
     for match in matches:
         print(match.term)

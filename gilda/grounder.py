@@ -110,6 +110,8 @@ class Grounder(object):
         if not organisms:
             organisms = ['9606']
         entries = self.lookup(raw_str)
+        logger.debug('Filtering %d entries by organism' % len(entries))
+        entries = filter_for_organism(entries, organisms)
         logger.debug('Comparing %s with %d entries' %
                      (raw_str, len(entries)))
         # For each entry to compare to, we generate a match data structure
@@ -355,14 +357,15 @@ def filter_for_organism(terms, organisms):
         if term.organism is not None and term.organism not in organisms:
             continue
         terms_by_organism[term.organism].append(term)
+    # We first take the terms without organism
+    all_terms = terms_by_organism[None]
     # We now find the top organism for which we have at least
-    # one term
-    top_organism = min(set(terms_by_organism) - {None},
-                       key=lambda x: organisms.index(x))
-    # We then take any terms that either don't have an organism
-    # or are from the top organism
-    all_terms = terms_by_organism.get(None, []) + \
-        terms_by_organism.get(top_organism, [])
+    # one term and then add the corresponding terms to the list
+    # of all terms
+    if set(terms_by_organism) != {None}:
+        top_organism = min(set(terms_by_organism) - {None},
+                           key=lambda x: organisms.index(x))
+        all_terms += terms_by_organism[top_organism]
     return all_terms
 
 
