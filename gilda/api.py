@@ -12,8 +12,9 @@ class GrounderInstance(object):
             self.grounder = Grounder()
         return self.grounder
 
-    def ground(self, text, context=None):
-        return self.get_grounder().ground(text, context=context)
+    def ground(self, text, context=None, organisms=None):
+        return self.get_grounder().ground(text, context=context,
+                                          organisms=organisms)
 
     def get_models(self):
         return self.get_grounder().get_models()
@@ -27,7 +28,7 @@ class GrounderInstance(object):
 grounder = GrounderInstance()
 
 
-def ground(text, context=None):
+def ground(text, context=None, organisms=None):
     """Return a list of scored matches for a text to ground.
 
     Parameters
@@ -44,7 +45,7 @@ def ground(text, context=None):
     list[gilda.grounder.ScoredMatch]
         A list of ScoredMatch objects representing the groundings.
     """
-    return grounder.ground(text=text, context=context)
+    return grounder.ground(text=text, context=context, organisms=organisms)
 
 
 def get_models():
