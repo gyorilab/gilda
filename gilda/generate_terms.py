@@ -50,6 +50,7 @@ def generate_hgnc_terms():
     rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
     id_name_map = {r['HGNC ID'].split(':')[1]: r['Approved symbol']
                    for r in rows}
+    organism = '9606'  # human
     for row in rows:
         db, id = row['HGNC ID'].split(':')
         name = row['Approved symbol']
@@ -60,7 +61,7 @@ def generate_hgnc_terms():
             new_id = m.groups()[0]
             new_name = id_name_map[new_id]
             term_args = (normalize(name), name, db, new_id,
-                         new_name, 'previous', 'hgnc')
+                         new_name, 'previous', 'hgnc', organism)
             all_term_args[term_args] = None
             # NOTE: consider adding withdrawn synonyms e.g.,
             # symbol withdrawn, see pex1     symbol withdrawn, see PEX1
@@ -68,12 +69,13 @@ def generate_hgnc_terms():
             continue
         # Handle regular entry official names
         else:
-            term_args = (normalize(name), name, db, id, name, 'name', 'hgnc')
+            term_args = (normalize(name), name, db, id, name, 'name', 'hgnc',
+                         organism)
             all_term_args[term_args] = None
             if row['Approved name']:
                 app_name = row['Approved name']
                 term_args = (normalize(app_name), app_name, db, id, name,
-                             'name', 'hgnc')
+                             'name', 'hgnc', organism)
                 all_term_args[term_args] = None
 
         # Handle regular entry synonyms
@@ -82,7 +84,7 @@ def generate_hgnc_terms():
             synonyms += row['Alias symbols'].split(', ')
         for synonym in synonyms:
             term_args = (normalize(synonym), synonym, db, id, name, 'synonym',
-                         'hgnc')
+                         'hgnc', organism)
             all_term_args[term_args] = None
 
         # Handle regular entry previous symbols
@@ -90,7 +92,7 @@ def generate_hgnc_terms():
             prev_symbols = row['Previous symbols'].split(', ')
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
-                             'previous', 'hgnc')
+                             'previous', 'hgnc', organism)
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]

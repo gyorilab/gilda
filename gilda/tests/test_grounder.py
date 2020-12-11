@@ -111,7 +111,7 @@ def test_organism_filter():
 def test_organisms():
     matches = gr.ground('Raf1')
     assert len(matches) == 2, len(matches)
-    organisms = {match.term.organism for match in matches}
+    assert {match.term.organism for match in matches}
     print(organisms)
     for match in matches:
         print(match.term)
