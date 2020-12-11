@@ -16,19 +16,13 @@ from indra.databases import hgnc_client, uniprot_client, chebi_client, \
 from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
-from .resources import resource_dir
+from .resources import resource_dir, popular_organisms
 
 
 indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
-
-# Popular organisms per UniProt, see
-# https://www.uniprot.org/help/filter_options
-popular_organisms = ['9606', '10090', '10116', '9913', '7955', '7227',
-                     '6239', '44689', '3702', '39947', '83333', '224308',
-                     '559292']
 
 
 def read_csv(fname, header=False, delimiter='\t'):
