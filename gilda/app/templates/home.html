@@ -1,10 +1,25 @@
 {% extends "base.html" %}
-
 {% block gcontent %}
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // see https://github.com/jshjohnson/Choices
+        const organismSelect = new Choices('#organism-select');
+    })
+</script>
+
 <div class="panel-heading">
     <h3 class="panel-title">Gilda grounding input</h3>
 </div>
 <div class="panel-body">
-    {{ wtf.quick_form(form, form_type='horizontal') }}
+    <form class="form" method="POST" role="form">
+    {{ wtf.form_field(form.text) }}
+    {{ wtf.form_field(form.context) }}
+    {{ wtf.form_field(form.organisms, class_="form-control") }}
+    {{ wtf.form_field(form.submit, class="btn btn-primary")}}
+    </form>
 </div>
 {% endblock %}

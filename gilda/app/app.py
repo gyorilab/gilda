@@ -1,11 +1,13 @@
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField
+from wtforms import StringField, SubmitField, TextAreaField, \
+    SelectMultipleField
 from wtforms.validators import DataRequired
 
 from gilda.api import *
 from gilda import __version__ as version
+from gilda.resources import popular_organisms
 
 app = Flask(__name__)
 app.config['WTF_CSRF_ENABLED'] = False
@@ -15,10 +17,15 @@ Bootstrap(app)
 class GroundForm(FlaskForm):
     text = StringField('Text', validators=[DataRequired()])
     context = TextAreaField('Context')
+    organisms = SelectMultipleField('Organisms',
+                                    choices=[(org, org)
+                                             for org in popular_organisms],
+                                    id='organism-select')
     submit = SubmitField('Submit')
 
     def get_matches(self):
-        return ground(self.text.data, self.context.data)
+        return ground(self.text.data, context=self.context.data,
+                      organisms=self.organisms.data)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -38,7 +45,8 @@ def ground_endpoint():
     # Get input parameters
     text = request.json.get('text')
     context = request.json.get('context')
-    scored_matches = ground(text, context)
+    organisms = request.json.get('organisms')
+    scored_matches = ground(text, context=context, organisms=organisms)
     res = [sm.to_json() for sm in scored_matches]
     return jsonify(res)
 
