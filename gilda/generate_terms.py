@@ -24,6 +24,12 @@ indra_resources = os.path.join(indra_module_path, 'resources')
 
 logger = logging.getLogger('gilda.generate_terms')
 
+# Popular organisms per UniProt, see
+# https://www.uniprot.org/help/filter_options
+popular_organisms = ['9606', '10090', '10116', '9913', '7955', '7227',
+                     '6239', '44689', '3702', '39947', '83333', '224308',
+                     '559292']
+
 
 def read_csv(fname, header=False, delimiter='\t'):
     with open(fname, 'r') as fh:
@@ -263,12 +269,15 @@ def generate_famplex_terms(ignore_mappings=False):
     return terms
 
 
-def generate_uniprot_terms(download=False):
+def generate_uniprot_terms(download=True, organisms=None):
+    if not organisms:
+        organisms = popular_organisms
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
+    org_filter_str = ' OR '.join(organisms)
     if not os.path.exists(path) or download:
-        url = ('https://www.uniprot.org/uniprot/?format=tab&columns=id,'
-               'genes(PREFERRED),protein%20names,organism-id&sort=score&'
-               'query=reviewed:yes')
+        url = (f'https://www.uniprot.org/uniprot/?format=tab&columns=id,'
+               f'genes(PREFERRED),protein%20names,organism-id&sort=score&'
+               f'query=reviewed:yes&fil=organism:{org_filter_str}')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
         with open(path, 'w') as fh:
@@ -527,12 +536,12 @@ def get_all_terms():
     terms = []
 
     generated_term_groups = [
+        generate_uniprot_terms(),
         generate_famplex_terms(),
         generate_hgnc_terms(),
         generate_chebi_terms(),
         generate_go_terms(),
         generate_mesh_terms(),
-        generate_uniprot_terms(),
         generate_adeft_terms(),
         generate_doid_terms(),
         generate_hp_terms(),
