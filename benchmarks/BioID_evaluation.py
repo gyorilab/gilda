@@ -15,6 +15,7 @@ from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
 
 from gilda.grounder import logger, Grounder
+from gilda.resources import popular_organisms
 
 logger.setLevel('WARNING')
 
@@ -315,7 +316,8 @@ class BioIDBenchmarker(object):
 
     def _get_grounding_list(self, text, context=None):
         """Run gilda on a text and extract list of result-score tuples."""
-        groundings = self.grounder.ground(text, context=context)
+        groundings = self.grounder.ground(text, context=context,
+                                          organisms=popular_organisms)
         result = []
         for grounding in groundings:
             db, id_ = grounding.term.db, grounding.term.id
