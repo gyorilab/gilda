@@ -22,6 +22,25 @@ popular_organisms = ['9606', '10090', '10116', '9913', '7955', '7227',
                      '6239', '44689', '3702', '39947', '83333', '224308',
                      '559292']
 
+# NOTE: these are not all exact mappings..
+# Several mappings here are to the closest match which works correctly
+# in this setting but isn't generally speaking a valid xref.
+taxonomy_to_mesh = {
+    '9606': 'D006801',
+    '10090': 'D051379',
+    '10116': 'D051381',
+    '9913': 'D002417',
+    '7955': 'D015027',
+    '7227': 'D004331',
+    '6239': 'D017173',
+    '44689': 'D004023',
+    '3702': 'D017360',
+    '39947': 'D012275',
+    '83333': 'D048168',
+    '224308': 'D001412',
+    '559292': 'D012441',
+}
+
 
 def _download_from_s3(path, base_name):
     config = botocore.client.Config(signature_version=botocore.UNSIGNED)
