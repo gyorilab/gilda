@@ -1,0 +1,10 @@
+graft gilda
+graft doc
+prune benchmarks
+prune scripts
+prune notebooks
+prune models
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .DS_Store *.gpickle
+
+include README.md LICENSE
