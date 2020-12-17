@@ -52,6 +52,7 @@ class Term(object):
         }
         if self.organism:
             js['organism'] = self.organism
+        return js
 
     def to_list(self):
         """Return the term serialized into a list of strings."""
