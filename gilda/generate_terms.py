@@ -232,7 +232,9 @@ def generate_famplex_terms(ignore_mappings=False):
             db = 'UP'
             id = groundings['UP']
             name = id
+            organism = None
             if uniprot_client.is_human(id):
+                organism = '9606'
                 hgnc_id = uniprot_client.get_hgnc_id(id)
                 if hgnc_id:
                     name = hgnc_client.get_hgnc_name(hgnc_id)
@@ -242,7 +244,8 @@ def generate_famplex_terms(ignore_mappings=False):
                 else:
                     logger.warning('No gene name for %s' % id)
             # TODO: should we add organism info here?
-            term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex')
+            term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex',
+                        organism)
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
             name = chebi_client.get_chebi_name_from_id(id[6:])
