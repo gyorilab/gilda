@@ -1,5 +1,6 @@
 import os
 import json
+import pickle
 import argparse
 import pandas as pd
 import networkx as nx
@@ -287,6 +288,7 @@ class BioIDBenchmarker(object):
         return '/n'.join(paragraphs) + '/n'
 
     def _get_organism_priority(self, don_article):
+        don_article = str(don_article)
         if don_article in self.taxonomy_cache:
             return self.taxonomy_cache[don_article]
         pubmed_id = pubmed_from_pmc(don_article)
@@ -609,8 +611,23 @@ def get_taxonomy_for_pmid(pmid):
     if mesh_annots is None:
         return {}
     mesh_ids = {annot['mesh'] for annot in mesh_annots}
-    return {mesh_to_taxonomy[mesh_id] for mesh_id in mesh_ids
-            if mesh_id in mesh_to_taxonomy}
+    from indra.ontology.bio import bio_ontology
+    taxonomy_ids = set()
+    for mesh_id in mesh_ids:
+        if mesh_id in mesh_to_taxonomy:
+            taxonomy_ids.add(mesh_to_taxonomy[mesh_id])
+        mesh_parents = [id for ns, id in
+                        bio_ontology.get_parents('MESH', mesh_id)]
+        for mesh_parent in mesh_parents:
+            if mesh_parent in mesh_to_taxonomy:
+                taxonomy_ids.add(mesh_to_taxonomy[mesh_parent])
+    print('-----')
+    print('PMID: %s' % pmid)
+    for mesh_annot in mesh_annots:
+        print(mesh_annot['text'])
+    print('Taxonomy IDs: %s' % taxonomy_ids)
+    print('-----')
+    return taxonomy_ids
 
 
 def pubmed_from_pmc(pmc_id):
@@ -715,3 +732,5 @@ if __name__ == '__main__':
     outname = f'benchmark_{time}'
     with open(os.path.join(results_path, outname), 'w') as f:
         f.write(output)
+    benchmarker.processed_data.to_csv(os.path.join(results_path,
+                                                   f'{outname}.pkl'))
