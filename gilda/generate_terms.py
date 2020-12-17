@@ -273,7 +273,7 @@ def generate_uniprot_terms(download=False, organisms=None):
     org_filter_str = ' OR '.join(organisms)
     if not os.path.exists(path) or download:
         url = (f'https://www.uniprot.org/uniprot/?format=tab&columns=id,'
-               f'genes(PREFERRED),protein%20names,organism-id&sort=score&'
+               f'genes(PREFERRED),genes(ALTERNATIVE),protein%20names,organism-id&sort=score&'
                f'query=reviewed:yes&fil=organism:{org_filter_str}')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
@@ -281,29 +281,63 @@ def generate_uniprot_terms(download=False, organisms=None):
             fh.write(res.text)
     terms = []
     for row in read_csv(path, delimiter='\t', header=True):
-        names = parse_uniprot_synonyms(row['Protein names'])
         up_id = row['Entry']
-        standard_name = row['Gene names  (primary )']
-        ns = 'UP'
-        id = row['Entry']
         organism = row['Organism ID']
+        protein_names = parse_uniprot_synonyms(row['Protein names'])
+        primary_gene_name = row['Gene names  (primary )'].strip()
+        if primary_gene_name == ';':
+            primary_gene_name = None
+        gene_synonyms_str = row['Gene names  (synonym )'].strip()
+        if gene_synonyms_str == ';':
+            gene_synonyms_str = None
+        # We generally use the gene name as the standard name
+        # except when there are multiple gene names (separated by
+        # semi-colons) in which case we take the first protein name.
+        if not primary_gene_name or ';' in primary_gene_name:
+            standard_name = protein_names[0]
+        else:
+            standard_name = primary_gene_name
         # We skip a small number of not critical entries that don't have
         # standard names
         if not standard_name:
             continue
+        ns = 'UP'
+        id = up_id
         hgnc_id = uniprot_client.get_hgnc_id(up_id)
         if hgnc_id:
             ns = 'HGNC'
             id = hgnc_id
             standard_name = hgnc_client.get_hgnc_name(hgnc_id)
-        for name in names:
+        for name in protein_names:
             # Skip names that are EC codes
             if name.startswith('EC '):
+                continue
+            if name == standard_name:
                 continue
             term = Term(normalize(name), name, ns, id,
                         standard_name, 'synonym', 'uniprot',
                         organism)
             terms.append(term)
+        # For non-human proteins we add the gene name and synonyms
+        # here. For human proteins we get these from HGNC.
+        if organism != '9606':
+            term = Term(normalize(standard_name), standard_name,
+                        ns, id, standard_name, 'name', 'uniprot',
+                        organism)
+            terms.append(term)
+            if gene_synonyms_str:
+                # This is to deal with all the variations in which
+                # synonyms are listed, including degenerate strings
+                # like "; ;"
+                for synonym_group in gene_synonyms_str.split('; '):
+                    for synonym in synonym_group.split(' '):
+                        if not synonym or synonym == ';':
+                            continue
+                        term = Term(normalize(synonym), synonym,
+                                    ns, id, standard_name, 'synonym', 'uniprot',
+                                    organism)
+                        terms.append(term)
+
     return terms
 
 

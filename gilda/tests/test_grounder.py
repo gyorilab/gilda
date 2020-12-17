@@ -131,3 +131,9 @@ def test_organisms():
     assert len(matches) == 2, len(matches)
     organisms = {match.term.organism for match in matches}
     assert organisms == {'10090', None}
+
+
+def test_nonhuman_gene_synonyms():
+    matches = gr.ground('Tau', organisms=['10090'])
+    assert matches[0].term.db == 'UP', matches
+    assert matches[0].term.id == 'P10637', matches

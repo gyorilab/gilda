@@ -20,6 +20,8 @@ class Term(object):
     """
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
                  organism=None):
+        if not text:
+            raise ValueError('Text for Term cannot be empty')
         self.norm_text = norm_text
         self.text = text
         self.db = db
