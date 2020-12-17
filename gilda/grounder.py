@@ -3,6 +3,7 @@ import json
 import pickle
 import logging
 import itertools
+from collections import defaultdict
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -87,7 +88,7 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None):
+    def ground(self, raw_str, context=None, organisms=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -106,7 +107,11 @@ class Grounder(object):
             A list of ScoredMatch objects representing the groundings sorted
             by decreasing score.
         """
+        if not organisms:
+            organisms = ['9606']
         entries = self.lookup(raw_str)
+        logger.debug('Filtering %d entries by organism' % len(entries))
+        entries = filter_for_organism(entries, organisms)
         logger.debug('Comparing %s with %d entries' %
                      (raw_str, len(entries)))
         # For each entry to compare to, we generate a match data structure
@@ -342,6 +347,26 @@ def load_terms_file(terms_file):
             else:
                 entries[row[0]] = [entry]
         return entries
+
+
+def filter_for_organism(terms, organisms):
+    # First we organize terms by organism, including None
+    terms_by_organism = defaultdict(list)
+    for term in terms:
+        # We filter out any organisms that aren't in the list provided
+        if term.organism is not None and term.organism not in organisms:
+            continue
+        terms_by_organism[term.organism].append(term)
+    # We first take the terms without organism
+    all_terms = terms_by_organism[None]
+    # We now find the top organism for which we have at least
+    # one term and then add the corresponding terms to the list
+    # of all terms
+    if set(terms_by_organism) != {None}:
+        top_organism = min(set(terms_by_organism) - {None},
+                           key=lambda x: organisms.index(x))
+        all_terms += terms_by_organism[top_organism]
+    return all_terms
 
 
 def load_adeft_models():

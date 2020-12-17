@@ -23,6 +23,13 @@ GROUNDING_TERMS_BASE_NAME = 'grounding_terms.tsv'
 GROUNDING_TERMS_PATH = os.path.join(resource_dir, GROUNDING_TERMS_BASE_NAME)
 
 
+# Popular organisms per UniProt, see
+# https://www.uniprot.org/help/filter_options
+popular_organisms = ['9606', '10090', '10116', '9913', '7955', '7227',
+                     '6239', '44689', '3702', '39947', '83333', '224308',
+                     '559292']
+
+
 def _download_from_s3(path, base_name):
     config = botocore.client.Config(signature_version=botocore.UNSIGNED)
     s3 = boto3.client('s3', config=config)

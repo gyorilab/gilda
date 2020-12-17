@@ -18,7 +18,10 @@ class Term(object):
     source : str
         The source from which the term was obtained.
     """
-    def __init__(self, norm_text, text, db, id, entry_name, status, source):
+    def __init__(self, norm_text, text, db, id, entry_name, status, source,
+                 organism=None):
+        if not text:
+            raise ValueError('Text for Term cannot be empty')
         self.norm_text = norm_text
         self.text = text
         self.db = db
@@ -26,31 +29,36 @@ class Term(object):
         self.entry_name = entry_name
         self.status = status
         self.source = source
+        self.organism = organism
 
     def __str__(self):
-        return 'Term(%s,%s,%s,%s,%s,%s,%s)' % (
+        return 'Term(%s,%s,%s,%s,%s,%s,%s,%s)' % (
             self.norm_text, self.text, self.db, self.id, self.entry_name,
-            self.status, self.source)
+            self.status, self.source, self.organism)
 
     def __repr__(self):
         return str(self)
 
     def to_json(self):
         """Return the term serialized into a JSON dict."""
-        return {
+        js = {
             'norm_text': self.norm_text,
             'text': self.text,
             'db': self.db,
             'id': self.id,
             'entry_name': self.entry_name,
             'status': self.status,
-            'source': self.source
+            'source': self.source,
         }
+        if self.organism:
+            js['organism'] = self.organism
+        return js
 
     def to_list(self):
         """Return the term serialized into a list of strings."""
         return [self.norm_text, self.text, self.db, self.id,
-                self.entry_name, self.status, self.source]
+                self.entry_name, self.status, self.source,
+                self.organism]
 
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
