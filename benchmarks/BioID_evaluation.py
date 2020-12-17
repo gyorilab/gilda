@@ -9,13 +9,14 @@ from obonet import read_obo
 from datetime import datetime
 from collections import defaultdict
 
+from indra.literature import pmc_client, pubmed_client
 from indra.databases.mesh_client import mesh_isa
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
 
 from gilda.grounder import logger, Grounder
-from gilda.resources import popular_organisms
+from gilda.resources import popular_organisms, taxonomy_to_mesh
 
 logger.setLevel('WARNING')
 
@@ -72,6 +73,11 @@ class BioIDBenchmarker(object):
         self.bioid_data_path = bioid_data_path
         self.processed_data = self._process_annotations_table()
         self.godag = godag
+        if os.path.exists('taxonomy_cache.json'):
+            with open('taxonomy_cache.json', 'r') as fh:
+                self.taxonomy_cache = json.load(fh)
+        else:
+            self.taxonomy_cache = {}
 
     def get_mappings_tables(self):
         """Get table showing how goldstandard groundings are being mapped
@@ -251,9 +257,12 @@ class BioIDBenchmarker(object):
         print("Grounding with-context corpus with Gilda...")
         df.loc[:, 'groundings'] = df.\
             progress_apply(lambda row:
-                  self._get_grounding_list(
-                      row.text,
-                      context=self._get_plaintext(row.don_article)), axis=1)
+                           self._get_grounding_list(
+                               row.text,
+                               context=self._get_plaintext(row.don_article),
+                               organisms=self._get_organism_priority(
+                                   row.don_article)),
+                           axis=1)
         print("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
 
@@ -276,6 +285,21 @@ class BioIDBenchmarker(object):
         paragraphs = tree.xpath('//text')
         paragraphs = [' '.join(text.itertext()) for text in paragraphs]
         return '/n'.join(paragraphs) + '/n'
+
+    def _get_organism_priority(self, don_article):
+        if don_article in self.taxonomy_cache:
+            return self.taxonomy_cache[don_article]
+        pubmed_id = pubmed_from_pmc(don_article)
+        taxonomy_ids = get_taxonomy_for_pmid(pubmed_id)
+        # We remove human so that it gets deprioritized
+        # if other organisms are mentioned
+        taxonomy_ids -= {'9606'}
+        organisms = [o for o in popular_organisms
+                     if o in taxonomy_ids] + \
+                    [o for o in popular_organisms
+                     if o not in taxonomy_ids]
+        self.taxonomy_cache[don_article] = organisms
+        return organisms
 
     def _normalize_id(self, id_):
         """Convert ID into standardized format, f'{namespace}:{id}'."""
@@ -314,10 +338,10 @@ class BioIDBenchmarker(object):
             result = 'unknown'
         return result
 
-    def _get_grounding_list(self, text, context=None):
+    def _get_grounding_list(self, text, context=None, organisms=None):
         """Run gilda on a text and extract list of result-score tuples."""
         groundings = self.grounder.ground(text, context=context,
-                                          organisms=popular_organisms)
+                                          organisms=organisms)
         result = []
         for grounding in groundings:
             db, id_ = grounding.term.db, grounding.term.id
@@ -570,6 +594,32 @@ def make_table_printable(df):
     except ImportError:
         output = df.to_string(index=False)
     return output
+
+
+mesh_to_taxonomy = {v: k for k, v in taxonomy_to_mesh.items()}
+
+
+def get_taxonomy_for_pmid(pmid):
+    if not pmid:
+        return {}
+    import time
+    print(f'Looking up annotations for {pmid}')
+    time.sleep(2)
+    mesh_annots = pubmed_client.get_mesh_annotations(pmid)
+    if mesh_annots is None:
+        return {}
+    mesh_ids = {annot['mesh'] for annot in mesh_annots}
+    return {mesh_to_taxonomy[mesh_id] for mesh_id in mesh_ids
+            if mesh_id in mesh_to_taxonomy}
+
+
+def pubmed_from_pmc(pmc_id):
+    pmc_id = str(pmc_id)
+    if not pmc_id.startswith('PMC'):
+        pmc_id = f'PMC{pmc_id}'
+    ids = pmc_client.id_lookup(pmc_id, 'pmcid')
+    pmid = ids.get('pmid')
+    return pmid
 
 
 if __name__ == '__main__':
