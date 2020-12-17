@@ -36,9 +36,9 @@ def test_grounder_bug():
 
 def test_grounder_num_entries():
     entries = gr.lookup('NPM1')
-    assert len(entries) == 1, entries
+    assert len(entries) == 4, entries
     entries = gr.lookup('H4')
-    assert len(entries) == 5, entries
+    assert len(entries) == 7, entries
 
 
 def test_grounder_depluralize():
@@ -46,7 +46,7 @@ def test_grounder_depluralize():
     # or filtering so we get two identical FPLX entries and a yeast protein
     # entry here.
     entries = gr.lookup('RAFs')
-    assert len(entries) == 3, entries
+    assert len(entries) == 7, entries
     for entry in entries:
         assert entry.norm_text == 'raf'
 
@@ -90,9 +90,10 @@ def test_aa_synonym():
 
 
 def test_organism_filter():
-    t1 = Term('x', None, None, None, None, None, None, '9606')
-    t2 = Term('x', None, None, None, None, None, None, '10090')
-    t3 = Term('x', None, None, None, None, None, None, None)
+    dummy = 'dummy'
+    t1 = Term('x', dummy, dummy, dummy, dummy, dummy, dummy, '9606')
+    t2 = Term('x', dummy, dummy, dummy, dummy, dummy, dummy, '10090')
+    t3 = Term('x', dummy, dummy, dummy, dummy, dummy, dummy, None)
     terms = filter_for_organism([t1, t2, t3],
                                 organisms=['9606'])
     assert len(terms) == 2, terms
@@ -115,22 +116,22 @@ def test_organisms():
     matches = gr.ground('Raf1')
     assert len(matches) == 2, len(matches)
     organisms = {match.term.organism for match in matches}
-    assert organisms == {'9606', None}, organisms
+    assert organisms == {'9606'}, matches
 
     matches = gr.ground('Raf1', organisms=['10090'])
-    assert len(matches) == 2, len(matches)
+    assert len(matches) == 1, len(matches)
     organisms = {match.term.organism for match in matches}
-    assert organisms == {'10090', None}
+    assert organisms == {'10090'}
 
     matches = gr.ground('Raf1', organisms=['9606', '10090'])
     assert len(matches) == 2, len(matches)
     organisms = {match.term.organism for match in matches}
-    assert organisms == {'9606', None}
+    assert organisms == {'9606'}, matches
 
     matches = gr.ground('Raf1', organisms=['10090', '9606'])
-    assert len(matches) == 2, len(matches)
+    assert len(matches) == 1, len(matches)
     organisms = {match.term.organism for match in matches}
-    assert organisms == {'10090', None}
+    assert organisms == {'10090'}, matches
 
 
 def test_nonhuman_gene_synonyms():
