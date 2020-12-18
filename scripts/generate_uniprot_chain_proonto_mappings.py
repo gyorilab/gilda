@@ -13,12 +13,20 @@ PROONTO = '/Users/ben/src/bioresources/kb/protein-ontology-fragments.tsv'
 PROONTO_OBO = '/Users/ben/src/bioresources/scripts/pro_reasoned.obo'
 
 
+def organism_filter(organism):
+    if organism == 'Human':
+        return True
+    if organism == 'SARS-CoV-2':
+        return True
+    return False
+
+
 def get_uniprot_terms():
     terms = {}
     with open(UNIPROT, 'r') as fh:
         reader = csv.reader(fh, delimiter='\t')
         for row in reader:
-            if '#' in row[1] and row[2]:
+            if '#' in row[1] and organism_filter(row[2]):
                 synonym = row[0]
                 id = row[1].split('#')[1]
                 term = Term(normalize(synonym), synonym, 'UP',
