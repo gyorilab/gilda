@@ -18,7 +18,6 @@ with open(path.join(here, 'gilda', '__init__.py'), 'r') as fh:
         raise ValueError('Could not get version from gilda/__init__.py')
 
 
-
 setup(name='gilda',
       version=gilda_version,
       description=('Grounding for biomedical entities with contextual '
@@ -30,7 +29,6 @@ setup(name='gilda',
       author_email='benjamin_gyori@hms.harvard.edu',
       classifiers=[
           'Development Status :: 4 - Beta',
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7'
       ],
