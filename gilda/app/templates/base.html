@@ -1,47 +1,57 @@
-{% extends "bootstrap/base.html" %}
+<!doctype html>
+<html lang="en">
+<head>
+    {% block head %}
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-{% import "bootstrap/wtf.html" as wtf %}
-{% import "bootstrap/fixes.html" as fixes %}
-{% import "bootstrap/utils.html" as util %}
+        {% block styles %}
+            <!-- Bootstrap CSS -->
+            {{ bootstrap.load_css() }}
+        {% endblock %}
 
-{% block content %}
+        <title>{% block title %}{% endblock %}</title>
+    {% endblock %}
+</head>
+<body>
 
-<div class="container">
-  <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h2>Gilda grounding service</h2>
-      </div>
-      <div class="panel-body">
-        <p>
-          This is version {{ version }} of the Gilda grounding service.
-        For interactive use, enter an entity text (example: k-ras)
-        to ground in the form below. You can optionally provide additional
-        context (e.g., the sentence in which the entity text appeared) to help
-        disambiguation.
-      </p>
-      <p>
-        For programmatic access, POST requests to the <code>/ground</code>
-        endpoint. See the
-        <a href="https://github.com/indralab/gilda/blob/master/README.md">documentation</a>
-        for more information.
-      </p>
-      </div>
+<div class="container" style="margin-top: 25px; margin-bottom: 25px">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-sm-8 col-lg-8">
+            <div class="card">
+                <h2 class="card-header">Gilda Grounding Service</h2>
+                <div class="card-body">
+                    <p>
+                        This is version {{ version }} of the Gilda grounding service. For interactive use, enter an
+                        entity text (example: k-ras) to ground in the form below. You can optionally provide additional
+                        context (e.g., the sentence in which the entity text appeared) to help disambiguation.
+                    </p>
+                    <p>
+                        For programmatic access, POST requests to the <code>/ground</code> endpoint. See the <a
+                            href="https://github.com/indralab/gilda/blob/master/README.md">documentation</a> for more
+                        information.
+                    </p>
+                    {% block gcontent %}{% endblock %}
+                </div>
+                {% block mcontent %}{% endblock %}
+                <div class="card-footer">
+                    <p>
+                        Gilda is developed by <a href="https://indralab.github.io" target="_blank">INDRA labs</a> which
+                        is part of the <a href="http://hits.harvard.edu" target="_blank">Harvard Program in Therapeutic
+                        Science (HiTS)</a>. The development of Gilda is funded under the DARPA Communicating with
+                        Computers program (ARO grant W911NF-15-1-0544). Point of contact: Benjamin M. Gyori
+                        (benjamin_gyori [AT] hms.harvard.edu).
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="panel panel-default">
-      {% block gcontent %}{% endblock %}
-    </div>
-    <div class="well">
-      <p>Gilda is developed by <a href="https://indralab.github.io"
-          target="_blank">INDRA labs</a> which is part of the <a
-          href="http://hits.harvard.edu" target="_blank">Harvard Program in
-      Therapeutic Science (HiTS)</a>. The development of Gilda is funded under
-      the DARPA Communicating with Computers program (ARO grant W911NF-15-1-0544).
-      Point of contact: Benjamin M. Gyori (benjamin_gyori [AT]
-      hms.harvard.edu).
-      </p>
-    </small>
-    </div>
-  </div>
 </div>
+
+{% block scripts %}
+    <!-- Optional JavaScript -->
+    {{ bootstrap.load_js() }}
 {% endblock %}
+</body>
+</html>
