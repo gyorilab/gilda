@@ -41,7 +41,7 @@ endpoint.  There is a public REST service running on AWS but the service can
 also be run locally as
 
 ```bash
-python -m gilda.app
+gilda
 ```
 
 Below is an example request using `curl`:
