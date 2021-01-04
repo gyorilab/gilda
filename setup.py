@@ -39,9 +39,4 @@ setup(name='gilda',
                       'benchmarks': ['pandas', 'requests'],
                       'web': ['flask', 'flask-wtf', 'bootstrap-flask']},
       keywords=['nlp', 'biology'],
-      entry_points={
-          'console_scripts': [
-              'gilda = gilda.app.__main__:main',
-          ],
-      },
       )
