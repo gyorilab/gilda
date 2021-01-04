@@ -28,7 +28,7 @@ def main():
 @click.argument('text')
 @click.option('-c', '--context')
 def ground(text: str, context: Optional[str]):
-    """Ground the term"""
+    """Ground the term."""
     from gilda.api import ground
     for scored_match in ground(text=text, context=context):
         click.echo(json.dumps(scored_match.to_json()))
