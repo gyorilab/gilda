@@ -40,4 +40,9 @@ setup(name='gilda',
                       'benchmarks': ['pandas', 'requests']},
       keywords=['nlp', 'biology'],
       include_package_data=True,
+      entry_points={
+          'console_scripts': [
+              'gilda = gilda.cli:main',
+          ],
+      },
       )
