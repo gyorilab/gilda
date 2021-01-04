@@ -35,10 +35,12 @@ def ground(text: str, context: Optional[str]):
 
 
 @main.command()
-def web():
+@click.option('--host', type=str, default='0.0.0.0', help='Flask host.', show_default=True)
+@click.option('--port', type=int, default=8001, help='Flask port.', show_default=True)
+def web(host: str, port: int):
     """Run the Gilda web app."""
     from .app.app import app
-    app.run()
+    app.run(host=host, port=port)
 
 
 if __name__ == '__main__':
