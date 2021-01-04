@@ -44,6 +44,12 @@ also be run locally as
 python -m gilda.app
 ```
 
+Gilda's optional `[web]` requirements need to be installed to use this command with:
+
+```bash
+pip install git+https://github.com/indralab/gilda.git
+```
+
 Below is an example request using `curl`:
 
 ```bash
