@@ -33,10 +33,10 @@ setup(name='gilda',
           'Programming Language :: Python :: 3.7'
       ],
       packages=find_packages(),
-      install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'obonet'],
+      install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask',
+                        'flask-wtf', 'bootstrap-flask', 'obonet'],
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra'],
-                      'benchmarks': ['pandas', 'requests'],
-                      'web': ['flask', 'flask-wtf', 'bootstrap-flask']},
-      keywords=['nlp', 'biology'],
+                      'benchmarks': ['pandas', 'requests']},
+      keywords=['nlp', 'biology']
       )
