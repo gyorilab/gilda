@@ -750,4 +750,4 @@ if __name__ == '__main__':
     with open(os.path.join(results_path, outname), 'w') as f:
         f.write(output)
     benchmarker.processed_data.to_csv(os.path.join(results_path,
-                                                   f'{outname}.pkl'))
+                                                   f'{outname}.csv'))
