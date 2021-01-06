@@ -298,9 +298,6 @@ class BioIDBenchmarker(object):
             return self.taxonomy_cache[don_article]
         pubmed_id = pubmed_from_pmc(don_article)
         taxonomy_ids = get_taxonomy_for_pmid(pubmed_id)
-        # We remove human so that it gets deprioritized
-        # if other organisms are mentioned
-        taxonomy_ids -= {'9606'}
         organisms = [o for o in popular_organisms
                      if o in taxonomy_ids] + \
                     [o for o in popular_organisms
