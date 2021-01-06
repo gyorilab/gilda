@@ -1,10 +1,10 @@
 import os
 import json
-import pickle
 import argparse
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
+from copy import deepcopy
 import lxml.etree as etree
 from obonet import read_obo
 from datetime import datetime
@@ -72,6 +72,7 @@ class BioIDBenchmarker(object):
         self.isa_relations = isa_relations
         self.available_namespaces = list(available_namespaces)
         self.bioid_data_path = bioid_data_path
+        self.paper_level_grounding = defaultdict(set)
         self.processed_data = self._process_annotations_table()
         self.godag = godag
         if os.path.exists('taxonomy_cache.json'):
@@ -79,6 +80,7 @@ class BioIDBenchmarker(object):
                 self.taxonomy_cache = json.load(fh)
         else:
             self.taxonomy_cache = {}
+        print('Taxonomy cache length: %s' % len(self.taxonomy_cache))
 
     def get_mappings_tables(self):
         """Get table showing how goldstandard groundings are being mapped
@@ -243,6 +245,9 @@ class BioIDBenchmarker(object):
                              'don_article']]
         processed_data = processed_data[processed_data.entity_type
                                         != 'unknown']
+        for _, row in df.iterrows():
+            self.paper_level_grounding[(row.don_article, row.text)] |= \
+                set(row.obj_synonyms)
         return processed_data
 
     def ground_entities_with_gilda(self):
@@ -432,15 +437,19 @@ class BioIDBenchmarker(object):
                 return False
             groundings = [g[0] for g in groundings]
             top_grounding = groundings[0]
-            return set([top_grounding]) <= set(row.obj_synonyms)
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
+            return top_grounding in ref_groundings
 
         def exists_correct(row, disamb=True):
             groundings = row.groundings if disamb \
                 else row.groundings_no_context
             if not groundings:
                 return False
-            groundings = [g[0] for g in groundings]
-            return len(set(groundings) & set(row.obj_synonyms)) > 0
+            groundings = {g[0] for g in groundings}
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
+            return len(groundings & ref_groundings) > 0
 
         def top_correct_w_fplx(row, disamb=True):
             groundings = row.groundings if disamb \
@@ -449,9 +458,11 @@ class BioIDBenchmarker(object):
                 return False
             groundings = [g[0] for g in groundings]
             top_grounding = groundings[0]
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
             return any([x == top_grounding or
                         self.famplex_isa(x, top_correct)
-                        for x in row.obj_synonyms])
+                        for x in ref_groundings])
 
         def exists_correct_w_fplx(row, disamb=True):
             groundings = row.groundings if disamb \
@@ -459,8 +470,10 @@ class BioIDBenchmarker(object):
             if not groundings:
                 return False
             groundings = [g[0] for g in groundings]
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
             return any([x == y or self.famplex_isa(x, y)
-                        for x in row.obj_synonyms
+                        for x in ref_groundings
                         for y in groundings])
 
         def top_correct_loose(row, disamb=True):
@@ -470,10 +483,12 @@ class BioIDBenchmarker(object):
                 return False
             groundings = [g[0] for g in groundings]
             top_grounding = groundings[0]
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
             return any([x == top_grounding or
                         self.isa(x, top_grounding) or
                         self.isa(top_grounding, x)
-                        for x in row.obj_synonyms])
+                        for x in ref_groundings])
 
         def exists_correct_loose(row, disamb=True):
             groundings = row.groundings if disamb \
@@ -481,10 +496,12 @@ class BioIDBenchmarker(object):
             if not groundings:
                 return False
             groundings = [g[0] for g in groundings]
+            ref_groundings = \
+                self.paper_level_grounding[(row.don_article, row.text)]
             return any([x == y or
                         self.isa(x, y) or
                         self.isa(y, x)
-                        for x in row.obj_synonyms
+                        for x in ref_groundings
                         for y in groundings])
         print("Evaluating performance...")
         df = self.processed_data
@@ -555,7 +572,7 @@ class BioIDBenchmarker(object):
         if not with_context:
             score_cols[0] = score_cols[0] + ['_no_context']
         cols = ['entity_type'] + score_cols + ['Has Grounding', 'Total']
-        counts_table = stats[cols]
+        counts_table = deepcopy(stats[cols])
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
                             'Has Grounding', 'Total']
         counts_table.columns = new_column_names
@@ -592,7 +609,7 @@ def make_table_printable(df):
     to string.
     """
     try:
-        output = df.to_markdown(showindex=False)
+        output = df.to_markdown(index=False)
     except ImportError:
         output = df.to_string(index=False)
     return output
