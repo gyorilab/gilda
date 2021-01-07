@@ -579,6 +579,9 @@ class BioIDBenchmarker(object):
                                                  'Exists Correct PR',
                                                  'Recall',
                                                  'Exists Correct RC'])
+        def f1(p, r):
+            return 2 * p * r / (p + r)
+
         precision_recall.loc[:, 'Entity Type'] = counts_table['Entity Type']
         precision_recall.loc[:, 'Precision'] = \
             round(counts_table['Correct'] /
@@ -590,6 +593,14 @@ class BioIDBenchmarker(object):
                                                   counts_table['Total'], 3)
         precision_recall.loc[:, 'Exists Correct RC'] = \
             round(counts_table['Exists Correct'] / counts_table['Total'], 3)
+
+        precision_recall.loc[:, 'Correct F1'] = \
+            f1(precision_recall.loc[:, 'Precision'],
+               precision_recall.loc[:, 'Recall'])
+        precision_recall.loc[:, 'Exists Correct F1'] = \
+            f1(precision_recall.loc[:, 'Exists Correct PR'],
+               precision_recall.loc[:, 'Exists Correct RC'])
+
         cols = ['entity_type', 'top_correct_loose_no_context',
                 'top_correct_loose', 'exists_correct', 'Total']
         new_column_names = ['Entity Type', 'Correct', 'Correct (disamb)',
