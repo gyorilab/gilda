@@ -9,7 +9,7 @@ from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
-    replace_greek_latin, depluralize
+    replace_greek_latin, replace_greek_spelled_out, depluralize
 from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
 
@@ -80,6 +80,8 @@ class Grounder(object):
         greek_replaced = normalize(replace_greek_uni(raw_str))
         lookups.add(greek_replaced)
         greek_replaced = normalize(replace_greek_latin(raw_str))
+        lookups.add(greek_replaced)
+        greek_replaced = normalize(replace_greek_spelled_out(raw_str))
         lookups.add(greek_replaced)
         # Finally, we attempt to depluralize the word
         depluralized = normalize(depluralize(raw_str)[0])
