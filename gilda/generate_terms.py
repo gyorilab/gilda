@@ -321,25 +321,22 @@ def generate_uniprot_terms(download=False, organisms=None):
                         standard_name, 'synonym', 'uniprot',
                         organism)
             terms.append(term)
-        # For non-human proteins we add the gene name and synonyms
-        # here. For human proteins we get these from HGNC.
-        if organism != '9606':
-            term = Term(normalize(standard_name), standard_name,
-                        ns, id, standard_name, 'name', 'uniprot',
-                        organism)
-            terms.append(term)
-            if gene_synonyms_str:
-                # This is to deal with all the variations in which
-                # synonyms are listed, including degenerate strings
-                # like "; ;"
-                for synonym_group in gene_synonyms_str.split('; '):
-                    for synonym in synonym_group.split(' '):
-                        if not synonym or synonym == ';':
-                            continue
-                        term = Term(normalize(synonym), synonym,
-                                    ns, id, standard_name, 'synonym', 'uniprot',
-                                    organism)
-                        terms.append(term)
+        term = Term(normalize(standard_name), standard_name,
+                    ns, id, standard_name, 'name', 'uniprot',
+                    organism)
+        terms.append(term)
+        if gene_synonyms_str:
+            # This is to deal with all the variations in which
+            # synonyms are listed, including degenerate strings
+            # like "; ;"
+            for synonym_group in gene_synonyms_str.split('; '):
+                for synonym in synonym_group.split(' '):
+                    if not synonym or synonym == ';':
+                        continue
+                    term = Term(normalize(synonym), synonym,
+                                ns, id, standard_name, 'synonym', 'uniprot',
+                                organism)
+                    terms.append(term)
 
     return terms
 
