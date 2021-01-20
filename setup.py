@@ -38,5 +38,6 @@ setup(name='gilda',
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra'],
                       'benchmarks': ['pandas', 'requests']},
-      keywords=['nlp', 'biology']
+      keywords=['nlp', 'biology'],
+      include_package_data=True,
       )
