@@ -1,4 +1,6 @@
-from gilda.generate_terms import parse_uniprot_synonyms
+from gilda.term import Term
+from gilda.generate_terms import parse_uniprot_synonyms, \
+    filter_out_duplicates
 
 
 def test_parse_embedded_parentheses_uniprot():
@@ -43,3 +45,13 @@ def test_parse_parentheses_in_name():
     assert syms == ['DNA (cytosine-5)-methyltransferase 1', 'EC:2.1.1.37'], \
         syms
 
+
+def test_filter_priority():
+    term1 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
+                 'previous', 'hgnc', '9606')
+    term2 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
+                 'synonym', 'up', '9606')
+    terms = filter_out_duplicates([term1, term2])
+    assert len(terms) == 1
+    term = terms[0]
+    assert term.status == 'synonym'

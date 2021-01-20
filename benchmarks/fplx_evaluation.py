@@ -120,7 +120,8 @@ def evaluate_new_grounding(grounding, term):
         if term.id == \
                 incorrect_assertions[grounding['text']].get(term.db):
             return 'incorrect'
-    elif not grounding['correct']:
+
+    if not grounding['correct']:
         # If the grounding matches one of the known incorrect ones
         if grounding['db_refs'].get(term.db) == term.id:
             return 'incorrect'

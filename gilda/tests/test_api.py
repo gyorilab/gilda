@@ -38,9 +38,9 @@ def test_organisms():
     assert len(matches3) == 2, matches3
     assert matches3[0].term.db == 'UP'
     assert matches3[0].term.id == 'P63163'
-    # Here we use SMN again but prioritize human and get two bad groundings
+    # Here we use SMN again but prioritize human and get three bad groundings
     matches4 = ground('SMN', organisms=['9606', '10090'])
-    assert len(matches4) == 2, matches4
+    assert len(matches4) == 3, matches4
     assert all(m.term.organism == '9606' for m in matches4)
     # Finally we try grounding SMN1 with mouse prioritized, don't find a match
     # and end up with the human gene grounding

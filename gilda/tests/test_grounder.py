@@ -46,7 +46,7 @@ def test_grounder_depluralize():
     # or filtering so we get two identical FPLX entries and a yeast protein
     # entry here.
     entries = gr.lookup('RAFs')
-    assert len(entries) == 7, entries
+    assert len(entries) == 9, entries
     for entry in entries:
         assert entry.norm_text == 'raf'
 
@@ -138,3 +138,9 @@ def test_nonhuman_gene_synonyms():
     matches = gr.ground('Tau', organisms=['10090'])
     assert matches[0].term.db == 'UP', matches
     assert matches[0].term.id == 'P10637', matches
+
+
+def test_uniprot_gene_synonym():
+    matches = gr.ground('MEKK2')
+    assert matches[0].term.db == 'HGNC', matches
+    assert matches[0].term.entry_name == 'MAP3K2'
