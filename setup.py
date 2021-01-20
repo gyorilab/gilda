@@ -34,8 +34,7 @@ setup(name='gilda',
       ],
       packages=find_packages(),
       install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask',
-                        'flask-wtf', 'flask-bootstrap', 'obonet',
-                        'click'],
+                        'flask-wtf', 'flask-bootstrap', 'obonet'],
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra'],
                       'benchmarks': ['pandas', 'requests']},
@@ -43,7 +42,7 @@ setup(name='gilda',
       include_package_data=True,
       entry_points={
           'console_scripts': [
-              'gilda = gilda.cli:main',
+              'gilda = gilda.app:main',
           ],
       },
       )
