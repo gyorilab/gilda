@@ -144,3 +144,9 @@ def test_uniprot_gene_synonym():
     matches = gr.ground('MEKK2')
     assert matches[0].term.db == 'HGNC', matches
     assert matches[0].term.entry_name == 'MAP3K2'
+
+
+def test_greek_to_spelled_out():
+    matches = gr.ground('interferon-γ')
+    assert matches
+    assert matches[0].term.entry_name == 'IFNG'

@@ -114,6 +114,14 @@ def replace_greek_latin(s):
     return s
 
 
+def replace_greek_spelled_out(s):
+    """Replace Greek unicode character with latin spelled out.
+    """
+    for greek_uni, greek_spelled_out in greek_alphabet.items():
+        s = s.replace(greek_uni, greek_spelled_out)
+    return s
+
+
 def get_capitalization_pattern(word, beginning_of_sentence=False):
     """Return the type of capitalization for the string.
 
