@@ -1,10 +1,5 @@
-graft gilda
 graft doc
-prune benchmarks
-prune scripts
-prune notebooks
-prune models
+graft gilda/resources
+include README.md LICENSE
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .DS_Store *.gpickle
-
-include README.md LICENSE
