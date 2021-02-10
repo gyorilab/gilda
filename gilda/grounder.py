@@ -339,7 +339,7 @@ def load_terms_file(terms_file):
         A lookup dictionary whose keys are normalized entity texts, and values
         are lists of Terms with that normalized entity text.
     """
-    with open(terms_file, 'r') as fh:
+    with open(terms_file, 'r', encoding='utf-8') as fh:
         entries = {}
         for row in csv.reader(fh, delimiter='\t'):
             row_nones = [r if r else None for r in row]
