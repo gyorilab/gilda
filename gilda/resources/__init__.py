@@ -1,5 +1,6 @@
 import os
 import boto3
+import pystow
 import logging
 import botocore
 from gilda import __version__
@@ -9,15 +10,7 @@ logger = logging.getLogger(__name__)
 HERE = os.path.abspath(os.path.dirname(__file__))
 MESH_MAPPINGS_PATH = os.path.join(HERE, 'mesh_mappings.tsv')
 
-home_dir = os.path.expanduser('~')
-resource_dir = os.path.join(home_dir, '.gilda', __version__)
-
-
-if not os.path.isdir(resource_dir):
-    try:
-        os.makedirs(resource_dir)
-    except Exception:
-        logger.warning('%s already exists' % resource_dir)
+resource_dir = pystow.join('gilda', __version__)
 
 GROUNDING_TERMS_BASE_NAME = 'grounding_terms.tsv'
 GROUNDING_TERMS_PATH = os.path.join(resource_dir, GROUNDING_TERMS_BASE_NAME)
