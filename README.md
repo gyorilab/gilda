@@ -15,9 +15,12 @@ The recommended method to install Gilda is through PyPI as
 pip install gilda
 ```
 Note that Gilda uses a single large resource file for grounding, which is
-automatically downloaded into the `~/.gilda/<version>` folder during runtime.
-Given some additional dependencies, the grounding resource file can also be
-regenerated locally by running `python -m gilda.generate_terms`.
+automatically downloaded into the `~/.data/gilda/<version>` folder during
+runtime (see [pystow](https://github.com/cthoyt/pystow#%EF%B8%8F-configuration) for options to
+configure the location of this folder).
+
+Given some additional dependencies, the grounding resource file can
+also be regenerated locally by running `python -m gilda.generate_terms`.
 
 ## Usage
 Gilda can either be used as a REST service or used programmatically
