@@ -10,9 +10,7 @@ logger = logging.getLogger(__name__)
 HERE = os.path.abspath(os.path.dirname(__file__))
 MESH_MAPPINGS_PATH = os.path.join(HERE, 'mesh_mappings.tsv')
 
-home_dir = os.path.expanduser('~')
-resource_dir_path = pystow.join('gilda', __version__)
-resource_dir = resource_dir_path.as_posix()
+resource_dir = pystow.join('gilda', __version__)
 
 GROUNDING_TERMS_BASE_NAME = 'grounding_terms.tsv'
 GROUNDING_TERMS_PATH = os.path.join(resource_dir, GROUNDING_TERMS_BASE_NAME)
