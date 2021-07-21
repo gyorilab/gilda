@@ -5,7 +5,7 @@ import pystow
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
-from typing import Any, Collection, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 from copy import deepcopy
 from obonet import read_obo
 from datetime import datetime
@@ -245,17 +245,21 @@ class BioIDBenchmarker:
         tqdm.write("Grounding no-context corpus with Gilda...")
         df.loc[:, 'groundings_no_context'] = df.text.\
             progress_apply(self._get_grounding_list)
+
         tqdm.write("Grounding with-context corpus with Gilda...")
+        # use from tqdm.contrib.concurrent import thread_map
         df.loc[:, 'groundings'] = df.\
-            progress_apply(lambda row:
-                           self._get_grounding_list(
-                               row.text,
-                               context=self._get_plaintext(row.don_article),
-                               organisms=self._get_organism_priority(
-                                   row.don_article)),
-                           axis=1)
+            progress_apply(self._get_row_grounding_list, axis=1)
+
         tqdm.write("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
+
+    def _get_row_grounding_list(self, row):
+        return self._get_grounding_list(
+            row.text,
+            context=self._get_plaintext(row.don_article),
+            organisms=self._get_organism_priority(row.don_article),
+        )
 
     def _get_plaintext(self, don_article):
         """Get plaintext content from XML file in BioID corpus
@@ -334,7 +338,12 @@ class BioIDBenchmarker:
         else:
             return 'unknown'
 
-    def _get_grounding_list(self, text, context=None, organisms=None):
+    def _get_grounding_list(
+        self,
+        text: str,
+        context=None,
+        organisms=None,
+    ) -> List[Tuple[str, float]]:
         """Run gilda on a text and extract list of result-score tuples."""
         groundings = self.grounder.ground(text, context=context,
                                           organisms=organisms)
