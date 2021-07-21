@@ -40,6 +40,7 @@ taxonomy_to_mesh = {
     '224308': 'D001412',
     '559292': 'D012441',
 }
+mesh_to_taxonomy = {v: k for k, v in taxonomy_to_mesh.items()}
 
 
 def _download_from_s3(path, base_name):

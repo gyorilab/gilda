@@ -1,11 +1,12 @@
 import os
 import json
-import argparse
+import click
+import pystow
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
+from typing import Any, Dict, Optional, Set
 from copy import deepcopy
-import lxml.etree as etree
 from obonet import read_obo
 from datetime import datetime
 from collections import defaultdict
@@ -15,47 +16,49 @@ from indra.databases.mesh_client import mesh_isa
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
-
+from indra.ontology.bio import bio_ontology
 from gilda.grounder import logger, Grounder
-from gilda.resources import popular_organisms, taxonomy_to_mesh
+from gilda.resources import popular_organisms, mesh_to_taxonomy
 
 logger.setLevel('WARNING')
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+MODULE = pystow.module('gilda', 'biocreative')
+URL = 'https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz'
 
 tqdm.pandas()
 
 
-class BioIDBenchmarker(object):
+class BioIDBenchmarker:
     """Used for evaluating gilda using data from BioCreative VI BioID track
 
     Parameters
     ----------
-    bioid_data_path : str
-        Path to dataset from BioCreative VI BioID track training data
-        It should contain a file annotations.csv which contains columns
-        text, obj, and 'don article' (among others) for entity text, curated
-        grounding, and an identifier for the paper where the entity was
-        tagged respectively. It should also contain a directory fulltext_bioc
-        containing xml files for fulltexts of papers used in corpus.
-    grounder : Optional[py:class:`gilda.grounder.Grounder]
+    grounder :
         Grounder object to use in evaluation. If None, instantiates a grounder
         with default arguments. Default: None
-    equivalences : Optional[dict]
+    equivalences :
         Dictionary of mappings between namespaces. Maps strings of the form
         f'{namespace}:{id}' to strings for equivalent groundings. This is
         used to map groundings from namespaces used the the BioID track
         (e.g. Uberon, Cell Ontology, Cellosaurus, NCBI Taxonomy) that are not
         available by default in Gilda. Default: None
-    isa_relations : Optional[dict]
+    isa_relations :
         Dictionary mapping strings of the form f'{namespace}:{id}' to other
         such strings such that if y = isa_relations[x] then x isa y holds.
         Users have the option of considering a Gilda grounding x to match a
         gold standard grounding y if x isa y or y isa x. Default: None
-    godag : Optional[py:class:`networkx.MultiDiGraph`]
+    godag :
         Networkx graph of go network taken from file go.obo
     """
-    def __init__(self, bioid_data_path, grounder=None,
-                 equivalences=None, isa_relations=None, godag=None):
+    def __init__(
+        self,
+        *,
+        grounder: Optional[Grounder] = None,
+        equivalences: Optional[Dict[str, Any]] = None,
+        isa_relations: Optional[Dict[str, Any]] = None,
+        godag: Optional[nx.MultiDiGraph] = None,
+    ):
         print("Instantiating benchmarker...")
         if grounder is None:
             grounder = Grounder()
@@ -71,7 +74,6 @@ class BioIDBenchmarker(object):
         self.equivalences = equivalences
         self.isa_relations = isa_relations
         self.available_namespaces = list(available_namespaces)
-        self.bioid_data_path = bioid_data_path
         self.paper_level_grounding = defaultdict(set)
         self.processed_data = self._process_annotations_table()
         self.godag = godag
@@ -222,9 +224,11 @@ class BioIDBenchmarker(object):
     def _process_annotations_table(self):
         """Extract relevant information from annotations table."""
         print("Extracting information from annotations table...")
-        df = pd.read_csv(os.path.join(self.bioid_data_path,
-                                      'annotations.csv'),
-                         sep=',', low_memory=False)
+        df = MODULE.ensure_tar_df(
+            url=URL,
+            inner_path='BioIDtraining_2/annotations.csv',
+            read_csv_kwargs=dict(sep=',',  low_memory=False),
+        )
         # Split entries with multiple groundings
         df.loc[:, 'obj'] = df['obj'].\
             apply(lambda x: x.split('|'))
@@ -285,9 +289,7 @@ class BioIDBenchmarker(object):
         str
             Plaintext of specified article
         """
-        tree = etree.parse(os.path.join(self.bioid_data_path,
-                                        'fulltext_bioc',
-                                        f'{don_article}.xml'))
+        tree = MODULE.ensure_tar_xml(url=URL, inner_path=f'BioIDtraining_2/fulltext_bioc/{don_article}.xml')
         paragraphs = tree.xpath('//text')
         paragraphs = [' '.join(text.itertext()) for text in paragraphs]
         return '/n'.join(paragraphs) + '/n'
@@ -610,33 +612,29 @@ class BioIDBenchmarker(object):
         return counts_table, precision_recall, disamb_table
 
 
-def make_table_printable(df):
-    """Return table in printable format
+
+def make_table_printable(df: pd.DataFrame) -> str:
+    """Return table in printable format.
 
     Output to markdown if tabulate is installed, otherwise just convert
     to string.
     """
     try:
-        output = df.to_markdown(index=False)
+        return df.to_markdown(index=False)
     except ImportError:
-        output = df.to_string(index=False)
-    return output
+        return df.to_string(index=False)
 
 
-mesh_to_taxonomy = {v: k for k, v in taxonomy_to_mesh.items()}
-
-
-def get_taxonomy_for_pmid(pmid):
+def get_taxonomy_for_pmid(pmid: str) -> Set[str]:
     if not pmid:
-        return {}
+        return set()
     import time
-    print(f'Looking up annotations for {pmid}')
+    tqdm.write(f'Looking up annotations for pmid:{pmid}')
     time.sleep(2)
     mesh_annots = pubmed_client.get_mesh_annotations(pmid)
     if mesh_annots is None:
-        return {}
+        return set()
     mesh_ids = {annot['mesh'] for annot in mesh_annots}
-    from indra.ontology.bio import bio_ontology
     taxonomy_ids = set()
     for mesh_id in mesh_ids:
         if mesh_id in mesh_to_taxonomy:
@@ -646,12 +644,12 @@ def get_taxonomy_for_pmid(pmid):
         for mesh_parent in mesh_parents:
             if mesh_parent in mesh_to_taxonomy:
                 taxonomy_ids.add(mesh_to_taxonomy[mesh_parent])
-    print('-----')
-    print('PMID: %s' % pmid)
+    tqdm.write('-----')
+    tqdm.write('PMID: %s' % pmid)
     for mesh_annot in mesh_annots:
-        print(mesh_annot['text'])
-    print('Taxonomy IDs: %s' % taxonomy_ids)
-    print('-----')
+        tqdm.write(mesh_annot['text'])
+    tqdm.write('Taxonomy IDs: %s' % taxonomy_ids)
+    tqdm.write('-----')
     return taxonomy_ids
 
 
@@ -664,7 +662,10 @@ def pubmed_from_pmc(pmc_id):
     return pmid
 
 
-if __name__ == '__main__':
+@click.command()
+@click.option('--data', type=click.Path(dir_okay=True, file_okay=False), default=os.path.join(HERE, 'data'))
+@click.option('--results', type=click.Path(dir_okay=True, file_okay=False), default=os.path.join(HERE, 'results'))
+def main(data: str, results: str):
     """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
 
     It has two optional arguments, --datapath and --resultspath that specify
@@ -680,18 +681,11 @@ if __name__ == '__main__':
     https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz,
     and needs to be extracted in the benchmarks/data folder.
     """
-    path = os.path.dirname(os.path.abspath(__file__))
-    parser = argparse.ArgumentParser(description='Benchmark gilda on BioID'
-                                     ' corpus.')
-    parser.add_argument('--datapath', type=str,
-                        default=os.path.join(path, 'data'))
-    parser.add_argument('--resultspath', type=str,
-                        default=os.path.join(path, 'results'))
-    args = parser.parse_args()
-    data_path = args.datapath
-    data_path = os.path.expandvars(os.path.expanduser(data_path))
-    results_path = args.resultspath
-    results_path = os.path.expandvars(os.path.expanduser(results_path))
+    data_path = os.path.expandvars(os.path.expanduser(data))
+    results_path = os.path.expandvars(os.path.expanduser(results))
+    os.makedirs(data_path, exist_ok=True)
+    os.makedirs(results_path, exist_ok=True)
+
     try:
         with open(os.path.join(data_path, 'equivalences.json')) as f:
             equivalences = json.load(f)
@@ -703,10 +697,11 @@ if __name__ == '__main__':
     except FileNotFoundError:
         isa_relations = {}
     godag = read_obo(os.path.join(data_path, 'go.obo'))
-    benchmarker = BioIDBenchmarker(os.path.join(data_path, 'BioIDtraining_2'),
-                                   equivalences=equivalences,
-                                   isa_relations=isa_relations,
-                                   godag=godag)
+    benchmarker = BioIDBenchmarker(
+       equivalences=equivalences,
+       isa_relations=isa_relations,
+       godag=godag,
+    )
     benchmarker.ground_entities_with_gilda()
     print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
@@ -763,3 +758,7 @@ if __name__ == '__main__':
         f.write(output)
     benchmarker.processed_data.to_csv(os.path.join(results_path,
                                                    f'{outname}.csv'))
+
+
+if __name__ == '__main__':
+    main()
