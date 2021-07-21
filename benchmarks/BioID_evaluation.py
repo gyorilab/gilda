@@ -5,7 +5,7 @@ import pystow
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
-from typing import Any, Dict, Optional, Set
+from typing import Any, Collection, Dict, List, Optional, Set
 from copy import deepcopy
 from obonet import read_obo
 from datetime import datetime
@@ -115,20 +115,6 @@ class BioIDBenchmarker:
         entity groundings, ignoring duplication of groundings between rows
         in the Bioc dataset.
         """
-        # Namespaces used in Bioc dataset after standardization
-        bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
-                         'CL', 'CVCL', 'UBERON', 'NCBI taxon']
-        # Mapping of namespaces to row and column names. Namespaces not
-        # included will be used as row and column names unmodifed.
-        nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
-                                'PubChem': 'PubChem', 'CL': 'Cell Ontology',
-                                'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
-                                'FPLX': 'Famplex'}
-
-        def get_display_name(ns):
-            """Gets row/column name associated to a namespace"""
-            return nmspace_displaynames[ns] \
-                if ns in nmspace_displaynames else ns
         # Build dataframes for storing information. Values will be filled in
         # by looping through rows of the dataset.
         index = [get_display_name(ns) for ns in bioc_nmspaces] + ['Total']
@@ -229,15 +215,10 @@ class BioIDBenchmarker:
             inner_path='BioIDtraining_2/annotations.csv',
             read_csv_kwargs=dict(sep=',',  low_memory=False),
         )
-        # Split entries with multiple groundings
-        df.loc[:, 'obj'] = df['obj'].\
-            apply(lambda x: x.split('|'))
-        # Normalize ids
-        df.loc[:, 'obj'] = df['obj'].\
-            apply(lambda x: [self._normalize_id(y) for y in x])
+        # Split entries with multiple groundings then normalize ids
+        df.loc[:, 'obj'] = df['obj'].apply(self._normalize_ids)
         # Add synonyms of gold standard groundings to help match more things
-        df.loc[:, 'obj_synonyms'] = df['obj'].\
-            apply(lambda x: self.get_synonym_set(x))
+        df.loc[:, 'obj_synonyms'] = df['obj'].apply(self.get_synonym_set)
         # Create column for entity type
         df.loc[:, 'entity_type'] = df.\
             apply(lambda row: self._get_entity_type(row.obj)
@@ -261,10 +242,10 @@ class BioIDBenchmarker:
         and without context based disambiguation.
         """
         df = self.processed_data
-        print("Grounding no-context corpus with Gilda...")
+        tqdm.write("Grounding no-context corpus with Gilda...")
         df.loc[:, 'groundings_no_context'] = df.text.\
-            progress_apply(lambda x: self._get_grounding_list(x))
-        print("Grounding with-context corpus with Gilda...")
+            progress_apply(self._get_grounding_list)
+        tqdm.write("Grounding with-context corpus with Gilda...")
         df.loc[:, 'groundings'] = df.\
             progress_apply(lambda row:
                            self._get_grounding_list(
@@ -273,7 +254,7 @@ class BioIDBenchmarker:
                                organisms=self._get_organism_priority(
                                    row.don_article)),
                            axis=1)
-        print("Finished grounding corpus with Gilda...")
+        tqdm.write("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
 
     def _get_plaintext(self, don_article):
@@ -289,7 +270,10 @@ class BioIDBenchmarker:
         str
             Plaintext of specified article
         """
-        tree = MODULE.ensure_tar_xml(url=URL, inner_path=f'BioIDtraining_2/fulltext_bioc/{don_article}.xml')
+        tree = MODULE.ensure_tar_xml(
+            url=URL,
+            inner_path=f'BioIDtraining_2/fulltext_bioc/{don_article}.xml',
+        )
         paragraphs = tree.xpath('//text')
         paragraphs = [' '.join(text.itertext()) for text in paragraphs]
         return '/n'.join(paragraphs) + '/n'
@@ -307,6 +291,9 @@ class BioIDBenchmarker:
         self.taxonomy_cache[don_article] = organisms
         return organisms
 
+    def _normalize_ids(self, x: str) -> List[str]:
+        return [self._normalize_id(y) for y in x.split('|')]
+
     def _normalize_id(self, id_):
         """Convert ID into standardized format, f'{namespace}:{id}'."""
         if id_.startswith('CVCL'):
@@ -320,29 +307,32 @@ class BioIDBenchmarker:
             return f'{split_id[0]}:{split_id[0]}:{split_id[1]}'
         return id_
 
-    def _get_entity_type(self, bioc_groundings):
-        """Get entity type based on entity groundings of text in corpus.
-        """
-        if any([x.startswith('NCBI gene')
-                or x.startswith('UP') for x in bioc_groundings]):
-            result = 'Gene'
-        elif any([x.startswith('Rfam') for x in bioc_groundings]):
-            result = 'miRNA'
-        elif any([x.startswith('CHEBI') or x.startswith('PubChem')
-                  for x in bioc_groundings]):
-            result = 'Small Molecule'
-        elif any([x.startswith('GO') for x in bioc_groundings]):
-            result = 'Cellular Component'
-        elif any([x.startswith('CVCL') or x.startswith('CL')
-                  for x in bioc_groundings]):
-            result = 'Cell types/Cell lines'
-        elif any([x.startswith('UBERON') for x in bioc_groundings]):
-            result = 'Tissue/Organ'
-        elif any([x.startswith('NCBI taxon') for x in bioc_groundings]):
-            result = 'Taxon'
+    @staticmethod
+    def _get_entity_type(groundings: Collection[str]) -> str:
+        """Get entity type based on entity groundings of text in corpus."""
+        if any(
+            grounding.startswith('NCBI gene') or grounding.startswith('UP')
+            for grounding in groundings
+        ):
+            return 'Gene'
+        elif any(grounding.startswith('Rfam') for grounding in groundings):
+            return 'miRNA'
+        elif any(grounding.startswith('CHEBI') or grounding.startswith('PubChem')
+                 for grounding in groundings):
+            return 'Small Molecule'
+        elif any(grounding.startswith('GO') for grounding in groundings):
+            return 'Cellular Component'
+        elif any(
+            grounding.startswith('CVCL') or grounding.startswith('CL')
+            for grounding in groundings
+        ):
+            return 'Cell types/Cell lines'
+        elif any(grounding.startswith('UBERON') for grounding in groundings):
+            return 'Tissue/Organ'
+        elif any(grounding.startswith('NCBI taxon') for grounding in groundings):
+            return 'Taxon'
         else:
-            result = 'unknown'
-        return result
+            return 'unknown'
 
     def _get_grounding_list(self, text, context=None, organisms=None):
         """Run gilda on a text and extract list of result-score tuples."""
@@ -362,42 +352,43 @@ class BioIDBenchmarker:
             output.update(self._get_equivalent_entities(id_))
         return output
 
-    def _get_equivalent_entities(self, id_):
+    def _get_equivalent_entities(self, curie: str) -> Set[str]:
         """Return set of equivalent entity groundings
 
         Uses set of equivalences in self.equiv_map as well as those
         available in indra's hgnc, uniprot, and chebi clients.
         """
-        output = set([id_])
-        db, value = id_.split(':', maxsplit=1)
-        if id_ in self.equivalences:
-            output.update(self.equivalences[id_])
-        hgnc_id = None
-        if db == 'NCBI gene':
-            hgnc_id = get_hgnc_from_entrez(value)
-        if db == 'UP':
-            hgnc_id = get_hgnc_id(value)
-        if hgnc_id is not None:
-            output.add(f'HGNC:{hgnc_id}')
-        if db == 'PubChem':
-            chebi_id = get_chebi_id_from_pubchem(value)
+        output = {curie}
+        prefix, identifier = curie.split(':', maxsplit=1)
+        if curie in self.equivalences:
+            output.update(self.equivalences[curie])
+        if prefix == 'NCBI gene':
+            hgnc_id = get_hgnc_from_entrez(identifier)
+            if hgnc_id is not None:
+                output.add(f'HGNC:{hgnc_id}')
+        if prefix == 'UP':
+            hgnc_id = get_hgnc_id(identifier)
+            if hgnc_id is not None:
+                output.add(f'HGNC:{hgnc_id}')
+        if prefix == 'PubChem':
+            chebi_id = get_chebi_id_from_pubchem(identifier)
             if chebi_id is not None:
                 output.add(f'CHEBI:CHEBI:{chebi_id}')
         return output
 
-    def famplex_isa(self, hgnc_id, fplx_id):
+    def famplex_isa(self, hgnc_id: str, fplx_id: str) -> bool:
         """Check if hgnc entity satisfies and isa relation with famplex entity
 
         Parameters
         ----------
-        hgnc_id : str
+        hgnc_id :
             String of the form f'{namespace}:{id}'
-        fplx_id : str
+        fplx_id :
             String of the form f'{namespace}:{id}'
 
         Returns
         -------
-        bool
+        :
             True if hgnc_id corresponds to a valid HGNC grounding,
             fplx_id corresponds to a valid Famplex grounding and the
             former isa the later.
@@ -405,129 +396,139 @@ class BioIDBenchmarker:
         return hgnc_id in self.isa_relations and \
             fplx_id in self.isa_relations[hgnc_id]
 
-    def isa(self, id1, id2):
+    def isa(self, curie_1: str, curie_2: str) -> bool:
         """True if id1 satisfies isa relationship with id2
 
         Is aware of MESH, GO, and any isa relationships provided in
         isa_relations dict. At this time only looks at parents and children
         in isa_relations dict, does not follow paths.
         """
-        if id1.startswith('MESH') and id2.startswith('MESH'):
-            return mesh_isa(id1, id2)
-        elif id1.startswith('GO') and id2.startswith('GO'):
-            id1 = id1.split(':', maxsplit=1)[1]
-            id2 = id2.split(':', maxsplit=1)[1]
+        if curie_1.startswith('MESH') and curie_2.startswith('MESH'):
+            return mesh_isa(curie_1, curie_2)
+
+        # Handle GOGO problem
+        elif curie_1.startswith('GO') and curie_2.startswith('GO'):
+            curie_1 = curie_1.split(':', maxsplit=1)[1]
+            curie_2 = curie_2.split(':', maxsplit=1)[1]
             try:
-                return nx.has_path(self.godag, id1, id2)
+                return nx.has_path(self.godag, curie_1, curie_2)
             except Exception:
                 return False
         else:
-            return id1 in self.isa_relations and id2 in self.isa_relations[id1]
+            return curie_1 in self.isa_relations and curie_2 in self.isa_relations[curie_1]
+
+    def top_correct(self, row, disamb=True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = [g[0] for g in groundings]
+        top_grounding = groundings[0]
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return top_grounding in ref_groundings
+
+    def exists_correct(self, row, disamb: bool = True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = {g[0] for g in groundings}
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return len(groundings & ref_groundings) > 0
+
+    def top_correct_w_fplx(self, row, disamb: bool = True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = [g[0] for g in groundings]
+        top_grounding = groundings[0]
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return any(
+            x == top_grounding or self.famplex_isa(x, top_correct)  # FIXME, probably should be top_grounding
+            for x in ref_groundings
+        )
+
+    def exists_correct_w_fplx(self, row, disamb: bool = True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = [g[0] for g in groundings]
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return any(
+            x == y or self.famplex_isa(x, y)
+            for x in ref_groundings
+            for y in groundings
+        )
+
+    def top_correct_loose(self, row, disamb=True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = [g[0] for g in groundings]
+        top_grounding = groundings[0]
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return any(
+            x == top_grounding
+            or self.isa(x, top_grounding)
+            or self.isa(top_grounding, x)
+            for x in ref_groundings
+        )
+
+    def exists_correct_loose(self, row, disamb=True) -> bool:
+        groundings = row.groundings if disamb \
+            else row.groundings_no_context
+        if not groundings:
+            return False
+        groundings = [g[0] for g in groundings]
+        ref_groundings = \
+            self.paper_level_grounding[(row.don_article, row.text)]
+        return any(
+            x == y
+            or self.isa(x, y)
+            or self.isa(y, x)
+            for x in ref_groundings
+            for y in groundings
+        )
 
     def _evaluate_gilda_performance(self):
         """Calculate statistics showing Gilda's performance on corpus
 
         Directly updates internal dataframe
         """
-        def top_correct(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = [g[0] for g in groundings]
-            top_grounding = groundings[0]
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return top_grounding in ref_groundings
-
-        def exists_correct(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = {g[0] for g in groundings}
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return len(groundings & ref_groundings) > 0
-
-        def top_correct_w_fplx(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = [g[0] for g in groundings]
-            top_grounding = groundings[0]
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return any([x == top_grounding or
-                        self.famplex_isa(x, top_correct)
-                        for x in ref_groundings])
-
-        def exists_correct_w_fplx(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = [g[0] for g in groundings]
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return any([x == y or self.famplex_isa(x, y)
-                        for x in ref_groundings
-                        for y in groundings])
-
-        def top_correct_loose(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = [g[0] for g in groundings]
-            top_grounding = groundings[0]
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return any([x == top_grounding or
-                        self.isa(x, top_grounding) or
-                        self.isa(top_grounding, x)
-                        for x in ref_groundings])
-
-        def exists_correct_loose(row, disamb=True):
-            groundings = row.groundings if disamb \
-                else row.groundings_no_context
-            if not groundings:
-                return False
-            groundings = [g[0] for g in groundings]
-            ref_groundings = \
-                self.paper_level_grounding[(row.don_article, row.text)]
-            return any([x == y or
-                        self.isa(x, y) or
-                        self.isa(y, x)
-                        for x in ref_groundings
-                        for y in groundings])
         print("Evaluating performance...")
         df = self.processed_data
-        df.loc[:, 'top_correct'] = df.apply(top_correct, axis=1)
-        df.loc[:, 'top_correct_w_fplx'] = df.apply(top_correct_w_fplx, axis=1)
-        df.loc[:, 'top_correct_loose'] = df.apply(top_correct_loose, axis=1)
-        df.loc[:, 'exists_correct'] = df.apply(exists_correct, axis=1)
+        df.loc[:, 'top_correct'] = df.apply(self.top_correct, axis=1)
+        df.loc[:, 'top_correct_w_fplx'] = df.apply(self.top_correct_w_fplx, axis=1)
+        df.loc[:, 'top_correct_loose'] = df.apply(self.top_correct_loose, axis=1)
+        df.loc[:, 'exists_correct'] = df.apply(self.exists_correct, axis=1)
         df.loc[:, 'exists_correct_w_fplx'] = df.\
-            apply(exists_correct_w_fplx, axis=1)
+            apply(self.exists_correct_w_fplx, axis=1)
         df.loc[:, 'exists_correct_loose'] = df.\
-            apply(exists_correct_loose, axis=1)
+            apply(self.exists_correct_loose, axis=1)
         df.loc[:, 'top_correct_no_context'] = df.\
-            apply(lambda row: top_correct(row, False), axis=1)
+            apply(lambda row: self.top_correct(row, False), axis=1)
         df.loc[:, 'top_correct_w_fplx_no_context'] = df.\
-            apply(lambda row: top_correct_w_fplx(row, False), axis=1)
+            apply(lambda row: self.top_correct_w_fplx(row, False), axis=1)
         df.loc[:, 'top_correct_loose_no_context'] = df.\
-            apply(lambda row: top_correct_loose(row, False), axis=1)
+            apply(lambda row: self.top_correct_loose(row, False), axis=1)
         df.loc[:, 'Has Grounding'] = df.groundings.\
             apply(lambda x: len(x) > 0)
         print("Finished evaluating performance...")
 
-    def get_results_tables(self, match='loose', with_context=True):
+    def get_results_tables(self, match: Optional[str] = 'loose', with_context: bool = True):
         """Get tables of results
 
         Parameters
         ----------
-        match : Optional[str]
+        match :
             One of 'strict', 'w_fplex', or 'loose'. 'strict' only counts
             a Gilda grounding as a match if it is an exact match or equivalent
             to at least one of the curated groundings for the entry
@@ -569,20 +570,22 @@ class BioIDBenchmarker:
         else:
             score_cols = [f'top_correct_{match}', f'exists_correct_{match}']
         if not with_context:
-            score_cols[0] = score_cols[0] + ['_no_context']
+            score_cols[0] = score_cols[0] + ['_no_context']  # FIXME
         cols = ['entity_type'] + score_cols + ['Has Grounding', 'Total']
         counts_table = deepcopy(stats[cols])
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
                             'Has Grounding', 'Total']
         counts_table.columns = new_column_names
-        precision_recall = pd.DataFrame(index=stats.index,
-                                        columns=['Entity Type',
-                                                 'Precision',
-                                                 'Exists Correct PR',
-                                                 'Recall',
-                                                 'Exists Correct RC'])
-        def f1(p, r):
-            return 2 * p * r / (p + r)
+        precision_recall = pd.DataFrame(
+            index=stats.index,
+            columns=[
+                'Entity Type',
+                'Precision',
+                'Exists Correct PR',
+                'Recall',
+                'Exists Correct RC',
+            ],
+        )
 
         precision_recall.loc[:, 'Entity Type'] = counts_table['Entity Type']
         precision_recall.loc[:, 'Precision'] = \
@@ -610,7 +613,6 @@ class BioIDBenchmarker:
         disamb_table = stats[cols]
         disamb_table.columns = new_column_names
         return counts_table, precision_recall, disamb_table
-
 
 
 def make_table_printable(df: pd.DataFrame) -> str:
@@ -662,9 +664,39 @@ def pubmed_from_pmc(pmc_id):
     return pmid
 
 
+#: Namespaces used in Bioc dataset after standardization
+bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
+                 'CL', 'CVCL', 'UBERON', 'NCBI taxon']
+
+#: Mapping of namespaces to row and column names. Namespaces not
+#: included will be used as row and column names unmodifed.
+nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
+                        'PubChem': 'PubChem', 'CL': 'Cell Ontology',
+                        'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
+                        'FPLX': 'Famplex'}
+
+
+def get_display_name(ns: str) -> str:
+    """Gets row/column name associated to a namespace"""
+    return nmspace_displaynames[ns] if ns in nmspace_displaynames else ns
+
+
+def f1(precision: float, recall: float) -> float:
+    """Calculate the F1 score."""
+    return 2 * precision * recall / (precision + recall)
+
+
 @click.command()
-@click.option('--data', type=click.Path(dir_okay=True, file_okay=False), default=os.path.join(HERE, 'data'))
-@click.option('--results', type=click.Path(dir_okay=True, file_okay=False), default=os.path.join(HERE, 'results'))
+@click.option(
+    '--data',
+    type=click.Path(dir_okay=True, file_okay=False),
+    default=os.path.join(HERE, 'data'),
+)
+@click.option(
+    '--results',
+    type=click.Path(dir_okay=True, file_okay=False),
+    default=os.path.join(HERE, 'results'),
+)
 def main(data: str, results: str):
     """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
 

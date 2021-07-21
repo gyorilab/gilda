@@ -39,7 +39,7 @@ setup(name='gilda',
       extras_require={'test': ['nose', 'coverage'],
                       'terms': ['indra'],
                       'benchmarks': ['pandas>=1.0', 'requests',
-                                     'tabulate', 'tqdm']},
+                                     'tabulate', 'tqdm', 'click']},
       keywords=['nlp', 'biology'],
       include_package_data=True,
       entry_points={
