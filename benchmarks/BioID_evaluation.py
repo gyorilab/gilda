@@ -63,6 +63,8 @@ class BioIDBenchmarker:
         print("Instantiating benchmarker...")
         if grounder is None:
             grounder = Grounder()
+        print("Instantiating bio ontology...")
+        bio_ontology.initialize()
         if equivalences is None:
             equivalences = {}
         if isa_relations is None:
