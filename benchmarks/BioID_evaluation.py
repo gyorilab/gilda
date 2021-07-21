@@ -23,6 +23,7 @@ from gilda.resources import popular_organisms, mesh_to_taxonomy
 logger.setLevel('WARNING')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+TAXONOMY_CACHE_PATH = os.path.join(HERE, 'taxonomy_cache.json')
 MODULE = pystow.module('gilda', 'biocreative')
 URL = 'https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz'
 
@@ -77,8 +78,8 @@ class BioIDBenchmarker:
         self.paper_level_grounding = defaultdict(set)
         self.processed_data = self._process_annotations_table()
         self.godag = godag
-        if os.path.exists('taxonomy_cache.json'):
-            with open('taxonomy_cache.json', 'r') as fh:
+        if os.path.exists(TAXONOMY_CACHE_PATH):
+            with open(TAXONOMY_CACHE_PATH, 'r') as fh:
                 self.taxonomy_cache = json.load(fh)
         else:
             self.taxonomy_cache = {}
