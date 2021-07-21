@@ -675,6 +675,10 @@ if __name__ == '__main__':
     serializing dictionaries of equivalence and isa relations between
     groundings. Results files will be added to the results directory in
     timestamped files.
+
+    The data can be downloaded from
+    https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDtraining_2.tar.gz,
+    and needs to be extracted in the benchmarks/data folder.
     """
     path = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='Benchmark gilda on BioID'
