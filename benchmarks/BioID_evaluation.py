@@ -462,7 +462,7 @@ class BioIDBenchmarker:
         ref_groundings = \
             self.paper_level_grounding[(row.don_article, row.text)]
         return any(
-            x == top_grounding or self.famplex_isa(x, top_correct)  # FIXME, probably should be top_grounding
+            x == top_grounding or self.famplex_isa(x, top_grounding)
             for x in ref_groundings
         )
 
@@ -584,7 +584,9 @@ class BioIDBenchmarker:
         else:
             score_cols = [f'top_correct_{match}', f'exists_correct_{match}']
         if not with_context:
-            score_cols[0] = score_cols[0] + ['_no_context']  # FIXME
+            # OLD
+            # score_cols[0] = score_cols[0] + ['_no_context']
+            score_cols[0] = score_cols[0] + '_no_context'
         cols = ['entity_type'] + score_cols + ['Has Grounding', 'Total']
         counts_table = deepcopy(stats[cols])
         new_column_names = ['Entity Type', 'Correct', 'Exists Correct',
