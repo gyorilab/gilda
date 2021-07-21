@@ -7,6 +7,7 @@ import networkx as nx
 from tqdm import tqdm
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 from copy import deepcopy
+from lxml import etree
 from obonet import read_obo
 from datetime import datetime
 from collections import defaultdict
@@ -264,23 +265,22 @@ class BioIDBenchmarker:
             organisms=self._get_organism_priority(row.don_article),
         )
 
-    def _get_plaintext(self, don_article):
+    def _get_plaintext(self, don_article: str) -> str:
         """Get plaintext content from XML file in BioID corpus
 
         Parameters
         ----------
-        don_article : str
+        don_article :
             Identifier for paper used within corpus.
 
         Returns
         -------
-        str
+        :
             Plaintext of specified article
         """
-        tree = MODULE.ensure_tar_xml(
-            url=URL,
-            inner_path=f'BioIDtraining_2/fulltext_bioc/{don_article}.xml',
-        )
+        directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
+        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc', f'{don_article}.xml')
+        tree = etree.parse(path.as_posix())
         paragraphs = tree.xpath('//text')
         paragraphs = [' '.join(text.itertext()) for text in paragraphs]
         return '/n'.join(paragraphs) + '/n'
@@ -298,21 +298,23 @@ class BioIDBenchmarker:
         self.taxonomy_cache[don_article] = organisms
         return organisms
 
-    def _normalize_ids(self, x: str) -> List[str]:
-        return [self._normalize_id(y) for y in x.split('|')]
+    @classmethod
+    def _normalize_ids(cls, curies: str) -> List[str]:
+        return [cls._normalize_id(y) for y in curies.split('|')]
 
-    def _normalize_id(self, id_):
+    @staticmethod
+    def _normalize_id(curie):
         """Convert ID into standardized format, f'{namespace}:{id}'."""
-        if id_.startswith('CVCL'):
-            return id_.replace('_', ':')
-        split_id = id_.split(':', maxsplit=1)
+        if curie.startswith('CVCL'):
+            return curie.replace('_', ':')
+        split_id = curie.split(':', maxsplit=1)
         if split_id[0] == 'Uberon':
             return split_id[1]
         if split_id[0] == 'Uniprot':
             return f'UP:{split_id[1]}'
         if split_id[0] in ['GO', 'CHEBI']:
             return f'{split_id[0]}:{split_id[0]}:{split_id[1]}'
-        return id_
+        return curie
 
     @staticmethod
     def _get_entity_type(groundings: Collection[str]) -> str:
