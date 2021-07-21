@@ -224,12 +224,7 @@ class BioIDBenchmarker:
         # Add synonyms of gold standard groundings to help match more things
         df.loc[:, 'obj_synonyms'] = df['obj'].apply(self.get_synonym_set)
         # Create column for entity type
-        df.loc[:, 'entity_type'] = df.\
-            apply(lambda row: self._get_entity_type(row.obj)
-                  if self._get_entity_type(row.obj) != 'Gene' else
-                  'Human Gene' if any([y.startswith('HGNC') for y in
-                                       row.obj_synonyms]) else
-                  'Nonhuman Gene', axis=1)
+        df.loc[:, 'entity_type'] = df.apply(self._get_entity_type_helper, axis=1)
         processed_data = df[['text', 'obj', 'obj_synonyms', 'entity_type',
                              'don_article']]
         processed_data = processed_data[processed_data.entity_type
@@ -238,6 +233,14 @@ class BioIDBenchmarker:
             self.paper_level_grounding[(row.don_article, row.text)] |= \
                 set(row.obj_synonyms)
         return processed_data
+
+    def _get_entity_type_helper(self, row) -> str:
+        if self._get_entity_type(row.obj) != 'Gene':
+            return self._get_entity_type(row.obj)
+        elif any(y.startswith('HGNC') for y in row.obj_synonyms):
+            return 'Human Gene'
+        else:
+            return 'Nonhuman Gene'
 
     def ground_entities_with_gilda(self):
         """Compute gilda groundings of entity texts in corpus
