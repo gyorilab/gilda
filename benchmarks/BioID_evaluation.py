@@ -2,19 +2,17 @@ import os
 import json
 import click
 import pystow
+import famplex
 import pandas as pd
-import networkx as nx
 from tqdm import tqdm
 from textwrap import dedent
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 from copy import deepcopy
 from lxml import etree
-from obonet import read_obo
 from datetime import datetime
 from collections import defaultdict
 
 from indra.literature import pmc_client, pubmed_client
-from indra.databases.mesh_client import mesh_isa
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
@@ -46,21 +44,12 @@ class BioIDBenchmarker:
         used to map groundings from namespaces used the the BioID track
         (e.g. Uberon, Cell Ontology, Cellosaurus, NCBI Taxonomy) that are not
         available by default in Gilda. Default: None
-    isa_relations :
-        Dictionary mapping strings of the form f'{namespace}:{id}' to other
-        such strings such that if y = isa_relations[x] then x isa y holds.
-        Users have the option of considering a Gilda grounding x to match a
-        gold standard grounding y if x isa y or y isa x. Default: None
-    godag :
-        Networkx graph of go network taken from file go.obo
     """
     def __init__(
         self,
         *,
         grounder: Optional[Grounder] = None,
         equivalences: Optional[Dict[str, Any]] = None,
-        isa_relations: Optional[Dict[str, Any]] = None,
-        godag: Optional[nx.MultiDiGraph] = None,
     ):
         print("Instantiating benchmarker...")
         if grounder is None:
@@ -69,19 +58,15 @@ class BioIDBenchmarker:
         bio_ontology.initialize()
         if equivalences is None:
             equivalences = {}
-        if isa_relations is None:
-            isa_relations = {}
         available_namespaces = set()
         for terms in grounder.entries.values():
             for term in terms:
                 available_namespaces.add(term.db)
         self.grounder = grounder
         self.equivalences = equivalences
-        self.isa_relations = isa_relations
         self.available_namespaces = list(available_namespaces)
         self.paper_level_grounding = defaultdict(set)
         self.processed_data = self._process_annotations_table()
-        self.godag = godag
         if os.path.exists(TAXONOMY_CACHE_PATH):
             with open(TAXONOMY_CACHE_PATH, 'r') as fh:
                 self.taxonomy_cache = json.load(fh)
@@ -411,8 +396,8 @@ class BioIDBenchmarker:
             fplx_id corresponds to a valid Famplex grounding and the
             former isa the later.
         """
-        return hgnc_id in self.isa_relations and \
-            fplx_id in self.isa_relations[hgnc_id]
+        # TODO can this be swapped directly for the bioontology?
+        return famplex.isa('HGNC', hgnc_id, 'FPLX', fplx_id)
 
     def isa(self, curie_1: str, curie_2: str) -> bool:
         """True if id1 satisfies isa relationship with id2
@@ -421,19 +406,22 @@ class BioIDBenchmarker:
         isa_relations dict. At this time only looks at parents and children
         in isa_relations dict, does not follow paths.
         """
-        if curie_1.startswith('MESH') and curie_2.startswith('MESH'):
-            return mesh_isa(curie_1, curie_2)
-
-        # Handle GOGO problem
-        elif curie_1.startswith('GO') and curie_2.startswith('GO'):
-            curie_1 = curie_1.split(':', maxsplit=1)[1]
-            curie_2 = curie_2.split(':', maxsplit=1)[1]
-            try:
-                return nx.has_path(self.godag, curie_1, curie_2)
-            except Exception:
-                return False
-        else:
-            return curie_1 in self.isa_relations and curie_2 in self.isa_relations[curie_1]
+        # if curie_1.startswith('MESH') and curie_2.startswith('MESH'):
+        #     return mesh_isa(curie_1, curie_2)
+        # # Handle GOGO problem
+        # elif curie_1.startswith('GO') and curie_2.startswith('GO'):
+        #     curie_1 = curie_1.split(':', maxsplit=1)[1]
+        #     curie_2 = curie_2.split(':', maxsplit=1)[1]
+        #     try:
+        #         return nx.has_path(self.godag, curie_1, curie_2)
+        #     except Exception:
+        #         return False
+        # else:
+        #     return curie_1 in self.isa_relations and curie_2 in self.isa_relations[curie_1]
+        ns1, id1 = curie_1.split(':', maxsplit=1)
+        ns2, id2 = curie_2.split(':', maxsplit=1)
+        # TODO did we need to keep some processing on the IDs?
+        return bio_ontology.isa(ns1, id1, ns2, id2)
 
     def top_correct(self, row, disamb=True) -> bool:
         groundings = row.groundings if disamb \
@@ -724,7 +712,7 @@ def main(data: str, results: str):
     the path to the directory with necessary data and the path to the
     directory where results will be stored. The directory at datapath must
     contain a folder BIoIDtraining_2 containing the BIoID training corpus,
-    and can optionally contain files equivalences.json and isa_relations.json
+    and can optionally contain files equivalences.json
     serializing dictionaries of equivalence and isa relations between
     groundings. Results files will be added to the results directory in
     timestamped files.
@@ -743,17 +731,7 @@ def main(data: str, results: str):
             equivalences = json.load(f)
     except FileNotFoundError:
         equivalences = {}
-    try:
-        with open(os.path.join(data_path, 'isa_relations.json')) as f:
-            isa_relations = json.load(f)
-    except FileNotFoundError:
-        isa_relations = {}
-    godag = read_obo(os.path.join(data_path, 'go.obo'))
-    benchmarker = BioIDBenchmarker(
-       equivalences=equivalences,
-       isa_relations=isa_relations,
-       godag=godag,
-    )
+    benchmarker = BioIDBenchmarker(equivalences=equivalences)
     benchmarker.ground_entities_with_gilda()
     print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
