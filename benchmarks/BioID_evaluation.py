@@ -5,6 +5,7 @@ import pystow
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
+from textwrap import dedent
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 from copy import deepcopy
 from lxml import etree
@@ -765,48 +766,70 @@ def main(data: str, results: str):
               " table output.")
     print(make_table_printable(precision_recall))
     # Generate output document
-    caption1 = """
-    Table 1:
-    Mapping of groundings for entities in BioID corpus into namespaces used by
-    Gilda. Count is by entries in corpus with groundings being counted multiple
-    times if they occur in more than one entry. Some entries contain multiple
-    equivalent curated groundings, leading to a discrepancy between the counts
-    shown here and those in the other tables."""
+    caption0 = dedent(f"""\
+    # Gilda Benchmarking
+    
+    Bio-ontology: v{bio_ontology.version}
+    """)
+    caption1 = dedent("""\
+        ## Table 1
+
+        Mapping of groundings for entities in BioID corpus into namespaces used by
+        Gilda. Count is by entries in corpus with groundings being counted multiple
+        times if they occur in more than one entry. Some entries contain multiple
+        equivalent curated groundings, leading to a discrepancy between the counts
+        shown here and those in the other tables.
+    """)
     table1 = make_table_printable(mappings_table)
-    caption2 = """
-    Table 2:
-    Mapping of groundings for entities in BioID corpus into Namespaces used by
-    Gilda. Count is by unique groundings, with the same grounding only being
-    counted once even if it appears in many entries."""
+    caption2 = dedent("""\
+        ## Table 2
+
+        Mapping of groundings for entities in BioID corpus into Namespaces used by
+        Gilda. Count is by unique groundings, with the same grounding only being
+        counted once even if it appears in many entries.
+    """)
     table2 = make_table_printable(mappings_table_unique)
-    caption3 = """
-    Table 3:
-    Counts of number of entries in corpus for each entity type, along with
-    number of entries where Gilda's top grounding is correct, the number
-    where one of Gilda's groundings is correct, and the number of entries
-    where Gilda produced some grounding. Context based disambiguation is
-    applied and Gilda's groundings are considered correct if there is
-    an isa relation between the goldstandard grounding and Gilda's or
-    vice versa."""
+    caption3 = dedent("""\
+        ## Table 3
+
+        Counts of number of entries in corpus for each entity type, along with
+        number of entries where Gilda's top grounding is correct, the number
+        where one of Gilda's groundings is correct, and the number of entries
+        where Gilda produced some grounding. Context based disambiguation is
+        applied and Gilda's groundings are considered correct if there is
+        an isa relation between the goldstandard grounding and Gilda's or
+        vice versa.
+    """)
     table3 = make_table_printable(counts)
-    caption4 = """
-    Table 4:
-    Precision and recall values for Gilda performance by entity type. Values
-    are given both for the case where Gilda is considered correct only if the
-    top grounding matches and the case where Gilda is considered correct if
-    any of its groundings match."""
+    caption4 = dedent("""\
+        ## Table 4
+
+        Precision and recall values for Gilda performance by entity type. Values
+        are given both for the case where Gilda is considered correct only if the
+        top grounding matches and the case where Gilda is considered correct if
+        any of its groundings match.
+    """)
     table4 = make_table_printable(precision_recall)
-    caption5 = """
-    Table 5:
-    Comparison of results with and without context based disambiguation."""
+    caption5 = dedent("""\
+        ## Table 5
+
+        Comparison of results with and without context based disambiguation.
+    """)
     table5 = make_table_printable(disamb_table)
-    output = '\n\n'.join([caption1, table1, caption2, table2,
-                          caption3, table3, caption4, table4,
-                          caption5, table5])
+    output = '\n\n'.join([
+        caption0,
+        caption1, table1,
+        caption2, table2,
+        caption3, table3,
+        caption4, table4,
+        caption5, table5,
+    ])
     time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
     outname = f'benchmark_{time}'
-    with open(os.path.join(results_path, outname), 'w') as f:
+    md_path = os.path.join(results_path, f'{outname}.md')
+    with open(md_path, 'w') as f:
         f.write(output)
+    print(f'Output summary at {md_path}')
     benchmarker.processed_data.to_csv(os.path.join(results_path,
                                                    f'{outname}.csv'))
 
