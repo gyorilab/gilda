@@ -29,6 +29,9 @@ URL = 'https://biocreative.bioinformatics.udel.edu/media/store/files/2017/BioIDt
 
 tqdm.pandas()
 
+#: A set of the prefix->prefix mappings missing from the bio-ontology
+BO_MISSING_XREFS = set()
+
 
 class BioIDBenchmarker:
     """Used for evaluating gilda using data from BioCreative VI BioID track
@@ -363,8 +366,17 @@ class BioIDBenchmarker:
         """
         output = {curie}
         prefix, identifier = curie.split(':', maxsplit=1)
-        if curie in self.equivalences:
-            output.update(self.equivalences[curie])
+        for xref_prefix, xref_id in bio_ontology.get_mappings(prefix, identifier):
+            output.add(f'{xref_prefix}:{xref_id}')
+
+        # TODO these should all be in bioontology, eventually
+        for xref_curie in self.equivalences.get(curie, []):
+            xref_prefix, xref_id = xref_curie.split(':', maxsplit=1)
+            if (prefix, xref_prefix) not in BO_MISSING_XREFS:
+                BO_MISSING_XREFS.add((prefix, xref_prefix))
+                tqdm.write(f'Bioontology is missing equivalences from {prefix} to {xref_prefix}')
+            output.add(xref_curie)
+
         if prefix == 'NCBI gene':
             hgnc_id = get_hgnc_from_entrez(identifier)
             if hgnc_id is not None:
