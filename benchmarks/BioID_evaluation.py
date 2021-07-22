@@ -643,9 +643,6 @@ class BioIDBenchmarker:
         return counts_table, precision_recall, disamb_table
 
 
-        return counts_table, precision_recall, disamb_table
-
-
 def get_taxonomy_for_pmid(pmid: str) -> Set[str]:
     if not pmid:
         return set()
