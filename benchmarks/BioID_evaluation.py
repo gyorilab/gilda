@@ -1,24 +1,26 @@
-import os
 import json
-import click
-import pystow
-import famplex
-import pandas as pd
-from tqdm import tqdm
+import os
+from collections import defaultdict
+from copy import deepcopy
+from datetime import datetime
 from textwrap import dedent
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple
-from copy import deepcopy
-from lxml import etree
-from datetime import datetime
-from collections import defaultdict
 
-from indra.literature import pmc_client, pubmed_client
-from indra.databases.uniprot_client import get_hgnc_id
-from indra.databases.hgnc_client import get_hgnc_from_entrez
+import click
+import pandas as pd
+import pystow
+import tabulate
+from lxml import etree
+from tqdm import tqdm
+
+import famplex
+from gilda.grounder import Grounder, logger
+from gilda.resources import mesh_to_taxonomy, popular_organisms
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
+from indra.databases.hgnc_client import get_hgnc_from_entrez
+from indra.databases.uniprot_client import get_hgnc_id
+from indra.literature import pmc_client, pubmed_client
 from indra.ontology.bio import bio_ontology
-from gilda.grounder import logger, Grounder
-from gilda.resources import popular_organisms, mesh_to_taxonomy
 
 logger.setLevel('WARNING')
 
@@ -48,12 +50,14 @@ class BioIDBenchmarker:
         (e.g. Uberon, Cell Ontology, Cellosaurus, NCBI Taxonomy) that are not
         available by default in Gilda. Default: None
     """
+
     def __init__(
         self,
         *,
         grounder: Optional[Grounder] = None,
         equivalences: Optional[Dict[str, Any]] = None,
     ):
+        print("using tabulate", tabulate.__version__)
         print("Instantiating benchmarker...")
         if grounder is None:
             grounder = Grounder()
@@ -77,7 +81,7 @@ class BioIDBenchmarker:
             self.taxonomy_cache = {}
         print('Taxonomy cache length: %s' % len(self.taxonomy_cache))
 
-    def get_mappings_tables(self):
+    def get_mappings_tables(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get table showing how goldstandard groundings are being mapped
 
         Namespaces used in the Bioc dataset may only partially overlap with
@@ -163,7 +167,7 @@ class BioIDBenchmarker:
                     # or if we have already tallied a mapping to this namespace
                     # for this particular row, discard and continue
                     if nmspace2 not in self.available_namespaces or \
-                       nmspace2 in used_namespaces:
+                        nmspace2 in used_namespaces:
                         continue
                     # If Gilda namespace has not been mapped to in the curent
                     # row increment the count of entries in the namespace with
@@ -175,7 +179,7 @@ class BioIDBenchmarker:
                     # If the grounding g1 has never been mapped to a Gilda
                     # namespace increment the unique count
                     if g1 not in mapped_from_nmspace_ids[nmspace1]:
-                        mapping_table_unique.\
+                        mapping_table_unique. \
                             loc[get_display_name(nmspace1),
                                 'Total Mapped'] += 1
                         mapped_from_nmspace_ids[nmspace1].add(g1)
@@ -187,7 +191,7 @@ class BioIDBenchmarker:
                     # to by the grounding in row namespace, increment unique
                     # count
                     if g2 not in mapped_to_nmspace_ids[nmspace1]:
-                        mapping_table_unique.\
+                        mapping_table_unique. \
                             loc[get_display_name(nmspace1),
                                 get_display_name(nmspace2)] += 1
                         mapped_to_nmspace_ids[nmspace1].add(g2)
@@ -206,7 +210,7 @@ class BioIDBenchmarker:
         df = MODULE.ensure_tar_df(
             url=URL,
             inner_path='BioIDtraining_2/annotations.csv',
-            read_csv_kwargs=dict(sep=',',  low_memory=False),
+            read_csv_kwargs=dict(sep=',', low_memory=False),
         )
         # Split entries with multiple groundings then normalize ids
         df.loc[:, 'obj'] = df['obj'].apply(self._normalize_ids)
@@ -239,12 +243,12 @@ class BioIDBenchmarker:
         """
         df = self.processed_data
         tqdm.write("Grounding no-context corpus with Gilda...")
-        df.loc[:, 'groundings_no_context'] = df.text.\
+        df.loc[:, 'groundings_no_context'] = df.text. \
             progress_apply(self._get_grounding_list)
 
         tqdm.write("Grounding with-context corpus with Gilda...")
         # use from tqdm.contrib.concurrent import thread_map
-        df.loc[:, 'groundings'] = df.\
+        df.loc[:, 'groundings'] = df. \
             progress_apply(self._get_row_grounding_list, axis=1)
 
         tqdm.write("Finished grounding corpus with Gilda...")
@@ -527,21 +531,25 @@ class BioIDBenchmarker:
         df.loc[:, 'top_correct_w_fplx'] = df.apply(self.top_correct_w_fplx, axis=1)
         df.loc[:, 'top_correct_loose'] = df.apply(self.top_correct_loose, axis=1)
         df.loc[:, 'exists_correct'] = df.apply(self.exists_correct, axis=1)
-        df.loc[:, 'exists_correct_w_fplx'] = df.\
+        df.loc[:, 'exists_correct_w_fplx'] = df. \
             apply(self.exists_correct_w_fplx, axis=1)
-        df.loc[:, 'exists_correct_loose'] = df.\
+        df.loc[:, 'exists_correct_loose'] = df. \
             apply(self.exists_correct_loose, axis=1)
-        df.loc[:, 'top_correct_no_context'] = df.\
+        df.loc[:, 'top_correct_no_context'] = df. \
             apply(lambda row: self.top_correct(row, False), axis=1)
-        df.loc[:, 'top_correct_w_fplx_no_context'] = df.\
+        df.loc[:, 'top_correct_w_fplx_no_context'] = df. \
             apply(lambda row: self.top_correct_w_fplx(row, False), axis=1)
-        df.loc[:, 'top_correct_loose_no_context'] = df.\
+        df.loc[:, 'top_correct_loose_no_context'] = df. \
             apply(lambda row: self.top_correct_loose(row, False), axis=1)
-        df.loc[:, 'Has Grounding'] = df.groundings.\
+        df.loc[:, 'Has Grounding'] = df.groundings. \
             apply(lambda x: len(x) > 0)
         print("Finished evaluating performance...")
 
-    def get_results_tables(self, match: Optional[str] = 'loose', with_context: bool = True):
+    def get_results_tables(
+        self,
+        match: Optional[str] = 'loose',
+        with_context: bool = True,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Get tables of results
 
         Parameters
@@ -681,10 +689,12 @@ bioc_nmspaces = ['UP', 'NCBI gene', 'Rfam', 'CHEBI', 'PubChem', 'GO',
 
 #: Mapping of namespaces to row and column names. Namespaces not
 #: included will be used as row and column names unmodifed.
-nmspace_displaynames = {'UP': 'Uniprot', 'NCBI gene': 'Entrez',
-                        'PubChem': 'PubChem', 'CL': 'Cell Ontology',
-                        'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
-                        'FPLX': 'Famplex'}
+nmspace_displaynames = {
+    'UP': 'Uniprot', 'NCBI gene': 'Entrez',
+    'PubChem': 'PubChem', 'CL': 'Cell Ontology',
+    'CVCL': 'Cellosaurus', 'UBERON': 'Uberon',
+    'FPLX': 'Famplex'
+}
 
 
 def get_display_name(ns: str) -> str:
