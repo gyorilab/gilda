@@ -635,16 +635,7 @@ class BioIDBenchmarker:
         return counts_table, precision_recall, disamb_table
 
 
-def make_table_printable(df: pd.DataFrame) -> str:
-    """Return table in printable format.
-
-    Output to markdown if tabulate is installed, otherwise just convert
-    to string.
-    """
-    try:
-        return df.to_markdown(index=False)
-    except ImportError:
-        return df.to_string(index=False)
+        return counts_table, precision_recall, disamb_table
 
 
 def get_taxonomy_for_pmid(pmid: str) -> Set[str]:
@@ -749,12 +740,7 @@ def main(data: str, results: str):
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
     print("Constructing results table...")
     counts, precision_recall, disamb_table = benchmarker.get_results_tables()
-    try:
-        _ = precision_recall.to_markdown()
-    except ImportError:
-        print("Install tabulate with `pip install tabulate` to pretty print"
-              " table output.")
-    print(make_table_printable(precision_recall))
+    print(precision_recall.to_markdown(index=False))
     # Generate output document
     caption0 = dedent(f"""\
     # Gilda Benchmarking
@@ -770,7 +756,7 @@ def main(data: str, results: str):
         equivalent curated groundings, leading to a discrepancy between the counts
         shown here and those in the other tables.
     """)
-    table1 = make_table_printable(mappings_table)
+    table1 = mappings_table.to_markdown(index=False)
     caption2 = dedent("""\
         ## Table 2
 
@@ -778,7 +764,7 @@ def main(data: str, results: str):
         Gilda. Count is by unique groundings, with the same grounding only being
         counted once even if it appears in many entries.
     """)
-    table2 = make_table_printable(mappings_table_unique)
+    table2 = mappings_table_unique.to_markdown(index=False)
     caption3 = dedent("""\
         ## Table 3
 
@@ -787,10 +773,10 @@ def main(data: str, results: str):
         where one of Gilda's groundings is correct, and the number of entries
         where Gilda produced some grounding. Context based disambiguation is
         applied and Gilda's groundings are considered correct if there is
-        an isa relation between the goldstandard grounding and Gilda's or
+        an isa relation between the gold standard grounding and Gilda's or
         vice versa.
     """)
-    table3 = make_table_printable(counts)
+    table3 = counts.to_markdown(index=False)
     caption4 = dedent("""\
         ## Table 4
 
@@ -799,13 +785,13 @@ def main(data: str, results: str):
         top grounding matches and the case where Gilda is considered correct if
         any of its groundings match.
     """)
-    table4 = make_table_printable(precision_recall)
+    table4 = precision_recall.to_markdown(index=False)
     caption5 = dedent("""\
         ## Table 5
 
         Comparison of results with and without context based disambiguation.
     """)
-    table5 = make_table_printable(disamb_table)
+    table5 = disamb_table.to_markdown(index=False)
     output = '\n\n'.join([
         caption0,
         caption1, table1,
@@ -820,8 +806,21 @@ def main(data: str, results: str):
     with open(md_path, 'w') as f:
         f.write(output)
     print(f'Output summary at {md_path}')
-    benchmarker.processed_data.to_csv(os.path.join(results_path,
-                                                   f'{outname}.csv'))
+
+    latex_output = dedent(f'''\
+    \\section{{Tables}}
+        {mappings_table.to_latex(index=False, caption=caption1, label='tab:mappings')}
+        {mappings_table_unique.to_latex(index=False, caption=caption2, label='tab:mappings-unique')}
+        {counts.to_latex(index=False, caption=caption3, label='tab:counts')}
+        {precision_recall.round(2).to_latex(index=False, caption=caption4, label='tab:precision-recall')}
+        {disamb_table.to_latex(index=False, caption=caption5, label='tab:disambiguation')}
+    ''')
+    latex_path = os.path.join(results_path, f'{outname}.tex')
+    with open(latex_path, 'w') as file:
+        print(latex_output, file=file)
+
+    tsv_path = os.path.join(results_path, f'{outname}.tsv')
+    benchmarker.processed_data.to_csv(tsv_path, sep='\t', index=False)
 
 
 if __name__ == '__main__':
