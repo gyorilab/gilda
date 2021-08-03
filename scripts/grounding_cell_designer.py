@@ -1,10 +1,15 @@
+"""This script can process a set of Cell Designer XML files that are
+part of the COVID-19 Disease Map project, detect species with missing
+grounding, ground these based on their string name with Gilda, and
+serialize the changes back into XML files."""
+
 import re
 import sys
-from collections import defaultdict
-import gilda
 from pathlib import Path
+from collections import defaultdict
 from xml.etree import ElementTree as ET
 from indra.databases import identifiers
+import gilda
 
 rdf_str = (
     b'<rdf:RDF '
@@ -33,8 +38,7 @@ relevant_grounding_ns = {'ncbiprotein', 'ncbigene', 'uniprot', 'obo.go',
                          'refseq', 'ensembl', 'ec-code', 'brenda',
                          'kegg.compound', 'drugbank'}
 irrelevant_classes = {'DEGRADED'}
-grounding_stats = {}
-
+grounding_stats = {'ngrounding': 0}
 
 def register_all_namespaces(fname):
     namespaces = dict([node for _, node in
@@ -71,6 +75,7 @@ def add_groundings(et):
             if species:
                 print(name, matches[0].term.db, matches[0].term.id,
                       matches[0].term.entry_name)
+                grounding_stats['ngrounding'] += 1
         print('---')
     return et
 
@@ -106,7 +111,7 @@ def add_grounding_element(species, entity_class, db_ns, db_id):
         bqbiol_tag = 'bqbiol:isEncodedBy'
     # In case a protein is grounded to CHEBI, it's typically a problem, we
     # skip these
-    if entity_class == 'PROTEIN' and db_ns == 'CHEBI':
+    elif entity_class == 'PROTEIN' and db_ns == 'CHEBI':
         return
     else:
         bqbiol_tag = 'bqbiol:is'
@@ -144,12 +149,14 @@ def dump(et, fname):
                           encoding='UTF-8')
     xml_str = b'<?xml version="1.0" encoding="UTF-8"?>\n' + xml_str
     xml_str = xml_str.replace(b'ns0:', b'')
+    xml_str = xml_str.replace(b'ns1:', b'')
     xml_str = xml_str.replace(b' />', b'/>')
     xml_str = xml_str.replace(b'<html>',
                               b'<html xmlns="http://www.w3.org/1999/xhtml">')
     xml_str = xml_str.replace(b'<rdf:RDF>', rdf_str)
     xml_str = xml_str.replace(b'xmlns:ns0="http://www.sbml.org/sbml/level2/version4"',
                               b'')
+    xml_str = xml_str.replace(b'xmlns:ns1="http://www.w3.org/1999/xhtml"', b'')
     with open(fname, 'wb') as fh:
         fh.write(xml_str)
 
@@ -163,6 +170,5 @@ if __name__ == '__main__':
         et = ET.parse(stable_xml)
         et = add_groundings(et)
         out_fname = stable_xml
-        #out_fname = stable_xml.as_posix()[:-4] + '_grounded.xml'
         dump(et, out_fname)
         print()
