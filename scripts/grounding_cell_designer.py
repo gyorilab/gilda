@@ -6,12 +6,15 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from indra.databases import identifiers
 
-rdf_str = (b'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '
-           b'xmlns:dc="http://purl.org/dc/elements/1.1/" '
-           b'xmlns:dcterms="http://purl.org/dc/terms/" '
-           b'xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" '
-           b'xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" '
-           b'xmlns:bqmodel="http://biomodels.net/model-qualifiers/">')
+rdf_str = (
+    b'<rdf:RDF '
+    b'xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" '
+    b'xmlns:bqmodel="http://biomodels.net/model-qualifiers/" '
+    b'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+    b'xmlns:dcterms="http://purl.org/dc/terms/" '
+    b'xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '
+    b'xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">'
+)
 
 namespaces = {'sbml': 'http://www.sbml.org/sbml/level2/version4',
               'celldesigner': 'http://www.sbml.org/2001/ns/celldesigner',
@@ -30,6 +33,7 @@ relevant_grounding_ns = {'ncbiprotein', 'ncbigene', 'uniprot', 'obo.go',
                          'refseq', 'ensembl', 'ec-code', 'brenda',
                          'kegg.compound', 'drugbank'}
 irrelevant_classes = {'DEGRADED'}
+grounding_stats = {}
 
 
 def register_all_namespaces(fname):
@@ -61,10 +65,12 @@ def add_groundings(et):
         print(entity_class)
         matches = gilda.ground(name)
         if matches:
-            print(name, matches[0].term.db, matches[0].term.id,
-                  matches[0].term.entry_name)
-            add_grounding_element(species, matches[0].term.db,
-                                  matches[0].term.id)
+            species = add_grounding_element(species, entity_class,
+                                            matches[0].term.db,
+                                            matches[0].term.id)
+            if species:
+                print(name, matches[0].term.db, matches[0].term.id,
+                      matches[0].term.entry_name)
         print('---')
     return et
 
@@ -93,17 +99,29 @@ def get_existing_grounding(species):
     return groundings
 
 
-def add_grounding_element(species, db_ns, db_id):
-    identifiers_ns = identifiers.get_identifiers_ns(db_ns)
-    grounding_str = 'urn:miriam:%s:%s' % (identifiers_ns, db_id)
+def add_grounding_element(species, entity_class, db_ns, db_id):
+    # For genes, if we're grounding a protein, we make the encoding aspect
+    # explicit
+    if entity_class == 'PROTEIN' and db_ns == 'HGNC':
+        bqbiol_tag = 'bqbiol:isEncodedBy'
+    # In case a protein is grounded to CHEBI, it's typically a problem, we
+    # skip these
+    if entity_class == 'PROTEIN' and db_ns == 'CHEBI':
+        return
+    else:
+        bqbiol_tag = 'bqbiol:is'
 
     tag_sequence = [
         'sbml:annotation',
         'rdf:RDF',
         'rdf:Description',
-        'bqmodel:is',
+        bqbiol_tag,
         'rdf:Bag',
     ]
+
+    identifiers_ns = identifiers.get_identifiers_ns(db_ns)
+    grounding_str = 'urn:miriam:%s:%s' % (identifiers_ns, db_id)
+
     root = species
     for tag in tag_sequence:
         element = root.find(tag, namespaces=namespaces)
@@ -111,6 +129,8 @@ def add_grounding_element(species, db_ns, db_id):
             root = element
         else:
             new_element = ET.Element(tag)
+            new_element.text = '\n'
+            new_element.tail = '\n'
             root.append(new_element)
             root = new_element
 
@@ -128,6 +148,8 @@ def dump(et, fname):
     xml_str = xml_str.replace(b'<html>',
                               b'<html xmlns="http://www.w3.org/1999/xhtml">')
     xml_str = xml_str.replace(b'<rdf:RDF>', rdf_str)
+    xml_str = xml_str.replace(b'xmlns:ns0="http://www.sbml.org/sbml/level2/version4"',
+                              b'')
     with open(fname, 'wb') as fh:
         fh.write(xml_str)
 
@@ -140,6 +162,7 @@ if __name__ == '__main__':
         register_all_namespaces(stable_xml)
         et = ET.parse(stable_xml)
         et = add_groundings(et)
-        out_fname = stable_xml.as_posix()[:-4] + '_grounded.xml'
+        out_fname = stable_xml
+        #out_fname = stable_xml.as_posix()[:-4] + '_grounded.xml'
         dump(et, out_fname)
         print()
