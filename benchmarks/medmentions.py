@@ -63,18 +63,23 @@ def main():
     click.echo(f"There are {len(corpus)} entries")
     rows = []
     for document in tqdm(corpus, desc="Documents"):
+        document_id = document["id"]
         abstract = document["abstract_text"]
-        for entity in document["entities"]:
+        for entity_idx, entity in enumerate(document["entities"]):
             umls_id = entity["entity_id"]
             text = entity["text_segment"]
+            start, end = entity["start_index"], entity["end_index"]
             with logging_redirect_tqdm():
                 matches = gilda.ground(text, context=abstract)
             for match in matches:
                 rows.append(
                     (
+                        document_id,
+                        start,
+                        end,
+                        text,
                         umls_id,
                         pyobo.get_name("umls", umls_id),
-                        text,
                         match.term.db,
                         match.term.id,
                         match.term.entry_name,
@@ -85,9 +90,12 @@ def main():
         writer = csv.writer(file, delimiter="\t")
         writer.writerow(
             (
+                "document",
+                "start_idx",
+                "end_idx",
+                "text",
                 "umls_id",
                 "umls_name",
-                "text",
                 "gilda_prefix",
                 "gilda_identifier",
                 "gilda_name",
