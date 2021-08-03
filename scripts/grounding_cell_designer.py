@@ -5,10 +5,13 @@ serialize the changes back into XML files."""
 
 import re
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 from xml.etree import ElementTree as ET
+
+import click
 from indra.databases import identifiers
+
 import gilda
 
 rdf_str = (
@@ -161,9 +164,11 @@ def dump(et, fname):
         fh.write(xml_str)
 
 
-if __name__ == '__main__':
-    base_path = sys.argv[1]
-    stable_xmls = list(Path(base_path).rglob('*_stable.xml'))
+@click.command()
+@click.argument('directory', type=Path)
+def main(directory: Path):
+    """Run grounding on the directory for the COVID 19 Disease Maps repository."""
+    stable_xmls = list(directory.resolve().rglob('*_stable.xml'))
     for stable_xml in stable_xmls:
         print('Grounding %s' % stable_xml)
         register_all_namespaces(stable_xml)
@@ -172,3 +177,7 @@ if __name__ == '__main__':
         out_fname = stable_xml
         dump(et, out_fname)
         print()
+
+
+if __name__ == '__main__':
+    main()
