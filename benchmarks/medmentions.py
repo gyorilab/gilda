@@ -4,6 +4,7 @@ import click
 import pystow
 from more_click import verbose_option
 
+import gilda
 from pubtator_loader import from_gz
 
 URL = "https://github.com/chanzuckerberg/MedMentions/raw/master/full/data/corpus_pubtator.txt.gz"
@@ -55,6 +56,12 @@ def get_corpus():
 def main():
     corpus = get_corpus()
     click.echo(f"There are {len(corpus)} entries")
+    for document in corpus:
+        abstract = document["abstract_text"]
+        for entity in document["entities"]:
+            umls_id = entity["entity_id"]
+            matches = gilda.ground(entity["text_segment"], context=abstract)
+            # TODO
 
 
 if __name__ == "__main__":
