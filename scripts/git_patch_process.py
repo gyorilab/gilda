@@ -21,7 +21,7 @@ def get_blocks(fname):
             if line.startswith('@@'):
                 block = [line]
                 for line in lines:
-                    if line.startswith('@@') or line.startswith('dioff --git'):
+                    if line.startswith('@@') or line.startswith('diff --git'):
                         break
                     block.append(line)
                 parts.append(block)
