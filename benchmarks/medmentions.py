@@ -1,8 +1,11 @@
+import csv
 import json
 
 import click
 import pystow
 from more_click import verbose_option
+from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 import gilda
 from pubtator_loader import from_gz
@@ -10,6 +13,7 @@ from pubtator_loader import from_gz
 URL = "https://github.com/chanzuckerberg/MedMentions/raw/master/full/data/corpus_pubtator.txt.gz"
 MODULE = pystow.module("gilda", "medmentions")
 CORPUS_PATH = MODULE.join(name="corpus.json")
+MATCHING_PATH = MODULE.join(name="matching.tsv")
 
 
 def get_corpus():
@@ -56,12 +60,27 @@ def get_corpus():
 def main():
     corpus = get_corpus()
     click.echo(f"There are {len(corpus)} entries")
-    for document in corpus:
+    rows = []
+    for document in tqdm(corpus, desc="Documents"):
         abstract = document["abstract_text"]
         for entity in document["entities"]:
             umls_id = entity["entity_id"]
-            matches = gilda.ground(entity["text_segment"], context=abstract)
-            # TODO
+            with logging_redirect_tqdm:
+                matches = gilda.ground(entity["text_segment"], context=abstract)
+            for match in matches:
+                rows.append(
+                    (
+                        umls_id,
+                        match.term.db,
+                        match.term.id,
+                        match.term.entry_name,
+                        match.score,
+                    )
+                )
+    with MATCHING_PATH.open("w") as file:
+        writer = csv.writer(file, delimiter="\t")
+        writer.writerow(("umls_id", "prefix", "identifier", "name", "score"))
+        writer.writerows(rows)
 
 
 if __name__ == "__main__":
