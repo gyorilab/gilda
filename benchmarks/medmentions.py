@@ -65,12 +65,14 @@ def main():
         abstract = document["abstract_text"]
         for entity in document["entities"]:
             umls_id = entity["entity_id"]
-            with logging_redirect_tqdm:
-                matches = gilda.ground(entity["text_segment"], context=abstract)
+            text = entity["text_segment"]
+            with logging_redirect_tqdm():
+                matches = gilda.ground(text, context=abstract)
             for match in matches:
                 rows.append(
                     (
                         umls_id,
+                        text,
                         match.term.db,
                         match.term.id,
                         match.term.entry_name,
@@ -79,7 +81,7 @@ def main():
                 )
     with MATCHING_PATH.open("w") as file:
         writer = csv.writer(file, delimiter="\t")
-        writer.writerow(("umls_id", "prefix", "identifier", "name", "score"))
+        writer.writerow(("umls_id", "text", "prefix", "identifier", "name", "score"))
         writer.writerows(rows)
 
 
