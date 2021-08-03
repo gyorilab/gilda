@@ -4,13 +4,13 @@ grounding, ground these based on their string name with Gilda, and
 serialize the changes back into XML files."""
 
 import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import click
 from indra.databases import identifiers
+from tqdm import tqdm
 
 import gilda
 
@@ -53,7 +53,7 @@ def register_all_namespaces(fname):
 def add_groundings(et):
     species = et.findall('sbml:model/sbml:listOfSpecies/sbml:species',
                          namespaces=namespaces)
-    for species in species:
+    for species in tqdm(species, desc='Species', leave=False):
         existing_grounding = get_existing_grounding(species)
         # Important: this is where we decide if we will add any grounding.
         # Here we skip this species if it has any relevant grounding
@@ -68,18 +68,18 @@ def add_groundings(et):
             if entity_class in irrelevant_classes:
                 continue
         name = species.attrib.get('name')
-        print(name)
-        print(entity_class)
+        tqdm.write(name)
+        tqdm.write(entity_class)
         matches = gilda.ground(name)
         if matches:
             species = add_grounding_element(species, entity_class,
                                             matches[0].term.db,
                                             matches[0].term.id)
             if species:
-                print(name, matches[0].term.db, matches[0].term.id,
-                      matches[0].term.entry_name)
+                tqdm.write(' '.join((name, matches[0].term.db, matches[0].term.id,
+                      matches[0].term.entry_name)))
                 grounding_stats['ngrounding'] += 1
-        print('---')
+        tqdm.write('---')
     return et
 
 
@@ -99,7 +99,7 @@ def get_existing_grounding(species):
                                  'resource']
             match = re.match(r'urn:miriam:([^:]+):(.+)', urn)
             if not match:
-                print('Unmatched urn: %s' % urn)
+                tqdm.write(f'Unmatched urn: {urn}')
                 continue
             else:
                 db_ns, db_id = match.groups()
@@ -169,14 +169,13 @@ def dump(et, fname):
 def main(directory: Path):
     """Run grounding on the directory for the COVID 19 Disease Maps repository."""
     stable_xmls = list(directory.resolve().rglob('*_stable.xml'))
-    for stable_xml in stable_xmls:
-        print('Grounding %s' % stable_xml)
+    it = tqdm(stable_xmls, desc='Grounding')
+    for stable_xml in it:
+        it.set_postfix(file=stable_xml.name)
         register_all_namespaces(stable_xml)
         et = ET.parse(stable_xml)
         et = add_groundings(et)
-        out_fname = stable_xml
-        dump(et, out_fname)
-        print()
+        dump(et, stable_xml)
 
 
 if __name__ == '__main__':
