@@ -2,6 +2,7 @@ import csv
 import json
 
 import click
+import pyobo
 import pystow
 from more_click import verbose_option
 from tqdm import tqdm
@@ -72,6 +73,7 @@ def main():
                 rows.append(
                     (
                         umls_id,
+                        pyobo.get_name("umls", umls_id),
                         text,
                         match.term.db,
                         match.term.id,
@@ -81,7 +83,17 @@ def main():
                 )
     with MATCHING_PATH.open("w") as file:
         writer = csv.writer(file, delimiter="\t")
-        writer.writerow(("umls_id", "text", "prefix", "identifier", "name", "score"))
+        writer.writerow(
+            (
+                "umls_id",
+                "umls_name",
+                "text",
+                "gilda_prefix",
+                "gilda_identifier",
+                "gilda_name",
+                "gilda_score",
+            )
+        )
         writer.writerows(rows)
 
 
