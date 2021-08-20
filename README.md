@@ -1,6 +1,6 @@
 # Gilda: Grounding Integrating Learned Disambiguation
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
-[![Build](https://travis-ci.com/indralab/gilda.svg)](https://travis-ci.com/indralab/gilda)
+[![Build](https://github.com/indralab/gilda/actions/workflows/tests.yml/badge.svg)](https://github.com/indralab/gilda/actions)
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 
 Gilda is a Python package and REST service that grounds (i.e., finds

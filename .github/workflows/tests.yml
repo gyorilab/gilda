@@ -16,7 +16,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install .[test]
         python -m adeft.download
-    - name: Run unit tests
+    - name: Tests
       run: |
         export NOSE_IGNORE_FILES="generate_terms.py";
         nosetests gilda/tests -v --with-coverage --cover-inclusive --cover-package=gilda
