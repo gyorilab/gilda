@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  resolver:
+    build: .
+    restart: always
+    ports:
+      - 8001:8001
