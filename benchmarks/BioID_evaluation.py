@@ -4,7 +4,7 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from textwrap import dedent
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple
+from typing import Any, Collection, Dict, Iterable, List, Optional, Set, Tuple
 
 import click
 import pandas as pd
@@ -222,9 +222,8 @@ class BioIDBenchmarker:
                              'don_article']]
         processed_data = processed_data[processed_data.entity_type
                                         != 'unknown']
-        for _, row in df.iterrows():
-            self.paper_level_grounding[(row.don_article, row.text)] |= \
-                set(row.obj_synonyms)
+        for don_article, text, synonyms in df[['don_article', 'text', 'obj_synonyms']].values:
+            self.paper_level_grounding[don_article, text].update(synonyms)
         return processed_data
 
     def _get_entity_type_helper(self, row) -> str:
@@ -354,12 +353,12 @@ class BioIDBenchmarker:
             result.append((f'{db}:{id_}', grounding.score))
         return result
 
-    def get_synonym_set(self, grounding_list):
+    def get_synonym_set(self, curies: Iterable[str]) -> Set[str]:
         """Return set containing all elements in input list along with synonyms
         """
         output = set()
-        for id_ in grounding_list:
-            output.update(self._get_equivalent_entities(id_))
+        for curie in curies:
+            output.update(self._get_equivalent_entities(curie))
         return output
 
     def _get_equivalent_entities(self, curie: str) -> Set[str]:
@@ -375,10 +374,12 @@ class BioIDBenchmarker:
 
         # TODO these should all be in bioontology, eventually
         for xref_curie in self.equivalences.get(curie, []):
+            if xref_curie in output:
+                continue
             xref_prefix, xref_id = xref_curie.split(':', maxsplit=1)
             if (prefix, xref_prefix) not in BO_MISSING_XREFS:
                 BO_MISSING_XREFS.add((prefix, xref_prefix))
-                tqdm.write(f'Bioontology is missing equivalences from {prefix} to {xref_prefix}')
+                tqdm.write(f'Bioontology is missing mappings from {prefix} to {xref_prefix}')
             output.add(xref_curie)
 
         if prefix == 'NCBI gene':
@@ -395,7 +396,8 @@ class BioIDBenchmarker:
                 output.add(f'CHEBI:CHEBI:{chebi_id}')
         return output
 
-    def famplex_isa(self, hgnc_id: str, fplx_id: str) -> bool:
+    @staticmethod
+    def famplex_isa(hgnc_id: str, fplx_id: str) -> bool:
         """Check if hgnc entity satisfies and isa relation with famplex entity
 
         Parameters
@@ -416,12 +418,7 @@ class BioIDBenchmarker:
         return famplex.isa('HGNC', hgnc_id, 'FPLX', fplx_id)
 
     def isa(self, curie_1: str, curie_2: str) -> bool:
-        """True if id1 satisfies isa relationship with id2
-
-        Is aware of MESH, GO, and any isa relationships provided in
-        isa_relations dict. At this time only looks at parents and children
-        in isa_relations dict, does not follow paths.
-        """
+        """True if id1 satisfies isa relationship with id2."""
         # if curie_1.startswith('MESH') and curie_2.startswith('MESH'):
         #     return mesh_isa(curie_1, curie_2)
         # # Handle GOGO problem
