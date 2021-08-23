@@ -64,7 +64,16 @@ using the appropriate URL instead of `localhost:8001`.
 
 ## Run web service with docker
 
-After cloning the repository locally, you can run:
+After cloning the repository locally, you can build and run using the
+following two docker subcommands:
+
+```shell
+$ docker build -t gilda .
+$ docker run -dp 8001:8001 gilda
+```
+
+Alternatively, you can use `docker-compose` to orchestrate them via the
+`docker-compose.yml` configuration:
 
 ```shell
 $ docker-compose up
