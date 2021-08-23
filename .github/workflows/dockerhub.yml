@@ -2,8 +2,11 @@ name: Build and Push to Dockerhub
 
 on:
   workflow_dispatch:
-#  schedule:
-#    - cron: "0 1 * * *"
+    inputs:
+      tag:
+        description: 'DockerHub Tag'
+        required: true
+        default: 'latest'
 
 jobs:
   docker:
@@ -23,6 +26,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: indralab/gilda:latest
+          tags: indralab/gilda:${{ github.event.inputs.tag }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
