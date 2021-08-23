@@ -4,6 +4,7 @@ import itertools
 from indra.databases import chebi_client
 from gilda import ground
 from gilda.resources import popular_organisms
+from tqdm import tqdm
 
 service_url = 'http://localhost:8001'
 
@@ -69,7 +70,7 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
 def process_fplx_groundings(df):
     groundings = []
     # Iterate over the rows of the curation table and extract groundings
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), desc='Processing groundings'):
         if pandas.isnull(row['Grounding']):
             break
         # Here we get the original entity text, its type, and the
@@ -143,7 +144,7 @@ def make_comparison(groundings):
 
     # Now iterate over all the old groundings, get the new one, and build up
     # the values in the comparison matrix
-    for idx, grounding in enumerate(groundings):
+    for idx, grounding in enumerate(tqdm(groundings, desc='Making comparison')):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
         matches = ground(text=grounding['text'],
@@ -215,10 +216,35 @@ def print_statistics(comparison):
     print('- Precision: (%.3f, %.3f)\n- Recall: (%.3f, %.3f)'
           '\n- F-score: (%.3f, %.3f)' %
           tuple(itertools.chain(prec, recall, fscore)))
+    print()
+
+    rows = [[old_prec, old_recall, old_fscore]]
+    rows.extend(zip(prec, recall, fscore))
+    df2 = pandas.DataFrame(
+        rows,
+        columns=["Precision", "Recall", "F_1"],
+        index=["Reference", "Current_1", "Current_2"],
+    ).round(3)
+    df2.columns.name = 'Trial'
+    print(df2.to_latex(caption="FamPlex benchmarking results", label='tab:famplex-benchmark-results'))
+
+    df1 = pandas.DataFrame(
+        [
+            (*(x.capitalize() for x in k.split('_')), len(v))
+            for k, v in comparison.items()
+        ],
+        columns=["Expected", "Actual", "Count"],
+    )
+    df1 = df1.pivot(index=["Expected"], columns=["Actual"], values=["Count"])
+    print(df1.to_latex(caption="FamPlex benchmarking confusion matrix", label="tab:famplex-confusion"))
 
 
-if __name__ == '__main__':
+def main():
     df = pandas.read_csv(url)
     groundings = process_fplx_groundings(df)
     comparison = make_comparison(groundings)
     print_statistics(comparison)
+
+
+if __name__ == '__main__':
+    main()
