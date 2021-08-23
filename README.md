@@ -62,6 +62,23 @@ requests.post('http://localhost:8001/ground', json={'text': 'kras'})
 The above requests can also be used to interact with the public service, by
 using the appropriate URL instead of `localhost:8001`.
 
+## Run web service with Docker
+
+After cloning the repository locally, you can build and run using the
+following two docker subcommands:
+
+```shell
+$ docker build -t gilda:latest .
+$ docker run -d -p 8001:8001 gilda:latest
+```
+
+Alternatively, you can use `docker-compose` to do both the initial build and
+run the container based on the `docker-compose.yml` configuration:
+
+```shell
+$ docker-compose up
+```
+
 ## Funding
 The development of Gilda is funded under the DARPA Communicating with Computers
 program (ARO grant W911NF-15-1-0544).
