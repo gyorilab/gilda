@@ -1,5 +1,6 @@
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
+from flasgger import Flasgger
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, \
     SelectMultipleField
@@ -12,6 +13,7 @@ from gilda.resources import popular_organisms
 app = Flask(__name__)
 app.config['WTF_CSRF_ENABLED'] = False
 Bootstrap(app)
+Flasgger(app)
 
 
 class GroundForm(FlaskForm):
@@ -40,6 +42,23 @@ def info():
 
 @app.route('/ground', methods=['POST'])
 def ground_endpoint():
+    """Ground an entity string.
+
+    ---
+    parameters:
+    - name: text
+      in: body
+      type: string
+      required: true
+    - name: context
+      in: body
+      type: string
+      required: false
+    - name: organisms
+      in: body
+      type: string
+      required: false
+    """
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
     # Get input parameters
@@ -53,6 +72,27 @@ def ground_endpoint():
 
 @app.route('/get_names', methods=['POST'])
 def get_names_endpoint():
+    """Get entity names.
+
+    ---
+    parameters:
+    - name: db
+      in: body
+      type: string
+      required: true
+    - name: id
+      in: body
+      type: string
+      required: false
+    - name: status
+      in: body
+      type: string
+      required: false
+    - name: source
+      in: body
+      type: string
+      required: false
+    """
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
     # Get input parameters
