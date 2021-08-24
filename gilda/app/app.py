@@ -1,6 +1,6 @@
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
-from flasgger import Flasgger
+from flasgger import Swagger
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, \
     SelectMultipleField
@@ -13,7 +13,23 @@ from gilda.resources import popular_organisms
 app = Flask(__name__)
 app.config['WTF_CSRF_ENABLED'] = False
 Bootstrap(app)
-Flasgger(app)
+Swagger.DEFAULT_CONFIG.update({
+    "info": {
+        "title": "Gilda",
+        "description": "A service for grounding entity strings",
+        "contact": {
+            "responsibleDeveloper": "Benjamin M. Gyori",
+            "email": "benjamin_gyori@hms.harvard.edu",
+        },
+        "version": version,
+        "license": {
+            "name": "Code available under the BSD 2-Clause License",
+            "url": "https://github.com/indralab/gilda/blob/master/LICENSE",
+        },
+    },
+    "host": "grounding.indra.bio",
+})
+Swagger(app)
 
 
 class GroundForm(FlaskForm):
