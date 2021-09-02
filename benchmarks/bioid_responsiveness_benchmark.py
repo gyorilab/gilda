@@ -98,17 +98,20 @@ def iter_corpus():
 
 
 def build(trials: int, chunk: Optional[int] = None) -> pd.DataFrame:
-    click.secho("Preparing BioID corpus")
-    corpus = list(iter_corpus())
-
     click.secho("Warming up python grounder")
+    start = time.time()
     grounder.get_grounder()
+    end = time.time() - start
+    click.secho(f"Warmed up in {end:.2f} seconds")
 
     click.secho("Warming up local api grounder")
     ground_app_local_context("ER", context="Calcium is released from the ER.")
 
     click.secho("Warming up remote api grounder")
     ground_app_remote_context("ER", context="Calcium is released from the ER.")
+
+    click.secho("Preparing BioID corpus")
+    corpus = list(iter_corpus())
 
     rows = []
     for tag, uses_context, func in FUNCTIONS:
@@ -154,17 +157,6 @@ def main(trials: int, chunk: Optional[int], force: bool):
     agg_df.to_latex(
         RESULTS_AGG_TEX_PATH,
         label="tab:bioid-responsiveness-benchmark",
-        caption=dedent(
-            f"""\
-        Benchmarking of the responsiveness of the Gilda service when running synchronously
-        through its Python package, when run locally as a web service, and when run remotely
-        as a web service. Each scenario was also tested with and without context added.
-        The Python usage had the fastest time due to the lack of overhead from
-        network communication. The local web service performed better than the remote one
-        for the same reason in addition to the possibility of external users requesting at the
-        same time.
-    """
-        ),
     )
 
     fig, ax = plt.subplots(figsize=(6, 3))
