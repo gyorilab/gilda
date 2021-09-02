@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
+from functools import lru_cache
 from textwrap import dedent
 from typing import Any, Collection, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -260,6 +261,7 @@ class BioIDBenchmarker:
             organisms=self._get_organism_priority(row.don_article),
         )
 
+    @lru_cache(maxsize=None)
     def _get_plaintext(self, don_article: str) -> str:
         """Get plaintext content from XML file in BioID corpus
 
