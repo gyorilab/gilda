@@ -188,8 +188,8 @@ def get_corpus():
 
 def iterate_corpus():
     corpus = get_corpus()
-    click.echo(f"There are {len(corpus)} entries")
-    for document in tqdm(corpus, desc="Documents"):
+    click.echo(f"Medmentions has {len(corpus)} entries")
+    for document in tqdm(corpus, unit="document", desc="Medmentions"):
         document_id = document["id"]
         abstract = document["abstract_text"]
         for entity_idx, entity in enumerate(document["entities"]):
@@ -198,6 +198,20 @@ def iterate_corpus():
             start, end = entity["start_index"], entity["end_index"]
             types = set(entity["semantic_type_id"].split(","))
             yield document_id, abstract, umls_id, text, start, end, types
+
+
+HEADER = [
+    "document",
+    "start_idx",
+    "end_idx",
+    "text",
+    "umls_id",
+    "umls_name",
+    "gilda_prefix",
+    "gilda_identifier",
+    "gilda_name",
+    "gilda_score",
+]
 
 
 @click.command()
@@ -209,37 +223,24 @@ def main():
     for document_id, abstract, umls_id, text, start, end, types in iterate_corpus():
         with logging_redirect_tqdm():
             matches = gilda.ground(text, context=abstract)
-        for match in matches:
-            rows.append(
-                (
-                    document_id,
-                    start,
-                    end,
-                    text,
-                    umls_id,
-                    pyobo.get_name("umls", umls_id),
-                    match.term.db,
-                    match.term.id,
-                    match.term.entry_name,
-                    match.score,
-                )
+        rows.extend(
+            (
+                document_id,
+                start,
+                end,
+                text,
+                umls_id,
+                pyobo.get_name("umls", umls_id),
+                match.term.db,
+                match.term.id,
+                match.term.entry_name,
+                match.score,
             )
+            for match in matches
+        )
     with MATCHING_PATH.open("w") as file:
         writer = csv.writer(file, delimiter="\t")
-        writer.writerow(
-            (
-                "document",
-                "start_idx",
-                "end_idx",
-                "text",
-                "umls_id",
-                "umls_name",
-                "gilda_prefix",
-                "gilda_identifier",
-                "gilda_name",
-                "gilda_score",
-            )
-        )
+        writer.writerow(HEADER)
         writer.writerows(rows)
 
 
