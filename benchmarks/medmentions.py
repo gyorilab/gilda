@@ -13,7 +13,9 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 URL = "https://github.com/chanzuckerberg/MedMentions/raw/master/full/data/corpus_pubtator.txt.gz"
 MODULE = pystow.module("gilda", "medmentions")
 CORPUS_PATH = MODULE.join(name="corpus.json")
-MATCHING_PATH = MODULE.join(name="matching.tsv")
+MATCHING_PATH = pystow.join(
+    "gilda", "medmentions", gilda.__version__, name="matching.tsv"
+)
 
 #: Subset of types from the Semantic Type Ontology used in annotation
 TYPES = {

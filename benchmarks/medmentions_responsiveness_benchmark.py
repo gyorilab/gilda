@@ -36,8 +36,8 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 from medmentions import iterate_corpus
 
 HERE = pathlib.Path(__file__).parent.resolve()
-RESULTS = HERE.joinpath("results", "medmentions")
-RESULTS.mkdir(exist_ok=True)
+RESULTS = HERE.joinpath("results", gilda.__version__, "medmentions")
+RESULTS.mkdir(exist_ok=True, parents=True)
 
 RESULTS_PATH = RESULTS.joinpath("medmentions_responsiveness.tsv")
 RESULTS_AGG_PATH = RESULTS.joinpath("medmentions_responsiveness_aggregated.tsv")
