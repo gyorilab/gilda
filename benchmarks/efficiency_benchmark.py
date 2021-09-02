@@ -4,21 +4,24 @@
 
 import random
 import time
+from textwrap import dedent
 
 import click
-import gilda
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import seaborn as sns
-from gilda.api import grounder
 from more_click import force_option, verbose_option
 from tqdm import tqdm, trange
 from tqdm.contrib.logging import logging_redirect_tqdm
 
+import gilda
+from gilda.api import grounder
 from medmentions import MODULE, iterate_corpus
 
 RESULTS_PATH = MODULE.join(name="efficiency.tsv")
+RESULTS_AGG_PATH = MODULE.join(name="efficiency_agg.tsv")
+RESULTS_AGG_TEX_PATH = MODULE.join(name="efficiency_agg.tex")
 FIG_PATH = MODULE.join(name="efficiency.svg")
 FIG_PDF_PATH = MODULE.join(name="efficiency.pdf")
 
@@ -124,10 +127,32 @@ def main(trials: int, chunk: int, force: bool):
             "remote": "Remote Gilda App",
         }
     )
+
+    df["duration"] = df["duration"].map(lambda x: 1 / x)
+
+    _grouped = df[["type", "context", "duration"]].groupby(["type", "context"])
+    agg_mean_df = _grouped.mean()
+    agg_mean_df.rename(columns={"duration": "duration_mean"}, inplace=True)
+    agg_std_df = _grouped.std()
+    agg_std_df.rename(columns={"duration": "duration_std"}, inplace=True)
+    agg_df = pd.merge(agg_mean_df, agg_std_df, left_index=True, right_index=True)
+    agg_df = agg_df.round(1)
+    agg_df.to_csv(RESULTS_AGG_PATH, sep="\t")
+    agg_df.to_latex(RESULTS_AGG_TEX_PATH, label="tab:responsiveness-benchmark", caption=dedent(f"""\
+        Benchmarking of the responsiveness of the Gilda service when running synchronously
+        through its Python package, when run locally as a web service, and when run remotely
+        as a web service. Each scenario was also tested with and without context added.
+        The Python usage had the fastest time due to the lack of overhead from
+        network communication. The local web service performed better than the remote one
+        for the same reason in addition to the possibility of external users requesting at the
+        same time.
+    """))
+
     fig, ax = plt.subplots(figsize=(6, 3))
     sns.boxplot(data=df, y="duration", x="type", hue="context", ax=ax)
     ax.set_title("Gilda Responsiveness Benchmark")
-    ax.set_ylabel("Time per request")
+    ax.set_yscale("log")
+    ax.set_ylabel("Responses per Second")
     ax.set_xlabel("")
     fig.savefig(FIG_PATH)
     fig.savefig(FIG_PDF_PATH)
