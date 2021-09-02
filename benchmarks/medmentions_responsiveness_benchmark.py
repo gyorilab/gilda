@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Test how fast the calls can be made to the Gilda remote API using Medmentions.
+"""Test how fast the calls can be made to the Gilda remote API using MedMentions.
 
 .. code-block:: bibtex
 
@@ -16,6 +16,7 @@
     }
 """
 
+import pathlib
 import random
 import time
 from textwrap import dedent
@@ -32,16 +33,20 @@ from more_click import force_option, verbose_option
 from tqdm import tqdm, trange
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from medmentions import MODULE, iterate_corpus
+from medmentions import iterate_corpus
 
-RESULTS_PATH = MODULE.join(name="medmentions_responsiveness.tsv")
-RESULTS_AGG_PATH = MODULE.join(name="medmentions_responsiveness_aggregated.tsv")
-RESULTS_AGG_TEX_PATH = MODULE.join(name="medmentions_responsiveness_aggregated.tex")
-FIG_PATH = MODULE.join(name="medmentions_responsiveness.svg")
-FIG_PDF_PATH = MODULE.join(name="medmentions_responsiveness.pdf")
+HERE = pathlib.Path(__file__).parent.resolve()
+RESULTS = HERE.joinpath("results", "medmentions")
+RESULTS.mkdir(exist_ok=True)
+
+RESULTS_PATH = RESULTS.joinpath("medmentions_responsiveness.tsv")
+RESULTS_AGG_PATH = RESULTS.joinpath("medmentions_responsiveness_aggregated.tsv")
+RESULTS_AGG_TEX_PATH = RESULTS.joinpath("medmentions_responsiveness_aggregated.tex")
+FIG_PATH = RESULTS.joinpath("medmentions_responsiveness.svg")
+FIG_PDF_PATH = RESULTS.joinpath("medmentions_responsiveness.pdf")
 
 
-def ground_package(text, _context):
+def ground_package(text, **_kwargs):
     return gilda.ground(text)
 
 
@@ -49,7 +54,7 @@ def ground_package_context(text, context):
     return gilda.ground(text, context=context)
 
 
-def ground_app_local(text, _context):
+def ground_app_local(text, **_kwargs):
     return requests.post("http://localhost:8001/ground", json={"text": text}).json()
 
 
@@ -59,7 +64,7 @@ def ground_app_local_context(text, context):
     ).json()
 
 
-def ground_app_remote(text, _context):
+def ground_app_remote(text, **_kwargs):
     return requests.post(
         "http://grounding.indra.bio/ground", json={"text": text}
     ).json()
@@ -101,7 +106,7 @@ def run_trial(
 
 
 def build(trials: int, chunk: Optional[int] = None) -> pd.DataFrame:
-    click.secho("Preparing medmentions corpus")
+    click.secho("Preparing MedMentions corpus")
     corpus = list(iterate_corpus())
 
     click.secho("Warming up python grounder")
@@ -172,7 +177,7 @@ def main(trials: int, chunk: Optional[int], force: bool):
 
     fig, ax = plt.subplots(figsize=(6, 3))
     sns.boxplot(data=df, y="duration", x="type", hue="context", ax=ax)
-    ax.set_title("Gilda Responsiveness Benchmark\non Medmentions")
+    ax.set_title("Gilda Responsiveness Benchmark on MedMentions")
     ax.set_yscale("log")
     ax.set_ylabel("Responses per Second")
     ax.set_xlabel("")

@@ -188,8 +188,8 @@ def get_corpus():
 
 def iterate_corpus():
     corpus = get_corpus()
-    click.echo(f"Medmentions has {len(corpus)} entries")
-    for document in tqdm(corpus, unit="document", desc="Medmentions"):
+    click.echo(f"MedMentions has {len(corpus)} entries")
+    for document in tqdm(corpus, unit="document", desc="MedMentions"):
         document_id = document["id"]
         abstract = document["abstract_text"]
         for entity_idx, entity in enumerate(document["entities"]):
