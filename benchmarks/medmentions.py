@@ -2,14 +2,13 @@ import csv
 import json
 
 import click
+import gilda
 import pyobo
 import pystow
 from more_click import verbose_option
+from pubtator_loader import from_gz
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-
-import gilda
-from pubtator_loader import from_gz
 
 URL = "https://github.com/chanzuckerberg/MedMentions/raw/master/full/data/corpus_pubtator.txt.gz"
 MODULE = pystow.module("gilda", "medmentions")
@@ -187,12 +186,9 @@ def get_corpus():
         return json.load(file)
 
 
-@click.command()
-@verbose_option
-def main():
+def iterate_corpus():
     corpus = get_corpus()
     click.echo(f"There are {len(corpus)} entries")
-    rows = []
     for document in tqdm(corpus, desc="Documents"):
         document_id = document["id"]
         abstract = document["abstract_text"]
@@ -201,23 +197,33 @@ def main():
             text = entity["text_segment"]
             start, end = entity["start_index"], entity["end_index"]
             types = set(entity["semantic_type_id"].split(","))
-            with logging_redirect_tqdm():
-                matches = gilda.ground(text, context=abstract)
-            for match in matches:
-                rows.append(
-                    (
-                        document_id,
-                        start,
-                        end,
-                        text,
-                        umls_id,
-                        pyobo.get_name("umls", umls_id),
-                        match.term.db,
-                        match.term.id,
-                        match.term.entry_name,
-                        match.score,
-                    )
+            yield document_id, abstract, umls_id, text, start, end, types
+
+
+@click.command()
+@verbose_option
+def main():
+    corpus = get_corpus()
+    click.echo(f"There are {len(corpus)} entries")
+    rows = []
+    for document_id, abstract, umls_id, text, start, end, types in iterate_corpus():
+        with logging_redirect_tqdm():
+            matches = gilda.ground(text, context=abstract)
+        for match in matches:
+            rows.append(
+                (
+                    document_id,
+                    start,
+                    end,
+                    text,
+                    umls_id,
+                    pyobo.get_name("umls", umls_id),
+                    match.term.db,
+                    match.term.id,
+                    match.term.entry_name,
+                    match.score,
                 )
+            )
     with MATCHING_PATH.open("w") as file:
         writer = csv.writer(file, delimiter="\t")
         writer.writerow(
