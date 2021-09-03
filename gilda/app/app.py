@@ -1,6 +1,6 @@
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
-from flasgger import Swagger
+from flask_restx import Api, Resource, fields
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, \
     SelectMultipleField
@@ -11,25 +11,36 @@ from gilda import __version__ as version
 from gilda.resources import popular_organisms
 
 app = Flask(__name__)
+app.config['RESTX_MASK_SWAGGER'] = True
 app.config['WTF_CSRF_ENABLED'] = False
+api = Api(app,
+          title="Gilda",
+          description="A service for grounding entity strings",
+          version=version,
+          license="Code available under the BSD 2-Clause License",
+          contact="benjamin_gyori@hms.harvard.edu",
+          doc='/apidoc')
 Bootstrap(app)
-Swagger.DEFAULT_CONFIG.update({
-    "info": {
-        "title": "Gilda",
-        "description": "A service for grounding entity strings",
-        "contact": {
-            "responsibleDeveloper": "Benjamin M. Gyori",
-            "email": "benjamin_gyori@hms.harvard.edu",
-        },
-        "version": version,
-        "license": {
-            "name": "Code available under the BSD 2-Clause License",
-            "url": "https://github.com/indralab/gilda/blob/master/LICENSE",
-        },
-    },
-    "host": "grounding.indra.bio",
-})
-Swagger(app)
+
+base_ns = api.namespace('Basic functions', 'Basic functions', path='/')
+
+grounding_input_model = api.model(
+    "GroundingInput",
+    {'text': fields.String(example='EGF-receptor',
+                           required=True,
+                           description='The entity string to be grounded.'),
+     'context': fields.String(example='The EGFR-receptor binds EGF.',
+                              required=False,
+                              description='Surrounding text as context to aid'
+                                          ' disambiguation when applicable.'),
+     'organisms': fields.List(fields.String, example=['9606'],
+                              description='An optional list of taxonomy '
+                                          'species IDs defining a priority list'
+                                          ' in case an entity string can be '
+                                          'resolved to multiple'
+                                          'species-specific genes/proteins.',
+                              required=False)}
+)
 
 
 class GroundForm(FlaskForm):
@@ -46,7 +57,7 @@ class GroundForm(FlaskForm):
                       organisms=self.organisms.data)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def info():
     form = GroundForm()
     if form.validate_on_submit():
@@ -56,34 +67,27 @@ def info():
     return render_template('home.html', form=form, version=version)
 
 
-@app.route('/ground', methods=['POST'])
-def ground_endpoint():
-    """Ground an entity string.
+@base_ns.expect(grounding_input_model)
+@base_ns.route('/ground', methods=['POST'])
+class Ground(Resource):
+    @base_ns.response(200, "Grounding results")
+    def post(self):
+        """Return scored grounding matches for an entity text.
 
-    ---
-    parameters:
-    - name: text
-      in: body
-      type: string
-      required: true
-    - name: context
-      in: body
-      type: string
-      required: false
-    - name: organisms
-      in: body
-      type: string
-      required: false
-    """
-    if request.json is None:
-        abort(Response('Missing application/json header.', 415))
-    # Get input parameters
-    text = request.json.get('text')
-    context = request.json.get('context')
-    organisms = request.json.get('organisms')
-    scored_matches = ground(text, context=context, organisms=organisms)
-    res = [sm.to_json() for sm in scored_matches]
-    return jsonify(res)
+        Parameters
+        ----------
+        text : str
+            The entity text to be grounded.
+        """
+        if request.json is None:
+            abort(Response('Missing application/json header.', 415))
+        # Get input parameters
+        text = request.json.get('text')
+        context = request.json.get('context')
+        organisms = request.json.get('organisms')
+        scored_matches = ground(text, context=context, organisms=organisms)
+        res = [sm.to_json() for sm in scored_matches]
+        return jsonify(res)
 
 
 @app.route('/get_names', methods=['POST'])
@@ -123,6 +127,10 @@ def get_names_endpoint():
         database are collected from multiple different sources."
       required: false
       example: hgnc
+
+    responses:
+      200:
+        description: A list of entity texts for the given grounding.
     """
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
@@ -135,5 +143,10 @@ def get_names_endpoint():
 
 @app.route('/models', methods=['GET', 'POST'])
 def models():
-    """Get"""
+    """Return a list of entity texts with Gilda disambugation models.
+
+    Gilda makes available more than one thousand disambiguation models
+    between synonyms shared by multiple genes. This endpoint returns
+    the list of entity texts for which such a model is available.
+    """
     return jsonify(get_models())
