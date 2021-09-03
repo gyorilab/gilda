@@ -34,8 +34,8 @@ Swagger(app)
 
 class GroundForm(FlaskForm):
     text = StringField('Text', validators=[DataRequired()])
-    context = TextAreaField('Context')
-    organisms = SelectMultipleField('Organisms',
+    context = TextAreaField('Context (optional)')
+    organisms = SelectMultipleField('Species priority (optional)',
                                     choices=[(org, org)
                                              for org in popular_organisms],
                                     id='organism-select')
