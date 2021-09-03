@@ -88,26 +88,41 @@ def ground_endpoint():
 
 @app.route('/get_names', methods=['POST'])
 def get_names_endpoint():
-    """Get entity names.
+    """Return all known entity texts (names, synonyms, etc.) for a grounding.
+
+    This endpoint can be used as a reverse lookup to find out what entity texts
+    are known for a given grounded entity
 
     ---
     parameters:
     - name: db
       in: body
       type: string
+      description: "Capitalized name of the database for the grounding, e.g.
+        HGNC."
       required: true
+      example: HGNC
     - name: id
       in: body
       type: string
-      required: false
+      description: "Identifier within the given database"
+      required: true
+      example: 6872
     - name: status
       in: body
       type: string
+      description: "If provided, only entity texts of the given status are
+        returned (e.g., assertion, name, synonym, previous)."
       required: false
+      example: synonym
     - name: source
       in: body
       type: string
+      description: "If provided, only entity texts collected from the given
+        source are returned. This is useful if terms grounded to IDs in a given
+        database are collected from multiple different sources."
       required: false
+      example: hgnc
     """
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
@@ -120,4 +135,5 @@ def get_names_endpoint():
 
 @app.route('/models', methods=['GET', 'POST'])
 def models():
+    """Get"""
     return jsonify(get_models())
