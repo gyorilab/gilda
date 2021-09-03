@@ -1,4 +1,5 @@
-from flask import Flask, Response, abort, jsonify, render_template, request
+from flask import Flask, Response, abort, jsonify, render_template, request, \
+    make_response
 from flask_bootstrap import Bootstrap
 from flask_restx import Api, Resource, fields
 from flask_wtf import FlaskForm
@@ -13,16 +14,46 @@ from gilda.resources import popular_organisms
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = True
 app.config['WTF_CSRF_ENABLED'] = False
+Bootstrap(app)
+
+
+class GroundForm(FlaskForm):
+    text = StringField('Text', validators=[DataRequired()])
+    context = TextAreaField('Context (optional)')
+    organisms = SelectMultipleField('Species priority (optional)',
+                                    choices=[(org, org)
+                                             for org in popular_organisms],
+                                    id='organism-select')
+    submit = SubmitField('Submit')
+
+    def get_matches(self):
+        return ground(self.text.data, context=self.context.data,
+                      organisms=self.organisms.data)
+
+
+@app.route('/')
+def home():
+    form = GroundForm()
+    if form.validate_on_submit():
+        matches = form.get_matches()
+        return render_template('matches.html', matches=matches, form=form,
+                               version=version)
+    return render_template('home.html', form=form, version=version)
+
+
+# NOTE: the Flask REST-X API has to be declared here, below the home endpoint
+# otherwise it reserves the / base path.
+
 api = Api(app,
           title="Gilda",
           description="A service for grounding entity strings",
           version=version,
           license="Code available under the BSD 2-Clause License",
           contact="benjamin_gyori@hms.harvard.edu",
-          doc='/apidoc')
-Bootstrap(app)
+          doc='/apidoc',
+          )
 
-base_ns = api.namespace('Basic functions', 'Basic functions', path='/')
+base_ns = api.namespace('Gilda API', 'Gilda API', path='/')
 
 grounding_input_model = api.model(
     "GroundingInput",
@@ -41,30 +72,6 @@ grounding_input_model = api.model(
                                           'species-specific genes/proteins.',
                               required=False)}
 )
-
-
-class GroundForm(FlaskForm):
-    text = StringField('Text', validators=[DataRequired()])
-    context = TextAreaField('Context (optional)')
-    organisms = SelectMultipleField('Species priority (optional)',
-                                    choices=[(org, org)
-                                             for org in popular_organisms],
-                                    id='organism-select')
-    submit = SubmitField('Submit')
-
-    def get_matches(self):
-        return ground(self.text.data, context=self.context.data,
-                      organisms=self.organisms.data)
-
-
-@app.route('/')
-def info():
-    form = GroundForm()
-    if form.validate_on_submit():
-        matches = form.get_matches()
-        return render_template('matches.html', matches=matches, form=form,
-                               version=version)
-    return render_template('home.html', form=form, version=version)
 
 
 @base_ns.expect(grounding_input_model)
@@ -90,7 +97,8 @@ class Ground(Resource):
         return jsonify(res)
 
 
-@app.route('/get_names', methods=['POST'])
+
+#@app.route('/get_names', methods=['POST'])
 def get_names_endpoint():
     """Return all known entity texts (names, synonyms, etc.) for a grounding.
 
@@ -141,9 +149,9 @@ def get_names_endpoint():
     return jsonify(names)
 
 
-@app.route('/models', methods=['GET', 'POST'])
+#@app.route('/models', methods=['GET', 'POST'])
 def models():
-    """Return a list of entity texts with Gilda disambugation models.
+    """Return a list of entity texts with Gilda disambiguation models.
 
     Gilda makes available more than one thousand disambiguation models
     between synonyms shared by multiple genes. This endpoint returns
