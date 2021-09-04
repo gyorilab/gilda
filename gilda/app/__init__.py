@@ -8,6 +8,5 @@ def main():
     parser.add_argument('--host', default='0.0.0.0')
     parser.add_argument('--port', default=8001, type=int)
     args = parser.parse_args()
-    print(app.url_map)
     app.run(host=args.host, port=args.port, threaded=False)
 

@@ -1,5 +1,4 @@
-from flask import Flask, Response, abort, jsonify, render_template, request, \
-    make_response
+from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_restx import Api, Resource, fields
 from flask_wtf import FlaskForm
