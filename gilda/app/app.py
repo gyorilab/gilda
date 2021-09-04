@@ -12,7 +12,7 @@ from gilda import __version__ as version
 from gilda.resources import popular_organisms
 
 app = Flask(__name__)
-app.config['RESTX_MASK_SWAGGER'] = True
+app.config['RESTX_MASK_SWAGGER'] = False
 app.config['WTF_CSRF_ENABLED'] = False
 Bootstrap(app)
 
@@ -116,7 +116,7 @@ term_model = api.model(
 )
 
 scored_match_model = api.model(
-    "Scored match",
+    "ScoredMatch",
     {'term': fields.Nested(term_model,
                            description='The term that was matched'),
      'url': fields.String(
@@ -127,22 +127,25 @@ scored_match_model = api.model(
          description='The score assigned to the matched term.',
          example=0.9845
      ),
-     'match': fields.Nested(
+     'match': fields.Nested(api.model('Match', {}),
          description='Additional metadata about the nature of the match.'
      )}
-)
-
-scored_match_list_model = api.model(
-    "Scored match list", {'': fields.List(scored_match_model)}
 )
 
 
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
-    @base_ns.response(200, "Grounding results")
+    # NOTE: formally this response should be a list
+    @base_ns.response(200, "Grounding results", scored_match_model)
     @base_ns.expect(grounding_input_model)
-    @base_ns.marshal_with(scored_match_list_model)
     def post(self):
+        """Return a list of scored grounding matches for a given entity text.
+
+        The returned value is a list with each entry being a scored match.
+        Each scored match contains a term which was matched, and each term
+        contains a db and id constituting a grounding. An empty list
+        return value means that no grounding matches were found for the input.
+        """
         if request.json is None:
             abort(Response('Missing application/json header.', 415))
         # Get input parameters
