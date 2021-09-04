@@ -30,7 +30,7 @@ class GroundForm(FlaskForm):
                       organisms=self.organisms.data)
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
     form = GroundForm()
     if form.validate_on_submit():
@@ -49,7 +49,7 @@ api = Api(app,
           version=version,
           license="Code available under the BSD 2-Clause License",
           contact="benjamin_gyori@hms.harvard.edu",
-          doc='/apidoc',
+          doc='/apidocs',
           )
 
 base_ns = api.namespace('Gilda API', 'Gilda API', path='/')
