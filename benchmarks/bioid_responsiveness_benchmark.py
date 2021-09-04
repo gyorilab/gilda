@@ -65,12 +65,12 @@ def ground_app_remote_context(text, context):
 #: A list of benchmarks to run with three columns:
 #:  type, uses context, function
 FUNCTIONS = [
-    ("Python Package", False, ground_package),
-    ("Python Package", True, ground_package_context),
-    ("Local Gilda App", False, ground_app_local),
-    ("Local Gilda App", True, ground_app_local_context),
-    ("Remote Gilda App", False, ground_app_remote),
-    ("Remote Gilda App", True, ground_app_remote_context),
+    ("Python package", False, ground_package),
+    ("Python package", True, ground_package_context),
+    ("Local web app", False, ground_app_local),
+    ("Local web app", True, ground_app_local_context),
+    ("Public web app", False, ground_app_remote),
+    ("Public web app", True, ground_app_remote_context),
 ]
 
 
