@@ -73,19 +73,76 @@ grounding_input_model = api.model(
                               required=False)}
 )
 
+term_model = api.model(
+    "Term",
+    {'norm_text' : fields.String(
+        description='The normalized text corresponding to the text entry, '
+                    'used for lookups.',
+        example='egf receptor'),
+     'text' : fields.String(
+         description='The text entry that was matches.',
+         example='EGF receptor'
+     ),
+     'db' : fields.String(
+         description='The database / namespace corresponding to the '
+                     'grounded term.',
+         example='HGNC'
+     ),
+     'id': fields.String(
+         description='The identifier of the grounded term within the '
+                     'database / namespace.',
+         example='3236'
+     ),
+     'entry_name': fields.String(
+         description='The standardized name corresponding to the grounded '
+                     'term.',
+         example='EGFR'
+     ),
+     'status': fields.String(
+         description='The relationship of the text entry to the grounded '
+                     'term, e.g., synonym.',
+         example='assertion'
+     ),
+     'source': fields.String(
+         description='The source from which the term was obtained.',
+         example='famplex'
+     ),
+     'organism': fields.String(
+         description='If the term is a gene/protein, this field provides '
+                     'the taxonomy identifier of the species to which '
+                     'it belongs.',
+         example='9606'
+     )}
+)
 
-@base_ns.expect(grounding_input_model)
+scored_match_model = api.model(
+    "Scored match",
+    {'term': fields.Nested(term_model,
+                           description='The term that was matched'),
+     'url': fields.String(
+         description='Identifiers.org URL for the matched term.',
+         example='https://identifiers.org/hgnc:3236'
+     ),
+     'score': fields.Float(
+         description='The score assigned to the matched term.',
+         example=0.9845
+     ),
+     'match': fields.Nested(
+         description='Additional metadata about the nature of the match.'
+     )}
+)
+
+scored_match_list_model = api.model(
+    "Scored match list", {'': fields.List(scored_match_model)}
+)
+
+
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
     @base_ns.response(200, "Grounding results")
+    @base_ns.expect(grounding_input_model)
+    @base_ns.marshal_with(scored_match_list_model)
     def post(self):
-        """Return scored grounding matches for an entity text.
-
-        Parameters
-        ----------
-        text : str
-            The entity text to be grounded.
-        """
         if request.json is None:
             abort(Response('Missing application/json header.', 415))
         # Get input parameters
@@ -95,7 +152,6 @@ class Ground(Resource):
         scored_matches = ground(text, context=context, organisms=organisms)
         res = [sm.to_json() for sm in scored_matches]
         return jsonify(res)
-
 
 
 #@app.route('/get_names', methods=['POST'])
