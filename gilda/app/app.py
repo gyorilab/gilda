@@ -133,6 +133,41 @@ scored_match_model = api.model(
 )
 
 
+get_names_input_model = api.model(
+    "GetNamesInput",
+    {'db': fields.String(
+        description="Capitalized name of the database for the grounding, "
+                    "e.g. HGNC.",
+        required=True,
+        example='HGNC'),
+     'id': fields.String(
+         description="Identifier within the given database",
+         required=True,
+         example='3236'
+     ),
+     'status': fields.String(
+         description="If provided, only entity texts of the given status are "
+                     "returned(e.g., assertion, name, synonym, previous).",
+         required=False,
+         enum=['assertion', 'name', 'synonym', 'previous'],
+         example='synonym'
+     ),
+     'source': fields.String(
+         description="If provided, only entity texts collected from the given "
+                     "source are returned.This is useful if terms grounded to "
+                     "IDs in a given database are collected from multiple "
+                     "different sources.",
+         required=False,
+         example='uniprot'
+     )
+    }
+)
+
+names_model = fields.List(
+        fields.String,
+        example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
+
+
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
     # NOTE: formally this response should be a list
@@ -157,55 +192,25 @@ class Ground(Resource):
         return jsonify(res)
 
 
-#@app.route('/get_names', methods=['POST'])
-def get_names_endpoint():
-    """Return all known entity texts (names, synonyms, etc.) for a grounding.
+@base_ns.route('/get_names', methods=['POST'])
+class GetNames(Resource):
+    # NOTE: formally this response should be a list
+    @base_ns.response(200, "Grounding results", names_model)
+    @base_ns.expect(get_names_input_model)
+    def post(self):
+        """Return all known entity text for a grounding.
 
-    This endpoint can be used as a reverse lookup to find out what entity texts
-    are known for a given grounded entity
+        This endpoint can be used as a reverse lookup to find out what entity
+        texts (names, synonyms, etc._ are known for a given grounded entity.
+        """
+        if request.json is None:
+            abort(Response('Missing application/json header.', 415))
+        # Get input parameters
+        kwargs = {key: request.json.get(key) for key in {'db', 'id', 'status',
+                                                         'source'}}
+        names = get_names(**kwargs)
+        return jsonify(names)
 
-    ---
-    parameters:
-    - name: db
-      in: body
-      type: string
-      description: "Capitalized name of the database for the grounding, e.g.
-        HGNC."
-      required: true
-      example: HGNC
-    - name: id
-      in: body
-      type: string
-      description: "Identifier within the given database"
-      required: true
-      example: 6872
-    - name: status
-      in: body
-      type: string
-      description: "If provided, only entity texts of the given status are
-        returned (e.g., assertion, name, synonym, previous)."
-      required: false
-      example: synonym
-    - name: source
-      in: body
-      type: string
-      description: "If provided, only entity texts collected from the given
-        source are returned. This is useful if terms grounded to IDs in a given
-        database are collected from multiple different sources."
-      required: false
-      example: hgnc
-
-    responses:
-      200:
-        description: A list of entity texts for the given grounding.
-    """
-    if request.json is None:
-        abort(Response('Missing application/json header.', 415))
-    # Get input parameters
-    kwargs = {key: request.json.get(key) for key in {'db', 'id', 'status',
-                                                     'source'}}
-    names = get_names(**kwargs)
-    return jsonify(names)
 
 
 #@app.route('/models', methods=['GET', 'POST'])
