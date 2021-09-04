@@ -6,11 +6,11 @@
 
 {% block content %}
 
-<div class="container">
+<div class="container" style="margin-top: 30px;">
   <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
     <div class="panel panel-info">
       <div class="panel-heading">
-        <h2>Gilda grounding service</h2>
+        <h2 style="margin-top: 10px; margin-bottom: 10px;">Gilda Grounding Service</h2>
       </div>
       <div class="panel-body">
         <p>
@@ -18,12 +18,15 @@
         For interactive use, enter an entity text (example: k-ras)
         to ground in the form below. You can optionally provide additional
         context (e.g., the sentence in which the entity text appeared) to help
-        disambiguation.
+        disambiguation. You can also optionally select one or more taxonomy
+        species IDs to define a species priority list which is applied in
+        in case matches are found to proteins from multiple species (human,
+        mouse, yeast, etc).
       </p>
       <p>
         For programmatic access, POST requests to the <code>/ground</code>
-        endpoint. See the
-        <a href="https://github.com/indralab/gilda/blob/master/README.md">documentation</a>
+        endpoint. See the <a href="apidocs">API documentation</a>.
+        or the <a href="https://github.com/indralab/gilda/blob/master/README.md">user guide</a>
         for more information.
       </p>
       </div>
