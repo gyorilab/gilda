@@ -167,6 +167,10 @@ names_model = fields.List(
         fields.String,
         example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
 
+models_model = fields.List(
+    fields.String,
+    example=['A4', 'ABC1', 'p180'])
+
 
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
@@ -192,10 +196,9 @@ class Ground(Resource):
         return jsonify(res)
 
 
-@base_ns.route('/get_names', methods=['POST'])
+@base_ns.route('/names', methods=['POST'])
 class GetNames(Resource):
-    # NOTE: formally this response should be a list
-    @base_ns.response(200, "Grounding results", names_model)
+    @base_ns.response(200, "Get names result", names_model)
     @base_ns.expect(get_names_input_model)
     def post(self):
         """Return all known entity text for a grounding.
@@ -212,13 +215,14 @@ class GetNames(Resource):
         return jsonify(names)
 
 
+@base_ns.route('/models', methods=['GET', 'POST'])
+class GetModels(Resource):
+    @base_ns.response(200, "Get models result", models_model)
+    def post(selt):
+        """Return a list of texts with Gilda disambiguation models.
 
-#@app.route('/models', methods=['GET', 'POST'])
-def models():
-    """Return a list of entity texts with Gilda disambiguation models.
-
-    Gilda makes available more than one thousand disambiguation models
-    between synonyms shared by multiple genes. This endpoint returns
-    the list of entity texts for which such a model is available.
-    """
-    return jsonify(get_models())
+        Gilda makes available more than one thousand disambiguation models
+        between synonyms shared by multiple genes. This endpoint returns
+        the list of entity texts for which such a model is available.
+        """
+        return jsonify(get_models())
