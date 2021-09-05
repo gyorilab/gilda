@@ -3,10 +3,7 @@ import pandas
 import itertools
 from indra.databases import chebi_client
 from gilda import ground
-from gilda.resources import popular_organisms
 from tqdm import tqdm
-
-service_url = 'http://localhost:8001'
 
 url = ('https://raw.githubusercontent.com/sorgerlab/famplex_paper/master/'
        'step4_stmt_entity_stats/test_agents_with_fplx_sample_curated.csv')
@@ -249,7 +246,8 @@ def print_statistics(comparison):
         columns=["Expected", "Actual", "Count"],
     )
     df1 = df1.pivot(index=["Expected"], columns=["Actual"], values=["Count"])
-    print(df1.to_latex(caption="FamPlex benchmarking confusion matrix", label="tab:famplex-confusion"))
+    print(df1.to_latex(caption="FamPlex benchmarking confusion matrix",
+                       label="tab:famplex-confusion"))
 
 
 def run_comparison():

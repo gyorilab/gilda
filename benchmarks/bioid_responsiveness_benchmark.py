@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""Test how fast the calls can be made to the Gilda remote API using BioID."""
+"""This script benchmarks the responsivenes (i.e., speed) of Gilda
+on the BioCreative VII BioID corpus in three settings: when used as a Python
+package, as a local web service, and when using the remote public web
+service."""
 
 import pathlib
 import random
 import time
-from textwrap import dedent
 from typing import Optional
 
 import click
@@ -18,11 +20,11 @@ from tqdm import tqdm, trange
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 import gilda
-from BioID_evaluation import BioIDBenchmarker
+from bioid_evaluation import BioIDBenchmarker
 from gilda.api import grounder
 
 HERE = pathlib.Path(__file__).parent.resolve()
-RESULTS = HERE.joinpath("results", gilda.__version__, "bioid")
+RESULTS = HERE.joinpath("results")
 RESULTS.mkdir(exist_ok=True, parents=True)
 
 RESULTS_PATH = RESULTS.joinpath("bioid_responsiveness.tsv")

@@ -1,19 +1,8 @@
 # -*- coding: utf-8 -*-
 
-"""Test how fast the calls can be made to the Gilda remote API using MedMentions.
-
-.. code-block:: bibtex
-
-    @article{Mohan2019,
-        archivePrefix = {arXiv},
-        arxivId = {1902.09476},
-        author = {Mohan, Sunil and Li, Donghui},
-        eprint = {1902.09476},
-        month = {feb},
-        title = {{MedMentions: A Large Biomedical Corpus Annotated with UMLS Concepts}},
-        url = {http://arxiv.org/abs/1902.09476},
-        year = {2019}
-    }
+"""This script measures the responsiveness (i.e., speed) of Gilda on the
+MedMentions corpus in three settings: when used as a python package,
+a local web service or through the remote public web service.
 """
 
 import pathlib
@@ -36,7 +25,7 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 from medmentions import iterate_corpus
 
 HERE = pathlib.Path(__file__).parent.resolve()
-RESULTS = HERE.joinpath("results", gilda.__version__, "medmentions")
+RESULTS = HERE.joinpath("results")
 RESULTS.mkdir(exist_ok=True, parents=True)
 
 RESULTS_PATH = RESULTS.joinpath("medmentions_responsiveness.tsv")
@@ -79,12 +68,12 @@ def ground_app_remote_context(text, context):
 #: A list of benchmarks to run with three columns:
 #:  type, uses context, function
 FUNCTIONS = [
-    ("Python Package", False, ground_package),
-    ("Python Package", True, ground_package_context),
-    ("Local Gilda App", False, ground_app_local),
-    ("Local Gilda App", True, ground_app_local_context),
-    ("Remote Gilda App", False, ground_app_remote),
-    ("Remote Gilda App", True, ground_app_remote_context),
+    ("Python package", False, ground_package),
+    ("Python package", True, ground_package_context),
+    ("Local web app", False, ground_app_local),
+    ("Local web app", True, ground_app_local_context),
+    ("Public web app", False, ground_app_remote),
+    ("Public web app", True, ground_app_remote_context),
 ]
 
 

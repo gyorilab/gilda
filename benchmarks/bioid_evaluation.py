@@ -1,3 +1,5 @@
+"""This script benchmarks Gilda on the BioCreative VII BioID corpus.
+It dumps multiple result tables in the results folder."""
 import json
 import os
 from collections import defaultdict
