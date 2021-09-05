@@ -9,7 +9,8 @@ appropriate identifiers in namespaces for) named entities in biomedical text.
 
 ## Installation
 Gilda is deployed as a web service at http://grounding.indra.bio/ (see
-Usage instructions below), it only needs to be installed if used locally.
+Usage instructions below), however, it can also be used locally as a Python
+package.
 
 The recommended method to install Gilda is through PyPI as
 ```bash
@@ -24,13 +25,13 @@ Given some additional dependencies, the grounding resource file can
 also be regenerated locally by running `python -m gilda.generate_terms`.
 
 ## Usage
-Gilda can either be used as a REST service or used programmatically
+Gilda can either be used as a REST web service or used programmatically
 via its Python API. An introduction Jupyter notebook for using Gilda
 is available at
 https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
-### Use via Python API
-As for using Gilda as a Python package, the documentation at
+### Use as a Python package
+For using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module of
 Gilda and their usage. A basic usage example is as follows
 
@@ -47,26 +48,26 @@ also be run locally as
 ```bash
 python -m gilda.app
 ```
+which, by default, launches the server at `localhost:8001` (for local usage
+replace the URL in the examples below with this address).
 
 Below is an example request using `curl`:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' http://localhost:8001/ground
+curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' http://grounding.indra.bio/ground
 ```
 
 The same request using Python's request package would be as follows:
 
 ```python
-requests.post('http://localhost:8001/ground', json={'text': 'kras'})
+import requests
+requests.post('http://grounding.indra.bio/ground', json={'text': 'kras'})
 ```
-
-The above requests can also be used to interact with the public service, by
-using the appropriate URL instead of `localhost:8001`.
 
 ## Run web service with Docker
 
-After cloning the repository locally, you can build and run using the
-following two docker subcommands:
+After cloning the repository locally, you can build and run a Docker image
+of Gilda using the following commands:
 
 ```shell
 $ docker build -t gilda:latest .
@@ -81,5 +82,5 @@ $ docker-compose up
 ```
 
 ## Funding
-The development of Gilda is funded under the DARPA Communicating with Computers
+The development of Gilda was funded under the DARPA Communicating with Computers
 program (ARO grant W911NF-15-1-0544).
