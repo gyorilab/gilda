@@ -243,7 +243,10 @@ def generate_famplex_terms(ignore_mappings=False):
                         id = hgnc_id
                 else:
                     logger.warning('No gene name for %s' % id)
-            # TODO: should we add organism info here?
+            # FIXME: we should figure out what organism the given protein
+            # comes from and then add that organism info, otherwise
+            # these groundings will be asserted even if the organism
+            # doesn't match
             term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex',
                         organism)
         elif 'CHEBI' in groundings:

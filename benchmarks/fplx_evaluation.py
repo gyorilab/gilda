@@ -3,9 +3,7 @@ import pandas
 import itertools
 from indra.databases import chebi_client
 from gilda import ground
-from gilda.resources import popular_organisms
-
-service_url = 'http://localhost:8001'
+from tqdm import tqdm
 
 url = ('https://raw.githubusercontent.com/sorgerlab/famplex_paper/master/'
        'step4_stmt_entity_stats/test_agents_with_fplx_sample_curated.csv')
@@ -63,13 +61,15 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'CUL4': {'UP': 'Q17392'},
                         'MEKK3': {'GO': 'GO:0004709'},
                         'Hrs': {'GO': 'GO:0000725'},
-                        'thioredoxin-1': {'UP': 'P47938'}}
+                        'thioredoxin-1': {'UP': 'P47938'},
+                        'alpha4': {'HGNC': '10809'},
+                        'NT': {'HGNC': '17941'}}
 
 
 def process_fplx_groundings(df):
     groundings = []
     # Iterate over the rows of the curation table and extract groundings
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), desc='Processing groundings'):
         if pandas.isnull(row['Grounding']):
             break
         # Here we get the original entity text, its type, and the
@@ -143,12 +143,11 @@ def make_comparison(groundings):
 
     # Now iterate over all the old groundings, get the new one, and build up
     # the values in the comparison matrix
-    for idx, grounding in enumerate(groundings):
+    for idx, grounding in enumerate(tqdm(groundings, desc='Making comparison')):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
         matches = ground(text=grounding['text'],
-                         context=grounding['context'],
-                         organisms=popular_organisms)
+                         context=grounding['context'])
         if not matches:
             comparison['%s_ungrounded' % old_eval].append((idx, grounding,
                                                            None))
@@ -194,6 +193,10 @@ def print_statistics(comparison):
 
     assert old_correct + old_incorrect + old_ungrounded == 300
 
+    # Note: it can happen that a change in Gilda's behavior results in
+    # producing a grounding that is not curated and is therefore of
+    # "unknown" status. To cover this possibility, we calculate a lower
+    # and an upper bound for these values
     prec = (correct / (correct + incorrect + unknown),
             (correct + unknown) / (correct + incorrect + unknown))
     recall = (correct / (correct + ungrounded),
@@ -211,14 +214,49 @@ def print_statistics(comparison):
     print('The reference statistics were:')
     print('- Precision: %.3f\n- Recall: %.3f\n- F-score: %.3f' %
           (old_prec, old_recall, old_fscore))
-    print('The current statistics with Gilda are between:')
-    print('- Precision: (%.3f, %.3f)\n- Recall: (%.3f, %.3f)'
-          '\n- F-score: (%.3f, %.3f)' %
-          tuple(itertools.chain(prec, recall, fscore)))
+    print('The current statistics with Gilda are:')
+    if unknown:
+        print('- Precision: (%.3f, %.3f)\n- Recall: (%.3f, %.3f)'
+              '\n- F-score: (%.3f, %.3f)' %
+              tuple(itertools.chain(prec, recall, fscore)))
+    else:
+        print('- Precision: %.3f\n- Recall: %.3f\n- F-score: %.3f' %
+              (prec[0], recall[0], fscore[0]))
+
+    print()
+
+    rows = [[old_prec, old_recall, old_fscore]]
+    rows.extend(zip(prec, recall, fscore) if unknown \
+                else [[prec[0], recall[0], fscore[0]]])
+    df2 = pandas.DataFrame(
+        rows,
+        columns=["Precision", "Recall", "F_1"],
+        index=["Reference", "Current_1", "Current_2"] if unknown else \
+            ["Reference", "Current"],
+    ).round(3)
+    df2.columns.name = 'Trial'
+    print(df2.to_latex(caption="FamPlex benchmarking results",
+                       label='tab:famplex-benchmark-results'))
+
+    df1 = pandas.DataFrame(
+        [
+            (*(x.capitalize() for x in k.split('_')), len(v))
+            for k, v in comparison.items()
+        ],
+        columns=["Expected", "Actual", "Count"],
+    )
+    df1 = df1.pivot(index=["Expected"], columns=["Actual"], values=["Count"])
+    print(df1.to_latex(caption="FamPlex benchmarking confusion matrix",
+                       label="tab:famplex-confusion"))
 
 
-if __name__ == '__main__':
+def run_comparison():
     df = pandas.read_csv(url)
     groundings = process_fplx_groundings(df)
     comparison = make_comparison(groundings)
     print_statistics(comparison)
+    return comparison
+
+
+if __name__ == '__main__':
+    comparison = run_comparison()

@@ -1,3 +1,22 @@
+"""This script grounds entries in the MedMentions data set available at
+https://github.com/chanzuckerberg/MedMentions. This can serve both as a
+benchmark and as a bsis for creating mappings between the namespaces
+Gilda grounds to and UMLS, which is used for MedMentions groundings.
+
+.. code-block:: bibtex
+
+    @article{Mohan2019,
+        archivePrefix = {arXiv},
+        arxivId = {1902.09476},
+        author = {Mohan, Sunil and Li, Donghui},
+        eprint = {1902.09476},
+        month = {feb},
+        title = {{MedMentions: A Large Biomedical Corpus Annotated with UMLS Concepts}},
+        url = {http://arxiv.org/abs/1902.09476},
+        year = {2019}
+    }
+"""
+
 import csv
 import json
 

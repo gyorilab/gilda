@@ -1,38 +1,37 @@
 # -*- coding: utf-8 -*-
 
-"""This script measures the responsiveness (i.e., speed) of Gilda on the
-MedMentions corpus in three settings: when used as a python package,
-a local web service or through the remote public web service.
-"""
+"""This script benchmarks the responsivenes (i.e., speed) of Gilda
+on the BioCreative VII BioID corpus in three settings: when used as a Python
+package, as a local web service, and when using the remote public web
+service."""
 
 import pathlib
 import random
 import time
-from textwrap import dedent
 from typing import Optional
 
 import click
-import gilda
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import seaborn as sns
-from gilda.api import grounder
 from more_click import force_option, verbose_option
 from tqdm import tqdm, trange
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from medmentions import iterate_corpus
+import gilda
+from bioid_evaluation import BioIDBenchmarker
+from gilda.api import grounder
 
 HERE = pathlib.Path(__file__).parent.resolve()
 RESULTS = HERE.joinpath("results")
 RESULTS.mkdir(exist_ok=True, parents=True)
 
-RESULTS_PATH = RESULTS.joinpath("medmentions_responsiveness.tsv")
-RESULTS_AGG_PATH = RESULTS.joinpath("medmentions_responsiveness_aggregated.tsv")
-RESULTS_AGG_TEX_PATH = RESULTS.joinpath("medmentions_responsiveness_aggregated.tex")
-FIG_PATH = RESULTS.joinpath("medmentions_responsiveness.svg")
-FIG_PDF_PATH = RESULTS.joinpath("medmentions_responsiveness.pdf")
+RESULTS_PATH = RESULTS.joinpath("bioid_responsiveness.tsv")
+RESULTS_AGG_PATH = RESULTS.joinpath("bioid_responsiveness_aggregated.tsv")
+RESULTS_AGG_TEX_PATH = RESULTS.joinpath("bioid_responsiveness_aggregated.tex")
+FIG_PATH = RESULTS.joinpath("bioid_responsiveness.svg")
+FIG_PDF_PATH = RESULTS.joinpath("bioid_responsiveness.pdf")
 
 
 def ground_package(text, **_kwargs):
@@ -85,27 +84,36 @@ def run_trial(
     for trial in outer_it:
         random.shuffle(corpus)
         test_corpus = corpus[:chunk] if chunk else corpus
-        inner_it = tqdm(test_corpus, desc="Examples", leave=False)
-        for document_id, abstract, umls_id, text, start, end, types in inner_it:
+        inner_it = tqdm(test_corpus, desc="Examples", unit_scale=True, leave=False)
+        for text, context in inner_it:
             with logging_redirect_tqdm():
                 start = time.time()
-                matches = func(text, context=abstract)
+                matches = func(text, context=context)
                 rv.append((trial, len(matches), time.time() - start))
     return rv
 
 
-def build(trials: int, chunk: Optional[int] = None) -> pd.DataFrame:
-    click.secho("Preparing MedMentions corpus")
-    corpus = list(iterate_corpus())
+def iter_corpus():
+    benchmarker = BioIDBenchmarker()
+    for text, article in tqdm(benchmarker.processed_data[['text', 'don_article']].values):
+        yield text, benchmarker._get_plaintext(article)
 
+
+def build(trials: int, chunk: Optional[int] = None) -> pd.DataFrame:
     click.secho("Warming up python grounder")
+    start = time.time()
     grounder.get_grounder()
+    end = time.time() - start
+    click.secho(f"Warmed up in {end:.2f} seconds")
 
     click.secho("Warming up local api grounder")
     ground_app_local_context("ER", context="Calcium is released from the ER.")
 
     click.secho("Warming up remote api grounder")
     ground_app_remote_context("ER", context="Calcium is released from the ER.")
+
+    click.secho("Preparing BioID corpus")
+    corpus = list(iter_corpus())
 
     rows = []
     for tag, uses_context, func in FUNCTIONS:
@@ -150,23 +158,12 @@ def main(trials: int, chunk: Optional[int], force: bool):
     agg_df.to_csv(RESULTS_AGG_PATH, sep="\t")
     agg_df.to_latex(
         RESULTS_AGG_TEX_PATH,
-        label="tab:medmentions-responsiveness-benchmark",
-        caption=dedent(
-            f"""\
-        Benchmarking of the responsiveness of the Gilda service when running synchronously
-        through its Python package, when run locally as a web service, and when run remotely
-        as a web service. Each scenario was also tested with and without context added.
-        The Python usage had the fastest time due to the lack of overhead from
-        network communication. The local web service performed better than the remote one
-        for the same reason in addition to the possibility of external users requesting at the
-        same time.
-    """
-        ),
+        label="tab:bioid-responsiveness-benchmark",
     )
 
     fig, ax = plt.subplots(figsize=(6, 3))
     sns.boxplot(data=df, y="duration", x="type", hue="context", ax=ax)
-    ax.set_title("Gilda Responsiveness Benchmark on MedMentions")
+    ax.set_title("Gilda Responsiveness Benchmark on BioID")
     ax.set_yscale("log")
     ax.set_ylabel("Responses per Second")
     ax.set_xlabel("")

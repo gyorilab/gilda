@@ -128,3 +128,7 @@ dmypy.json
 
 # Docs
 doc/_build/
+
+# Benchmark data files
+benchmarks/data/**
+benchmarks/results/**
