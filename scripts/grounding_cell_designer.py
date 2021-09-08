@@ -4,6 +4,7 @@ grounding, ground these based on their string name with Gilda, and
 serialize the changes back into XML files."""
 
 import re
+import itertools
 from collections import defaultdict
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -30,7 +31,8 @@ namespaces = {'sbml': 'http://www.sbml.org/sbml/level2/version4',
               'bqbiol': 'http://biomodels.net/biology-qualifiers/',
               'bqmodel': 'http://biomodels.net/model-qualifiers/',
               'vCard': 'http://www.w3.org/2001/vcard-rdf/3.0#',
-              'dc': 'http://purl.org/dc/elements/1.1/'}
+              'dc': 'http://purl.org/dc/elements/1.1/',
+              'xhtml': 'http://www.w3.org/1999/xhtml'}
 
 
 irrelevant_grounding_ns = {'pubmed', 'taxonomy', 'doi', 'wikipathways', 'pdb',
@@ -43,6 +45,7 @@ relevant_grounding_ns = {'ncbiprotein', 'ncbigene', 'uniprot', 'obo.go',
 irrelevant_classes = {'DEGRADED'}
 grounding_stats = {'ngrounding': 0}
 
+
 def register_all_namespaces(fname):
     namespaces = dict([node for _, node in
                        ET.iterparse(fname, events=['start-ns'])])
@@ -50,10 +53,53 @@ def register_all_namespaces(fname):
         ET.register_namespace(ns, namespaces[ns])
 
 
+def get_protein_reference(species):
+    protein_ref = species.find('sbml:annotation/'
+                               'celldesigner:extension/'
+                               'celldesigner:speciesIdentity/'
+                               'celldesigner:proteinReference',
+                               namespaces=namespaces)
+    if protein_ref is None:
+        protein_ref = species.find('celldesigner:annotation/'
+                                   'celldesigner:speciesIdentity/'
+                                   'celldesigner:proteinReference',
+                                   namespaces=namespaces)
+        if protein_ref is None:
+            protein_ref = species.find('celldesigner:extension/'
+                                       'celldesigner:speciesIdentity/'
+                                       'celldesigner:proteinReference',
+                                       namespaces=namespaces)
+
+    if protein_ref is not None:
+        protein_ref_id = protein_ref.text
+        return protein_ref_id
+
+
 def add_groundings(et):
-    species = et.findall('sbml:model/sbml:listOfSpecies/sbml:species',
-                         namespaces=namespaces)
-    for species in tqdm(species, desc='Species', leave=False):
+    all_species = et.findall('sbml:model/sbml:listOfSpecies/sbml:species',
+                             namespaces=namespaces)
+    print('%d species found with first method' % len(all_species))
+    all_species += et.findall('sbml:model/sbml:annotation/'
+                              'celldesigner:extension/'
+                              'celldesigner:listOfIncludedSpecies/'
+                              'celldesigner:species',
+                              namespaces=namespaces)
+    print('%d species found after second method' % len(all_species))
+    # This is to collect protein reference-based groundings first
+    groundings_for_prot_ref = defaultdict(set)
+    species_for_prot_ref = defaultdict(set)
+    for species in all_species:
+        protein_ref_id = get_protein_reference(species)
+        if protein_ref_id:
+            existing_grounding = get_existing_grounding(species)
+            groundings_for_prot_ref[protein_ref_id] |= \
+                set(existing_grounding) & relevant_grounding_ns
+            species_for_prot_ref[protein_ref_id].add(species.attrib['id'])
+    for species in tqdm(all_species, desc='Species', leave=False):
+        # Skip if we have a grounding via the protein reference, indirectly
+        protein_ref_id = get_protein_reference(species)
+        if protein_ref_id and groundings_for_prot_ref.get(protein_ref_id):
+            continue
         existing_grounding = get_existing_grounding(species)
         # Important: this is where we decide if we will add any grounding.
         # Here we skip this species if it has any relevant grounding
@@ -87,12 +133,13 @@ def get_existing_grounding(species):
     # Others: isHomologTo
     bqbio_tags = ['isDescribedBy', 'isEncodedBy', 'is', 'encodes',
                   'occursIn']
+    prefixes = ['sbml:annotation', 'celldesigner:notes/xhtml:html/xhtml:body']
 
     groundings = defaultdict(list)
-    for tag in bqbio_tags:
+    for prefix, tag in itertools.product(prefixes, bqbio_tags):
         grounding_elements = \
-            species.findall('sbml:annotation/rdf:RDF/rdf:Description/'
-                            'bqbiol:%s/rdf:Bag/rdf:li' % tag,
+            species.findall('%s/rdf:RDF/rdf:Description/'
+                            'bqbiol:%s/rdf:Bag/rdf:li' % (prefix, tag),
                             namespaces=namespaces)
         for element in grounding_elements:
             urn = element.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}'
@@ -179,4 +226,5 @@ def main(directory: Path):
 
 
 if __name__ == '__main__':
+    gilda.ground('x')
     main()
