@@ -44,6 +44,10 @@ def filter_blocks(blocks):
             continue
         if any(l.startswith('-<math') for l in block):
             continue
+        if any(l.startswith('-<sbml') for l in block):
+            continue
+        if any(l.startswith('-<body') for l in block):
+            continue
         if any('&apos;' in l for l in block):
             continue
         new_blocks.append(block)
