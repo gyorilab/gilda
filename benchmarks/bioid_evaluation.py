@@ -237,7 +237,7 @@ class BioIDBenchmarker:
         else:
             return 'Nonhuman Gene'
 
-    def ground_entities_with_gilda(self):
+    def ground_entities_with_gilda(self, context=True):
         """Compute gilda groundings of entity texts in corpus
 
         Adds two columns to the internal dataframe for groundings with
@@ -248,11 +248,14 @@ class BioIDBenchmarker:
         df.loc[:, 'groundings_no_context'] = df.text. \
             progress_apply(self._get_grounding_list)
 
-        tqdm.write("Grounding with-context corpus with Gilda...")
-        # use from tqdm.contrib.concurrent import thread_map
-        df.loc[:, 'groundings'] = df. \
-            progress_apply(self._get_row_grounding_list, axis=1)
-
+        if context:
+            tqdm.write("Grounding with-context corpus with Gilda...")
+            # use from tqdm.contrib.concurrent import thread_map
+            df.loc[:, 'groundings'] = df. \
+                progress_apply(self._get_row_grounding_list, axis=1)
+        else:
+            tqdm.write("Skipping grounding with context.")
+            df.loc[:, 'groundings'] = df.groundings_no_context
         tqdm.write("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
 
