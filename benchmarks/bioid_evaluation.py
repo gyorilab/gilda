@@ -223,9 +223,13 @@ class BioIDBenchmarker:
         df.loc[:, 'entity_type'] = df.apply(self._get_entity_type_helper, axis=1)
         processed_data = df[['text', 'obj', 'obj_synonyms', 'entity_type',
                              'don_article']]
+        print("%d rows in processed annotations table." % len(processed_data))
         processed_data = processed_data[processed_data.entity_type
                                         != 'unknown']
-        for don_article, text, synonyms in df[['don_article', 'text', 'obj_synonyms']].values:
+        print("%d rows in annotations table without unknowns." %
+              len(processed_data))
+        for don_article, text, synonyms in df[['don_article', 'text',
+                                               'obj_synonyms']].values:
             self.paper_level_grounding[don_article, text].update(synonyms)
         return processed_data
 
@@ -281,7 +285,8 @@ class BioIDBenchmarker:
             Plaintext of specified article
         """
         directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
-        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc', f'{don_article}.xml')
+        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc',
+                                  f'{don_article}.xml')
         tree = etree.parse(path.as_posix())
         paragraphs = tree.xpath('//text')
         paragraphs = [' '.join(text.itertext()) for text in paragraphs]
@@ -366,6 +371,11 @@ class BioIDBenchmarker:
         output = set()
         for curie in curies:
             output.update(self._get_equivalent_entities(curie))
+        # We accept all FamPlex terms that cover some or all of the specific
+        # entries in the annotations
+        covered_fplx = {fplx_entry for fplx_entry, members
+                        in fplx_members.items() if (members <= output)}
+        output |= {'FPLX:%s' % fplx_entry for fplx_entry in covered_fplx}
         return output
 
     def _get_equivalent_entities(self, curie: str) -> Set[str]:
@@ -698,6 +708,20 @@ nmspace_displaynames = {
 }
 
 
+def get_famplex_members():
+    from indra.databases import hgnc_client
+    fplx_entities = famplex.load_entities()
+    fplx_children = defaultdict(set)
+    for fplx_entity in fplx_entities:
+        members = famplex.individual_members('FPLX', fplx_entity)
+        for db_ns, db_id in members:
+            if db_ns == 'HGNC':
+                db_id = hgnc_client.get_current_hgnc_id(db_id)
+                if db_id:
+                    fplx_children[fplx_entity].add('%s:%s' % (db_ns, db_id))
+    return dict(fplx_children)
+
+
 def get_display_name(ns: str) -> str:
     """Gets row/column name associated to a namespace"""
     return nmspace_displaynames[ns] if ns in nmspace_displaynames else ns
@@ -750,7 +774,8 @@ def main(data: str, results: str):
     print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
     print("Constructing results table...")
-    counts, precision_recall, disamb_table = benchmarker.get_results_tables()
+    counts, precision_recall, disamb_table = \
+        benchmarker.get_results_tables(match='strict')
     print(precision_recall.to_markdown(index=False))
     # Generate output document
     caption0 = dedent(f"""\
@@ -823,7 +848,7 @@ def main(data: str, results: str):
         {mappings_table.to_latex(index=False, caption=caption1, label='tab:mappings')}
         {mappings_table_unique.to_latex(index=False, caption=caption2, label='tab:mappings-unique')}
         {counts.to_latex(index=False, caption=caption3, label='tab:counts')}
-        {precision_recall.round(2).to_latex(index=False, caption=caption4, label='tab:precision-recall')}
+        {precision_recall.round(3).to_latex(index=False, caption=caption4, label='tab:precision-recall')}
         {disamb_table.to_latex(index=False, caption=caption5, label='tab:disambiguation')}
     ''')
     latex_path = os.path.join(results_path, f'{outname}.tex')
@@ -835,4 +860,5 @@ def main(data: str, results: str):
 
 
 if __name__ == '__main__':
+    fplx_members = get_famplex_members()
     main()
