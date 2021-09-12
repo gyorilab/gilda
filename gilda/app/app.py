@@ -200,10 +200,10 @@ class GetNames(Resource):
     @base_ns.response(200, "Get names result", names_model)
     @base_ns.expect(get_names_input_model)
     def post(self):
-        """Return all known entity text for a grounding.
+        """Return all known entity texts for a grounding.
 
         This endpoint can be used as a reverse lookup to find out what entity
-        texts (names, synonyms, etc._ are known for a given grounded entity.
+        texts (names, synonyms, etc.) are known for a given grounded entity.
         """
         if request.json is None:
             abort(Response('Missing application/json header.', 415))
