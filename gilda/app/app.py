@@ -200,10 +200,10 @@ class GetNames(Resource):
     @base_ns.response(200, "Get names result", names_model)
     @base_ns.expect(get_names_input_model)
     def post(self):
-        """Return all known entity text for a grounding.
+        """Return all known entity texts for a grounding.
 
         This endpoint can be used as a reverse lookup to find out what entity
-        texts (names, synonyms, etc._ are known for a given grounded entity.
+        texts (names, synonyms, etc.) are known for a given grounded entity.
         """
         if request.json is None:
             abort(Response('Missing application/json header.', 415))
@@ -218,6 +218,15 @@ class GetNames(Resource):
 class GetModels(Resource):
     @base_ns.response(200, "Get models result", models_model)
     def post(selt):
+        """Return a list of texts with Gilda disambiguation models.
+
+        Gilda makes available more than one thousand disambiguation models
+        between synonyms shared by multiple genes. This endpoint returns
+        the list of entity texts for which such a model is available.
+        """
+        return jsonify(get_models())
+
+    def get(self):
         """Return a list of texts with Gilda disambiguation models.
 
         Gilda makes available more than one thousand disambiguation models
