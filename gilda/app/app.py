@@ -225,3 +225,12 @@ class GetModels(Resource):
         the list of entity texts for which such a model is available.
         """
         return jsonify(get_models())
+
+    def get(self):
+        """Return a list of texts with Gilda disambiguation models.
+
+        Gilda makes available more than one thousand disambiguation models
+        between synonyms shared by multiple genes. This endpoint returns
+        the list of entity texts for which such a model is available.
+        """
+        return jsonify(get_models())
