@@ -81,6 +81,20 @@ run the container based on the `docker-compose.yml` configuration:
 $ docker-compose up
 ```
 
+## Citation
+
+```bibtex
+@article{gyori2021gilda,
+  author = {Gyori, Benjamin M and Hoyt, Charles Tapley and Steppi, Albert},
+  doi = {10.1101/2021.09.10.459803},
+  journal = {bioRxiv},
+  publisher = {Cold Spring Harbor Laboratory},
+  title = {{Gilda: biomedical entity text normalization with machine-learned disambiguation as a service}},
+  url = {https://www.biorxiv.org/content/10.1101/2021.09.10.459803v1},
+  year = {2021}
+}
+```
+
 ## Funding
 The development of Gilda was funded under the DARPA Communicating with Computers
 program (ARO grant W911NF-15-1-0544).
