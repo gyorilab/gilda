@@ -196,6 +196,7 @@ class Ground(Resource):
 
 
 @base_ns.route('/names', methods=['POST'])
+@base_ns.route('/get_names', methods=['POST'])
 class GetNames(Resource):
     @base_ns.response(200, "Get names result", names_model)
     @base_ns.expect(get_names_input_model)
