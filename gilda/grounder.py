@@ -1,5 +1,6 @@
 import csv
 import json
+import gzip
 import pickle
 import logging
 import itertools
@@ -339,9 +340,12 @@ def load_terms_file(terms_file):
         A lookup dictionary whose keys are normalized entity texts, and values
         are lists of Terms with that normalized entity text.
     """
-    with open(terms_file, 'r', encoding='utf-8') as fh:
+    with gzip.open(terms_file, 'rt', encoding='utf-8') as fh:
         entries = {}
-        for row in csv.reader(fh, delimiter='\t'):
+        reader = csv.reader(fh, delimiter='\t')
+        # Skip header
+        next(reader)
+        for row in reader:
             row_nones = [r if r else None for r in row]
             entry = Term(*row_nones)
             if row[0] in entries:
