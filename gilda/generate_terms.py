@@ -594,7 +594,12 @@ def main():
     terms = get_all_terms()
     from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
-    write_unicode_csv(fname, [t.to_list() for t in terms], delimiter='\t')
+    header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
+              'source', 'organism']
+    with open(fname, 'w') as fh:
+        writer = csv.writer(fh, delimiter='\t')
+        writer.writerow(header)
+        writer.writerows([t.to_list() for t in terms])
 
 
 if __name__ == '__main__':
