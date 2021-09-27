@@ -5,6 +5,7 @@ to be available locally."""
 import re
 import os
 import csv
+import gzip
 import json
 import logging
 import requests
@@ -596,7 +597,7 @@ def main():
     logger.info('Dumping into %s' % fname)
     header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
               'source', 'organism']
-    with open(fname, 'w') as fh:
+    with gzip.open(fname, 'wt', encoding='utf-8') as fh:
         writer = csv.writer(fh, delimiter='\t')
         writer.writerow(header)
         writer.writerows([t.to_list() for t in terms])
