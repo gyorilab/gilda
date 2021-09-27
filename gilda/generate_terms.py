@@ -600,7 +600,7 @@ def main():
     with gzip.open(fname, 'wt', encoding='utf-8') as fh:
         writer = csv.writer(fh, delimiter='\t')
         writer.writerow(header)
-        writer.writerows([t.to_list() for t in terms])
+        writer.writerows(t.to_list() for t in terms)
 
 
 if __name__ == '__main__':
