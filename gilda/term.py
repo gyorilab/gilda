@@ -17,6 +17,10 @@ class Term(object):
         The relationship of the text entry to the grounded term, e.g., synonym.
     source : str
         The source from which the term was obtained.
+    organism : Optional[str]
+        When the term represents a protein, this attribute provides the
+        taxonomy code of the species for the protein.
+        For non-proteins, not provided. Default: None
     """
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
                  organism=None):
