@@ -230,7 +230,8 @@ def _make_roman_arabic_patterns():
 
     roman_arabic_patterns = []
     for r, a in roman_arabic.items():
-        roman_arabic_patterns += [(re.compile(r'^(.*[- ])(%s)$' % a),
+        roman_arabic_patterns += [(re.compile(r'^(.*[- ])(%s)$' % a,
+                                              re.IGNORECASE),
                                    r'\g<1>%s' % b) for a,b in [(r, a), (a, r)]]
     return roman_arabic_patterns
 
