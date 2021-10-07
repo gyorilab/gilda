@@ -203,3 +203,36 @@ def depluralize(word):
         return word[:-1], 'plural_s'
     # Note: there don't seem to be any compelling examples of -f or -fe -> ves
     # so it is not implemented
+
+
+def replace_roman_arabic(s):
+    for pattern, result in roman_arabic_patterns:
+        sr = re.sub(pattern, result, s)
+        if sr != s:
+            return sr
+    return s
+
+
+
+def _make_roman_arabic_patterns():
+    roman_arabic = {
+        'I': '1',
+        'II': '2',
+        'III': '3',
+        'IV': '4',
+        'V': '5',
+        'VI': '6',
+        'VII': '7',
+        'VIII': '8',
+        'IX': '9',
+        'X': '10'
+    }
+
+    roman_arabic_patterns = []
+    for r, a in roman_arabic.items():
+        roman_arabic_patterns += [(re.compile(r'^(.*[- ])(%s)$' % a),
+                                   r'\g<1>%s' % b) for a,b in [(r, a), (a, r)]]
+    return roman_arabic_patterns
+
+
+roman_arabic_patterns = _make_roman_arabic_patterns()
