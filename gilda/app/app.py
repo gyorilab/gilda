@@ -32,11 +32,19 @@ class GroundForm(FlaskForm):
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    text = request.args.get('text')
+    if text is not None:
+        context = request.args.get('context')
+        organisms = request.args.getlist('organisms')
+        matches = ground(text, context=context, organisms=organisms)
+        return render_template('matches.html', matches=matches, version=version,
+                               text=text, context=context)
+
     form = GroundForm()
     if form.validate_on_submit():
         matches = form.get_matches()
-        return render_template('matches.html', matches=matches, form=form,
-                               version=version)
+        return render_template('matches.html', matches=matches, version=version,
+                               text=form.text.data, context=form.context.data)
     return render_template('home.html', form=form, version=version)
 
 
