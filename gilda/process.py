@@ -207,7 +207,9 @@ def depluralize(word):
 
 def replace_roman_arabic(s):
     for pattern, result in roman_arabic_patterns:
-        sr = re.sub(pattern, result, s)
+        sr = pattern.sub(result, s)
+        # This is to make sure we don't replace the string and then apply the
+        # reverse replacement pattern
         if sr != s:
             return sr
     return s
