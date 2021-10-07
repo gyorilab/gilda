@@ -21,7 +21,10 @@ class TestApp(unittest.TestCase):
             res = client.post("/ground", json={"text": "Raf1", "organisms": ["9606", "10090"]})
             self.assertIsInstance(res.json, list)
             self.assert_found(res.json, "HGNC", "9829")
-            self.assert_found(res.json, "MGI", "97847")
+
+            res = client.post("/ground", json={"text": "Raf1", "organisms": ["10090", "9606"]})
+            self.assertIsInstance(res.json, list)
+            self.assert_found(res.json, "UP", "Q99N57")
 
     def assert_found(self, matches, prefix: str, identifier: str) -> None:
         match_curies = {
