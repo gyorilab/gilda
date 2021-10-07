@@ -150,3 +150,9 @@ def test_greek_to_spelled_out():
     matches = gr.ground('interferon-γ')
     assert matches
     assert matches[0].term.entry_name == 'IFNG'
+
+
+def test_roman_arabic_ground():
+    for term in ['neurexin II', 'neurexin 2', 'neurexin-2', 'neurexin-ii']:
+        matches = gr.ground(term)
+        assert any((m.term.db, m.term.id) == ('HGNC', '8009') for m in matches)

@@ -10,7 +10,8 @@ from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
-    replace_greek_latin, replace_greek_spelled_out, depluralize
+    replace_greek_latin, replace_greek_spelled_out, depluralize, \
+    replace_roman_arabic
 from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
 
@@ -84,9 +85,13 @@ class Grounder(object):
         lookups.add(greek_replaced)
         greek_replaced = normalize(replace_greek_spelled_out(raw_str))
         lookups.add(greek_replaced)
+        # We try exchanging roman and arabic numerals
+        roman_arabic = normalize(replace_roman_arabic(raw_str))
+        lookups.add(roman_arabic)
         # Finally, we attempt to depluralize the word
         depluralized = normalize(depluralize(raw_str)[0])
         lookups.add(depluralized)
+
         logger.debug('Looking up the following strings: %s' %
                      ', '.join(lookups))
         return lookups
