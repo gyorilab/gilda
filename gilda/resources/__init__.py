@@ -64,7 +64,7 @@ def get_grounding_terms():
 
 
 def get_gilda_models():
-    base_name = 'gilda_models.pkl'
+    base_name = 'gilda_models.pkl.gz'
     full_path = os.path.join(resource_dir, base_name)
     if not os.path.exists(full_path):
         logger.info('Downloading disambiguation models from S3.')

@@ -383,7 +383,7 @@ def load_adeft_models():
 
 
 def load_gilda_models():
-    with open(get_gilda_models(), 'rb') as fh:
+    with gzip.open(get_gilda_models(), 'rb') as fh:
         models_raw = pickle.load(fh)
     models = {k: load_model_info(v['cl']) for k, v in models_raw.items()}
     models = {k: v for k, v in models.items() if v.stats['f1']['mean'] > 0.7}
