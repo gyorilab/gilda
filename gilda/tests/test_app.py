@@ -26,6 +26,18 @@ class TestApp(unittest.TestCase):
             self.assertIsInstance(res.json, list)
             self.assert_found(res.json, "UP", "Q99N57")
 
+    def test_get_names(self):
+        with app.test_client() as client:
+            res = client.post('/names', json={"db": "FPLX", "id": "ERK"})
+            self.assertIsInstance(res.json, list)
+            self.assertIn('ERK 1/2', res.json)
+
+    def test_get_models(self):
+        with app.test_client() as client:
+            res = client.get('/models')
+            self.assertIsInstance(res.json, list)
+            self.assertIn('ABC1', res.json)
+
     def assert_found(self, matches, prefix: str, identifier: str) -> None:
         match_curies = {
             (match['term']['db'], match['term']['id'])
