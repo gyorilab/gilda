@@ -13,7 +13,7 @@ import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client, doid_client
+    go_client, mesh_client, doid_client, efo_client, hp_client
 from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
@@ -401,6 +401,12 @@ def generate_adeft_terms():
                 standard_name = db_id
             elif db_ns == 'UP':
                 standard_name = uniprot_client.get_gene_name(db_id)
+            elif db_ns == 'EFO':
+                standard_name = efo_client.get_efo_name_from_efo_id(db_id)
+            elif db_ns == 'HP':
+                standard_name = hp_client.get_hp_name_from_hp_id(db_id)
+            elif db_ns == 'DOID':
+                standard_name = doid_client.get_doid_name_from_doid_id(db_id)
             else:
                 logger.warning('Unknown grounding namespace from Adeft: %s' %
                                db_ns)
