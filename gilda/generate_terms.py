@@ -425,12 +425,8 @@ def generate_doid_terms(ignore_mappings=False):
 
 def generate_efo_terms(ignore_mappings=False):
     terms = _generate_obo_terms('efo', ignore_mappings)
-    # We have to fix BFO terms that are listed by EFO
-    # e.g., we convert db=EFO id=BFO:123 into db=BFO id=123
-    for term in terms:
-        if term.id.startswith('BFO'):
-            term.db = 'BFO'
-            term.id = term.id[4:]
+    # We remove BFO terms since they are too generic to be useful
+    terms = [t for t in terms if not t.id.startswith('BFO:')]
     return terms
 
 
