@@ -13,7 +13,7 @@ import itertools
 import indra
 from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
-    go_client, mesh_client, doid_client, efo_client, hp_client
+    go_client, mesh_client, doid_client
 from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
