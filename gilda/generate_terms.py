@@ -348,7 +348,7 @@ def generate_uniprot_terms(download=False, organisms=None):
 def parse_uniprot_synonyms(synonyms_str):
     synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
                           '', synonyms_str).strip()
-    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]( \(Fragments\))?',
                           '', synonyms_str).strip()
 
     def find_block_from_right(s):
@@ -377,6 +377,9 @@ def parse_uniprot_synonyms(synonyms_str):
         syn = find_block_from_right(synonyms_str)
         syns = [syn] + syns
         synonyms_str = synonyms_str[:-len(syn)-3]
+        # EC codes are not valid synonyms
+        if not re.match(r'EC [\d\.-]+', syn):
+            syns = [syn] + syns
 
 
 def generate_adeft_terms():
@@ -393,8 +396,6 @@ def generate_adeft_terms():
             # Here we do a name standardization via INDRA just in case
             # there is a discrepancy
             indra_standard_name = get_standard_name({db_ns: db_id})
-            if indra_standard_name and indra_standard_name != name:
-                print(shortform, db_ns, db_id, name, indra_standard_name)
             if indra_standard_name:
                 name = indra_standard_name
             term_args = (normalize(shortform), shortform, db_ns, db_id,
