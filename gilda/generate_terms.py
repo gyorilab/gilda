@@ -382,37 +382,23 @@ def parse_uniprot_synonyms(synonyms_str):
 def generate_adeft_terms():
     from adeft import available_shortforms
     from adeft.disambiguate import load_disambiguator
+    from indra.ontology.standardize import get_standard_name
     all_term_args = set()
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
-        for grounding in da.names.keys():
+        for grounding, name in da.names.items():
             if grounding == 'ungrounded' or ':' not in grounding:
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
-            if db_ns == 'HGNC':
-                standard_name = hgnc_client.get_hgnc_name(db_id)
-            elif db_ns == 'GO':
-                standard_name = go_client.get_go_label(db_id)
-            elif db_ns == 'MESH':
-                standard_name = mesh_client.get_mesh_name(db_id)
-            elif db_ns == 'CHEBI':
-                standard_name = chebi_client.get_chebi_name_from_id(db_id)
-            elif db_ns == 'FPLX':
-                standard_name = db_id
-            elif db_ns == 'UP':
-                standard_name = uniprot_client.get_gene_name(db_id)
-            elif db_ns == 'EFO':
-                standard_name = efo_client.get_efo_name_from_efo_id(db_id)
-            elif db_ns == 'HP':
-                standard_name = hp_client.get_hp_name_from_hp_id(db_id)
-            elif db_ns == 'DOID':
-                standard_name = doid_client.get_doid_name_from_doid_id(db_id)
-            else:
-                logger.warning('Unknown grounding namespace from Adeft: %s' %
-                               db_ns)
-                continue
+            # Here we do a name standardization via INDRA just in case
+            # there is a discrepancy
+            indra_standard_name = get_standard_name({db_ns: db_id})
+            if indra_standard_name and indra_standard_name != name:
+                print(shortform, db_ns, db_id, name, indra_standard_name)
+            if indra_standard_name:
+                name = indra_standard_name
             term_args = (normalize(shortform), shortform, db_ns, db_id,
-                         standard_name, 'synonym', 'adeft')
+                         name, 'synonym', 'adeft')
             all_term_args.add(term_args)
     terms = [Term(*term_args) for term_args in sorted(list(all_term_args),
                                                       key=lambda x: x[0])]
