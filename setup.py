@@ -33,7 +33,7 @@ setup(name='gilda',
           'Programming Language :: Python :: 3.7'
       ],
       packages=find_packages(),
-      install_requires=['regex', 'adeft>=0.4.0', 'boto3', 'flask',
+      install_requires=['regex', 'adeft>=0.11.0', 'boto3', 'flask',
                         'flask-wtf', 'flask-bootstrap', 'flask-restx',
                         'obonet', 'pystow>=0.1.10'],
       extras_require={'test': ['nose', 'coverage'],

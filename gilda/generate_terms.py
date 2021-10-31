@@ -348,7 +348,7 @@ def generate_uniprot_terms(download=False, organisms=None):
 def parse_uniprot_synonyms(synonyms_str):
     synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
                           '', synonyms_str).strip()
-    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]',
+    synonyms_str = re.sub(r'\[Cleaved into: ([^]])+\]( \(Fragments\))?',
                           '', synonyms_str).strip()
 
     def find_block_from_right(s):
@@ -377,36 +377,29 @@ def parse_uniprot_synonyms(synonyms_str):
         syn = find_block_from_right(synonyms_str)
         syns = [syn] + syns
         synonyms_str = synonyms_str[:-len(syn)-3]
+        # EC codes are not valid synonyms
+        if not re.match(r'EC [\d\.-]+', syn):
+            syns = [syn] + syns
 
 
 def generate_adeft_terms():
     from adeft import available_shortforms
     from adeft.disambiguate import load_disambiguator
+    from indra.ontology.standardize import get_standard_name
     all_term_args = set()
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
-        for grounding in da.names.keys():
+        for grounding, name in da.names.items():
             if grounding == 'ungrounded' or ':' not in grounding:
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
-            if db_ns == 'HGNC':
-                standard_name = hgnc_client.get_hgnc_name(db_id)
-            elif db_ns == 'GO':
-                standard_name = go_client.get_go_label(db_id)
-            elif db_ns == 'MESH':
-                standard_name = mesh_client.get_mesh_name(db_id)
-            elif db_ns == 'CHEBI':
-                standard_name = chebi_client.get_chebi_name_from_id(db_id)
-            elif db_ns == 'FPLX':
-                standard_name = db_id
-            elif db_ns == 'UP':
-                standard_name = uniprot_client.get_gene_name(db_id)
-            else:
-                logger.warning('Unknown grounding namespace from Adeft: %s' %
-                               db_ns)
-                continue
+            # Here we do a name standardization via INDRA just in case
+            # there is a discrepancy
+            indra_standard_name = get_standard_name({db_ns: db_id})
+            if indra_standard_name:
+                name = indra_standard_name
             term_args = (normalize(shortform), shortform, db_ns, db_id,
-                         standard_name, 'synonym', 'adeft')
+                         name, 'synonym', 'adeft')
             all_term_args.add(term_args)
     terms = [Term(*term_args) for term_args in sorted(list(all_term_args),
                                                       key=lambda x: x[0])]
@@ -418,7 +411,10 @@ def generate_doid_terms(ignore_mappings=False):
 
 
 def generate_efo_terms(ignore_mappings=False):
-    return _generate_obo_terms('efo', ignore_mappings)
+    terms = _generate_obo_terms('efo', ignore_mappings)
+    # We remove BFO terms since they are too generic to be useful
+    terms = [t for t in terms if not t.id.startswith('BFO:')]
+    return terms
 
 
 def generate_hp_terms(ignore_mappings=False):
