@@ -8,6 +8,26 @@ from gilda.app.app import app
 class TestApp(unittest.TestCase):
     """A test case for the Gilda Flask application."""
 
+    def test_get_home(self):
+        """Test the GET response on the home page."""
+        with app.test_client() as client:
+            res = client.get("/?text=Raf1")
+            self.assert_raf1_ui(res)
+
+    def test_post_home(self):
+        """Test the POST response on the home page."""
+        with app.test_client() as client:
+            res = client.post("/", json={"text": "Raf1"})
+            self.assert_raf1_ui(res)
+
+    def assert_raf1_ui(self, res) -> None:
+        text = res.data.decode()
+        self.assertEqual(200, res.status_code)
+        self.assertIn('RAF1', text)
+        self.assertIn('0.9998', text)
+        self.assertIn('RNASE3', text)
+        self.assertIn('0.5024', text)
+
     def test_post_grounding(self):
         """Test the POST response with text."""
         with app.test_client() as client:
