@@ -130,7 +130,8 @@ def get_terms():
         generate_chebi_terms() + \
         generate_efo_terms(ignore_mappings=True) + \
         generate_hp_terms(ignore_mappings=True) + \
-        generate_doid_terms(ignore_mappings=True)
+        generate_doid_terms(ignore_mappings=True) + \
+        generate_mondo_terms(ignore_mappings=True)
     terms = filter_out_duplicates(terms)
     return terms
 

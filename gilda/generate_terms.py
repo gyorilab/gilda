@@ -583,6 +583,7 @@ def get_all_terms():
         generate_doid_terms(),
         generate_hp_terms(),
         generate_efo_terms(),
+        generate_mondo_terms(),
     ]
     for generated_terms in generated_term_groups:
         terms += generated_terms
