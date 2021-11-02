@@ -421,6 +421,10 @@ def generate_hp_terms(ignore_mappings=False):
     return _generate_obo_terms('hp', ignore_mappings)
 
 
+def generate_mondo_terms(ignore_mappings=False):
+    return _generate_obo_terms('mondo', ignore_mappings)
+
+
 def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
                               map_to_ns=None):
     if map_to_ns is None:
