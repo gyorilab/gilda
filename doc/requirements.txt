@@ -7,3 +7,4 @@ pandas
 regex
 adeft
 pystow
+docutils<0.18
