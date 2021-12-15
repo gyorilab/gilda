@@ -230,10 +230,10 @@ def score_string_match(match):
 
 def score_status(term):
     scores = {
-        'assertion': 4,
+        'curated': 4,
         'name': 3,
         'synonym': 2,
-        'previous': 1,
+        'former_name': 1,
     }
     return scores[term.status]
 

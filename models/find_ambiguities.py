@@ -31,8 +31,8 @@ def get_ambiguities(skip_assertions=True, skip_names=True):
         # If there is a name in statuses, we skip it because it's prioritized
         if skip_names and 'name' in statuses:
             continue
-        # We skip assertions because they are prioritized anyway
-        if skip_assertions and 'assertion' in statuses:
+        # We skip curated terms because they are prioritized anyway
+        if skip_assertions and 'curated' in statuses:
             continue
         # We can't get CHEBI PMIDs yet
         if 'CHEBI' in dbs:
