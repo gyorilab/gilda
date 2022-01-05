@@ -90,3 +90,16 @@ def test_get_terms_multi_gene_human():
     assert len(terms) == 1, terms
     assert terms[0].db == 'UP'
     assert terms[0].text == 'Histone H4'
+
+
+def test_get_terms_multi_gene_nonhuman():
+    row = {'Entry': 'P62784',
+           'Gene names  (primary )': ('his-1; his-5; his-10; his-14; his-18; '
+                                      'his-26; his-28; his-31; his-37; his-38; '
+                                      'his-46; his-50; his-56; his-60; '
+                                      'his-64; his-67'),
+           'Gene names  (synonym )': '; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ',
+           'Protein names': 'Histone H4',
+           'Organism ID': '6239'}
+    terms = get_terms_from_uniprot_row(row)
+    assert len(terms) == 17
