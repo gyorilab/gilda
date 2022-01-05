@@ -46,9 +46,27 @@ def test_parse_parentheses_in_name():
         syms
 
 
+def test_parse_parantheses_in_name2():
+    txt = ('Neutral amino acid transporter B(0) (ATB(0)) '
+           '(Baboon M7 virus receptor) (RD114/simian type D retrovirus '
+           'receptor) (Sodium-dependent neutral amino acid transporter type 2) '
+           '(Solute carrier family 1 member 5)')
+    # The challenge here is the trailing (0) at the end of the first
+    # synonym which is part of that synonym and shouldn't be treated as
+    # a separate synonym.
+    syms = parse_uniprot_synonyms(txt)
+    assert syms == \
+        ['Neutral amino acid transporter B(0)',
+         'ATB(0)',
+         'Baboon M7 virus receptor',
+         'RD114/simian type D retrovirus receptor',
+         'Sodium-dependent neutral amino acid transporter type 2',
+         'Solute carrier family 1 member 5']
+
+
 def test_filter_priority():
     term1 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
-                 'previous', 'hgnc', '9606')
+                 'former_name', 'hgnc', '9606')
     term2 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
                  'synonym', 'up', '9606')
     terms = filter_out_duplicates([term1, term2])
