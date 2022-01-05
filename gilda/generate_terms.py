@@ -389,7 +389,7 @@ def parse_uniprot_synonyms(synonyms_str):
         assert s.endswith(')')
         s = s[:-1]
         block = ''
-        for idx, c in enumerate(s[::-1]):
+        for c in s[::-1]:
             if c == ')':
                 parentheses_depth += 1
             elif c == '(':
