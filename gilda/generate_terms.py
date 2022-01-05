@@ -298,30 +298,44 @@ def get_terms_from_uniprot_row(row):
     up_id = row['Entry']
     organism = row['Organism ID']
     protein_names = parse_uniprot_synonyms(row['Protein names'])
-    primary_gene_name = row['Gene names  (primary )'].strip()
-    if primary_gene_name == ';':
-        primary_gene_name = None
-    gene_synonyms_str = row['Gene names  (synonym )'].strip()
-    if gene_synonyms_str == ';':
-        gene_synonyms_str = None
+
+    # These two lists are aligned and each separated by "; " if there
+    # are multiple genes. If there are not genes listed, we simply have
+    # an empty string here. If there are multiple genes but one doesn't
+    # have a name given, a corresponding "; " placeholder is still there.
+    # Consequently, we encounter cases like
+    # P34539»·; »·; »·
+    # where there are two genes but neither of them have names or
+    # synonyms listed.
+    primary_gene_names = row['Gene names  (primary )'].split('; ')
+    gene_synonyms = row['Gene names  (synonym )'].split('; ')
+
+    multi_gene = len(primary_gene_names) > 1
+
     # We generally use the gene name as the standard name
-    # except when there are multiple gene names (separated by
-    # semi-colons) in which case we take the first protein name.
-    if not primary_gene_name or ';' in primary_gene_name:
+    # except when there are multiple gene names or the gene name is missing
+    if not primary_gene_names or multi_gene:
         standard_name = protein_names[0]
     else:
-        standard_name = primary_gene_name
+        standard_name = primary_gene_names[0]
     # We skip a small number of non-critical entries that don't have
     # standard names
     if not standard_name:
         return []
+
+    # By default we use the UniProt namespace and ID
     ns = 'UP'
     id = up_id
+    # For human genes, we resolve redundancies by mapping to HGNC
     hgnc_id = uniprot_client.get_hgnc_id(up_id)
-    if hgnc_id:
+    # We only map to HGNC if there is a single gene corresponding to
+    # this protein. Otherwise, we keep the UniProt ID.
+    if hgnc_id and not multi_gene:
         ns = 'HGNC'
         id = hgnc_id
         standard_name = hgnc_client.get_hgnc_name(hgnc_id)
+
+    # We add all of the protein names as synonyms
     for name in protein_names:
         # Skip names that are EC codes
         if name.startswith('EC '):
@@ -332,16 +346,26 @@ def get_terms_from_uniprot_row(row):
                     standard_name, 'synonym', 'uniprot',
                     organism)
         terms.append(term)
+
+    # We add the standard name (usually the gene name)
     term = Term(normalize(standard_name), standard_name,
                 ns, id, standard_name, 'name', 'uniprot',
                 organism)
     terms.append(term)
-    if gene_synonyms_str:
-        # This is to deal with all the variations in which
-        # synonyms are listed, including degenerate strings
-        # like "; ;"
-        for synonym_group in gene_synonyms_str.split('; '):
-            for synonym in synonym_group.split(' '):
+
+    # If we have gene synonyms we include them according to the following logic.
+    # For human genes we do not include synonyms if there are multiple genes
+    # corresponding to this protein. For non-human genes, since we don't
+    # have a separate gene resource, we do include gene names and synonyms
+    # even if there are multiple genes corresponding to the protein.
+    if not ((organism == '9606') and multi_gene):
+        for gene_name, gene_synonyms_str in zip(primary_gene_names,
+                                                gene_synonyms):
+            all_synonyms = gene_synonyms_str.split(' ')
+            # We can skip a gene name if we used it as standard name
+            if gene_name != standard_name:
+                all_synonyms.append(gene_name)
+            for synonym in all_synonyms:
                 if not synonym or synonym == ';':
                     continue
                 term = Term(normalize(synonym), synonym,
