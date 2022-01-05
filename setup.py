@@ -30,7 +30,9 @@ setup(name='gilda',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7'
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
       ],
       packages=find_packages(),
       install_requires=['regex', 'adeft>=0.11.0', 'boto3', 'flask',
