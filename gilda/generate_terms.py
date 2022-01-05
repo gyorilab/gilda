@@ -56,7 +56,7 @@ def generate_hgnc_terms():
             new_id = m.groups()[0]
             new_name = id_name_map[new_id]
             term_args = (normalize(name), name, db, new_id,
-                         new_name, 'previous', 'hgnc', organism)
+                         new_name, 'former_name', 'hgnc', organism)
             all_term_args[term_args] = None
             # NOTE: consider adding withdrawn synonyms e.g.,
             # symbol withdrawn, see pex1     symbol withdrawn, see PEX1
@@ -87,7 +87,7 @@ def generate_hgnc_terms():
             prev_symbols = row['Previous symbols'].split(', ')
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
-                             'previous', 'hgnc', organism)
+                             'former_name', 'hgnc', organism)
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
@@ -224,11 +224,11 @@ def generate_famplex_terms(ignore_mappings=False):
         groundings = {k: v for k, v in zip(row[1::2], row[2::2]) if (k and v)}
         if 'FPLX' in groundings:
             id = groundings['FPLX']
-            term = Term(norm_txt, txt, 'FPLX', id, id, 'assertion', 'famplex')
+            term = Term(norm_txt, txt, 'FPLX', id, id, 'curated', 'famplex')
         elif 'HGNC' in groundings:
             id = groundings['HGNC']
             term = Term(norm_txt, txt, 'HGNC', hgnc_client.get_hgnc_id(id), id,
-                        'assertion', 'famplex', '9606')
+                        'curated', 'famplex', '9606')
         elif 'UP' in groundings:
             db = 'UP'
             id = groundings['UP']
@@ -248,24 +248,24 @@ def generate_famplex_terms(ignore_mappings=False):
             # comes from and then add that organism info, otherwise
             # these groundings will be asserted even if the organism
             # doesn't match
-            term = Term(norm_txt, txt, db, id, name, 'assertion', 'famplex',
+            term = Term(norm_txt, txt, db, id, name, 'curated', 'famplex',
                         organism)
         elif 'CHEBI' in groundings:
             id = groundings['CHEBI']
             name = chebi_client.get_chebi_name_from_id(id[6:])
-            term = Term(norm_txt, txt, 'CHEBI', id, name, 'assertion',
+            term = Term(norm_txt, txt, 'CHEBI', id, name, 'curated',
                         'famplex')
         elif 'GO' in groundings:
             id = groundings['GO']
             term = Term(norm_txt, txt, 'GO', id,
-                        go_client.get_go_label(id), 'assertion', 'famplex')
+                        go_client.get_go_label(id), 'curated', 'famplex')
         elif 'MESH' in groundings:
             id = groundings['MESH']
             mesh_mapping = mesh_mappings.get(id)
             db, db_id, name = mesh_mapping if (mesh_mapping
                                                and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
-            term = Term(norm_txt, txt, db, db_id, name, 'assertion', 'famplex')
+            term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex')
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -539,7 +539,7 @@ mesh_mappings, mesh_mappings_reverse = _make_mesh_mappings()
 def filter_out_duplicates(terms):
     logger.info('Filtering %d terms for uniqueness...' % len(terms))
     term_key = lambda term: (term.db, term.id, term.text)
-    statuses = {'assertion': 1, 'name': 2, 'synonym': 3, 'previous': 4}
+    statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
     new_terms = []
     for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
                                       key=lambda x: term_key(x)):

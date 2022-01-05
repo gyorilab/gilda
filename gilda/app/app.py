@@ -108,7 +108,7 @@ term_model = api.model(
      'status': fields.String(
          description='The relationship of the text entry to the grounded '
                      'term, e.g., synonym.',
-         example='assertion'
+         example='curated'
      ),
      'source': fields.String(
          description='The source from which the term was obtained.',
@@ -154,9 +154,9 @@ get_names_input_model = api.model(
      ),
      'status': fields.String(
          description="If provided, only entity texts of the given status are "
-                     "returned(e.g., assertion, name, synonym, previous).",
+                     "returned (e.g., curated, name, synonym, former_name).",
          required=False,
-         enum=['assertion', 'name', 'synonym', 'previous'],
+         enum=['curated', 'name', 'synonym', 'former_name'],
          example='synonym'
      ),
      'source': fields.String(
