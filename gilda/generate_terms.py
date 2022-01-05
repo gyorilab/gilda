@@ -300,7 +300,7 @@ def get_terms_from_uniprot_row(row):
     protein_names = parse_uniprot_synonyms(row['Protein names'])
 
     # These two lists are aligned and each separated by "; " if there
-    # are multiple genes. If there are not genes listed, we simply have
+    # are multiple genes. If there are no genes listed, we simply have
     # an empty string here. If there are multiple genes but one doesn't
     # have a name given, a corresponding "; " placeholder is still there.
     # Consequently, we encounter cases like
@@ -323,7 +323,7 @@ def get_terms_from_uniprot_row(row):
     if not standard_name:
         return []
 
-    # By default we use the UniProt namespace and ID
+    # By default, we use the UniProt namespace and ID
     ns = 'UP'
     id = up_id
     # For human genes, we resolve redundancies by mapping to HGNC
@@ -363,10 +363,10 @@ def get_terms_from_uniprot_row(row):
                                                 gene_synonyms):
             all_synonyms = gene_synonyms_str.split(' ')
             # We can skip a gene name if we used it as standard name
-            if gene_name != standard_name:
+            if gene_name and (gene_name != standard_name):
                 all_synonyms.append(gene_name)
             for synonym in all_synonyms:
-                if not synonym or synonym == ';':
+                if not synonym:
                     continue
                 term = Term(normalize(synonym), synonym,
                             ns, id, standard_name, 'synonym', 'uniprot',
