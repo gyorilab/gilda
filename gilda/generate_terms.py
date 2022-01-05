@@ -296,8 +296,6 @@ def generate_uniprot_terms(download=False, organisms=None):
 def get_terms_from_uniprot_row(row):
     terms = []
     up_id = row['Entry']
-    if up_id.startswith('P62805'):
-        breakpoint()
     organism = row['Organism ID']
     protein_names = parse_uniprot_synonyms(row['Protein names'])
     primary_gene_name = row['Gene names  (primary )'].strip()
@@ -383,11 +381,10 @@ def parse_uniprot_synonyms(synonyms_str):
             return [synonyms_str] + syns
 
         syn = find_block_from_right(synonyms_str)
-        syns = [syn] + syns
-        synonyms_str = synonyms_str[:-len(syn)-3]
         # EC codes are not valid synonyms
         if not re.match(r'EC [\d\.-]+', syn):
             syns = [syn] + syns
+        synonyms_str = synonyms_str[:-len(syn)-3]
 
 
 def generate_adeft_terms():

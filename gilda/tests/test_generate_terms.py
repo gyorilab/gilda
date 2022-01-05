@@ -1,6 +1,6 @@
 from gilda.term import Term
 from gilda.generate_terms import parse_uniprot_synonyms, \
-    filter_out_duplicates
+    filter_out_duplicates, get_terms_from_uniprot_row
 
 
 def test_parse_embedded_parentheses_uniprot():
@@ -55,3 +55,15 @@ def test_filter_priority():
     assert len(terms) == 1
     term = terms[0]
     assert term.status == 'synonym'
+
+
+def test_get_terms_simple():
+    row = {'Entry': 'P15056', 'Gene names  (primary )': 'BRAF',
+    'Gene names  (synonym )': 'BRAF1 RAFB1',
+    'Protein names': ('Serine/threonine-protein kinase B-raf (EC 2.7.11.1) '
+        '(Proto-oncogene B-Raf) (p94) (v-Raf murine sarcoma viral '
+        'oncogene homolog B1)'),
+    'Organism ID': '9606'}
+    terms = get_terms_from_uniprot_row(row)
+    assert len(terms) == 7, terms
+    assert all(term.db == 'HGNC' for term in terms), terms
