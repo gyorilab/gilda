@@ -375,6 +375,9 @@ def get_terms_from_uniprot_row(row):
     return terms
 
 
+ec_code_pattern = re.compile(r'EC [\d\.-]+')
+
+
 def parse_uniprot_synonyms(synonyms_str):
     synonyms_str = re.sub(r'\[Includes: ([^]])+\]',
                           '', synonyms_str).strip()
@@ -386,7 +389,7 @@ def parse_uniprot_synonyms(synonyms_str):
         assert s.endswith(')')
         s = s[:-1]
         block = ''
-        for c in s[::-1]:
+        for idx, c in enumerate(s[::-1]):
             if c == ')':
                 parentheses_depth += 1
             elif c == '(':
@@ -399,16 +402,34 @@ def parse_uniprot_synonyms(synonyms_str):
 
     syns = []
     while True:
+        # If the string is empty at this point, we return with the
+        # synonyms so far
         if not synonyms_str:
             return syns
+        # If the string doesn't end with a parenthesis, that means it's
+        # the first synonym which isn't in parentheses, and so we prepend
+        # it to the list of synonyms and return
         if not synonyms_str.endswith(')'):
             return [synonyms_str] + syns
 
         syn = find_block_from_right(synonyms_str)
-        # EC codes are not valid synonyms
-        if not re.match(r'EC [\d\.-]+', syn):
+        # This is where we remove the synonym we just processed plus
+        # the space and opening/closing parens (3 characters) to get to the
+        # next synonym
+        to_remove = len(syn) + 3
+        # One corner case is when there happens to be a parenthesis in the
+        # first synonym in the list like "X(0) (...) (...)"
+        # In this case the entire synonyms_str is to be used and we can
+        # prepend and return
+        if synonyms_str[-to_remove] != ' ':
+            return [synonyms_str] + syns
+
+        # EC codes are not valid synonyms bot otherwise we prepend
+        # the synonym to the list of synonyms
+        if not ec_code_pattern.match(syn):
             syns = [syn] + syns
-        synonyms_str = synonyms_str[:-len(syn)-3]
+        # We now remove the processed suffix
+        synonyms_str = synonyms_str[:-to_remove]
 
 
 def generate_adeft_terms():
