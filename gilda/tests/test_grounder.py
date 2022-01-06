@@ -156,3 +156,8 @@ def test_roman_arabic_ground():
     for term in ['neurexin II', 'neurexin 2', 'neurexin-2', 'neurexin-ii']:
         matches = gr.ground(term)
         assert any((m.term.db, m.term.id) == ('HGNC', '8009') for m in matches)
+
+
+def test_ground_go_activity():
+    matches = gr.ground('EGFR')
+    assert 'GO' not in {m.term.db for m in matches}, matches

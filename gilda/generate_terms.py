@@ -207,6 +207,13 @@ def generate_go_terms():
         # Next look at synonyms, sometimes those match the name so we
         # deduplicate
         for synonym in set(entry.get('synonyms', [])) - {name}:
+            # GO includes around 40k synonyms for terms that represent
+            # activity out of which around 5k are actually
+            # synonyms for entities. One example is "EGFR" as a synonym
+            # for "epidermal growth factor-activated receptor activity".
+            # We skip these according to the following logic.
+            if 'activity' in name and 'activity' not in synonym:
+                continue
             term = Term(normalize(synonym), synonym, 'GO', go_id, name,
                         'synonym', 'go')
             terms.append(term)
