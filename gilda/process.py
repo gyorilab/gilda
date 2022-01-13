@@ -1,5 +1,7 @@
 """Module containing various string processing functions used for grounding."""
 import regex as re
+import unidecode
+
 from .greek_alphabet import greek_alphabet, greek_to_latin
 
 
@@ -79,6 +81,7 @@ def normalize(s):
     """
     s = replace_whitespace(s)
     s = remove_dashes(s)
+    s = replace_unicode(s)
     s = s.lower()
     return s
 
@@ -120,6 +123,17 @@ def replace_greek_spelled_out(s):
     for greek_uni, greek_spelled_out in greek_alphabet.items():
         s = s.replace(greek_uni, greek_spelled_out)
     return s
+
+
+def replace_unicode(s):
+    """Replace unicode with ASCII equivalent, except Greek letters.
+
+    Greek letters are handled separately and aren't replaced in this context.
+    """
+    if unidecode.unidecode(s) == s:
+        return s
+    return ''.join(unidecode.unidecode(c) if c not in greek_alphabet else c
+                   for c in s)
 
 
 def get_capitalization_pattern(word, beginning_of_sentence=False):

@@ -161,3 +161,19 @@ def test_roman_arabic_ground():
 def test_ground_go_activity():
     matches = gr.ground('EGFR')
     assert 'GO' not in {m.term.db for m in matches}, matches
+
+
+def test_unidecode():
+    txt = 'Löfgren’s syndrome'
+    print(gr._generate_lookups(txt))
+    matches = gr.ground(txt)
+    print(matches)
+    txt = 'Aymé-Gripp syndrome'
+    matches = gr.ground(txt)
+    print(matches)
+    txt = 'Ayme-Gripp syndrome'
+    matches = gr.ground(txt)
+    print(matches)
+    txt = 'Bi₇O₉I₃'
+    matches = gr.ground(txt)
+    print(matches)
