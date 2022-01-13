@@ -165,15 +165,18 @@ def test_ground_go_activity():
 
 def test_unidecode():
     txt = 'Löfgren’s syndrome'
-    print(gr._generate_lookups(txt))
     matches = gr.ground(txt)
-    print(matches)
-    txt = 'Aymé-Gripp syndrome'
-    matches = gr.ground(txt)
-    print(matches)
-    txt = 'Ayme-Gripp syndrome'
-    matches = gr.ground(txt)
-    print(matches)
-    txt = 'Bi₇O₉I₃'
-    matches = gr.ground(txt)
-    print(matches)
+    assert matches[0].term.db, matches[0].term.id == ('EFO', '0009466')
+
+    txts = ['Aymé-Gripp syndrome', 'Ayme-Gripp syndrome']
+    for txt in txts:
+        matches = gr.ground(txt)
+        assert len(matches) == 2
+        assert {m.term.db for m in matches} == {'EFO', 'DOID'}
+
+    txts = ['Bi₇O₉I₃', 'Bi7O9I3']
+    for txt in txts:
+        matches = gr.ground(txt)
+        assert len(matches) == 1
+        assert (matches[0].term.db, matches[0].term.id) == \
+            ('MESH', 'C000605741')
