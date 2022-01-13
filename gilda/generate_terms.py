@@ -10,7 +10,6 @@ import json
 import logging
 import requests
 import itertools
-
 import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
@@ -18,6 +17,7 @@ from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
 from .resources import resource_dir, popular_organisms
+
 
 indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')

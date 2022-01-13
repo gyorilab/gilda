@@ -11,7 +11,7 @@ from adeft import available_shortforms as available_adeft_models
 from .term import Term
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
-    replace_roman_arabic, replace_unicode
+    replace_roman_arabic
 from .scorer import generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
 

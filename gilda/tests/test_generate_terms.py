@@ -1,7 +1,6 @@
 from gilda.term import Term
 from gilda.generate_terms import parse_uniprot_synonyms, \
-    filter_out_duplicates, get_terms_from_uniprot_row, \
-    get_unicode_replaced_terms
+    filter_out_duplicates, get_terms_from_uniprot_row
 
 
 def test_parse_embedded_parentheses_uniprot():
