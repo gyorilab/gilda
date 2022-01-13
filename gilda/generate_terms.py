@@ -10,9 +10,6 @@ import json
 import logging
 import requests
 import itertools
-from copy import deepcopy
-
-import unidecode
 
 import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
@@ -21,7 +18,6 @@ from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
 from .resources import resource_dir, popular_organisms
-from .greek_alphabet import greek_alphabet
 
 indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')
