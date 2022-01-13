@@ -10,15 +10,18 @@ import json
 import logging
 import requests
 import itertools
+from copy import deepcopy
+
+import unidecode
+
 import indra
-from indra.util import write_unicode_csv
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
 from indra.statements.resources import amino_acids
 from .term import Term
 from .process import normalize
 from .resources import resource_dir, popular_organisms
-
+from .greek_alphabet import greek_alphabet
 
 indra_module_path = indra.__path__[0]
 indra_resources = os.path.join(indra_module_path, 'resources')
@@ -641,7 +644,24 @@ def get_all_terms():
         terms += generated_terms
 
     terms = filter_out_duplicates(terms)
+    unicode_replaced_terms = get_unicode_replaced_terms(terms)
+    terms += unicode_replaced_terms
     return terms
+
+
+def get_unicode_replaced_terms(terms):
+    new_terms = []
+    for term in terms:
+        if term.text != unidecode.unidecode(term.text):
+            new_text = ''.join(unidecode.unidecode(c)
+                               if c not in greek_alphabet else c
+                               for c in term.text)
+            if new_text != term.text:
+                new_term = deepcopy(term)
+                new_term.text = new_text
+                new_term.norm_text = normalize(new_text)
+                new_terms.append(new_term)
+    return new_terms
 
 
 def main():

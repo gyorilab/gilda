@@ -1,6 +1,7 @@
 from gilda.term import Term
 from gilda.generate_terms import parse_uniprot_synonyms, \
-    filter_out_duplicates, get_terms_from_uniprot_row
+    filter_out_duplicates, get_terms_from_uniprot_row, \
+    get_unicode_replaced_terms
 
 
 def test_parse_embedded_parentheses_uniprot():
@@ -121,3 +122,16 @@ def test_get_terms_multi_gene_nonhuman():
            'Organism ID': '6239'}
     terms = get_terms_from_uniprot_row(row)
     assert len(terms) == 17
+
+
+def test_unicode_replace():
+    term = Term('βar', 'βAR', 'x', 'x', 'x', 'synonym', 'x', 'x')
+    new_terms = get_unicode_replaced_terms([term])
+    assert not new_terms
+
+    term = Term('aymégripp syndrome', 'Aymé-Gripp syndrome',
+                'x', 'x', 'x', 'synonym', 'x', 'x')
+    new_terms = get_unicode_replaced_terms([term])
+    assert len(new_terms) == 1
+    assert new_terms[0].text == 'Ayme-Gripp syndrome'
+    assert new_terms[0].norm_text == 'aymegripp syndrome'
