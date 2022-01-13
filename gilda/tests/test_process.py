@@ -1,5 +1,5 @@
 from gilda.process import depluralize, replace_greek_spelled_out, \
-    replace_roman_arabic
+    replace_roman_arabic, replace_greek_uni, replace_greek_latin, normalize
 
 
 def test_depluralize():
@@ -13,8 +13,9 @@ def test_depluralize():
 
 
 def test_greek():
-    assert replace_greek_spelled_out('interferon-γ') == \
-        'interferon-gamma'
+    assert replace_greek_spelled_out('interferon-γ') == 'interferon-gamma'
+    assert replace_greek_uni('interferon-gamma') == 'interferon-γ'
+    assert replace_greek_latin('interferon-beta') == 'interferon-b'
 
 
 def test_roman_arabic():
@@ -24,3 +25,8 @@ def test_roman_arabic():
     assert replace_roman_arabic('xx-I') == 'xx-1'
     assert replace_roman_arabic('xx viii') == 'xx 8'
     assert replace_roman_arabic('xx-iX') == 'xx-9'
+
+
+def test_normalize():
+    assert normalize('Löfgren’s syndrome') == 'lofgren\'s syndrome'
+    assert normalize('βAR') == 'βar'

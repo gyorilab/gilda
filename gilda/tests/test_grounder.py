@@ -161,3 +161,22 @@ def test_roman_arabic_ground():
 def test_ground_go_activity():
     matches = gr.ground('EGFR')
     assert 'GO' not in {m.term.db for m in matches}, matches
+
+
+def test_unidecode():
+    txt = 'Löfgren’s syndrome'
+    matches = gr.ground(txt)
+    assert matches[0].term.db, matches[0].term.id == ('EFO', '0009466')
+
+    txts = ['Aymé-Gripp syndrome', 'Ayme-Gripp syndrome']
+    for txt in txts:
+        matches = gr.ground(txt)
+        assert len(matches) == 2
+        assert {m.term.db for m in matches} == {'EFO', 'DOID'}
+
+    txts = ['Bi₇O₉I₃', 'Bi7O9I3']
+    for txt in txts:
+        matches = gr.ground(txt)
+        assert len(matches) == 1
+        assert (matches[0].term.db, matches[0].term.id) == \
+            ('MESH', 'C000605741')
