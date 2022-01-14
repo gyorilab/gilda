@@ -21,5 +21,4 @@ jobs:
         python -m adeft.download
     - name: Tests
       run: |
-        export NOSE_IGNORE_FILES="generate_terms.py";
-        nosetests gilda/tests -v --with-coverage --cover-inclusive --cover-package=gilda
+        pytest gilda/tests --ignore=generate_terms.py --durations=20 --cov=gilda
