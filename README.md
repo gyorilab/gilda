@@ -97,5 +97,5 @@ $ docker-compose up
 
 ## Funding
 The development of Gilda was funded under the DARPA Communicating with Computers
-program (ARO grant W911NF-15-1-0544) and the DARPA Young Faculty Ward
+program (ARO grant W911NF-15-1-0544) and the DARPA Young Faculty Award
 (ARO grant W911NF-20-1-0255).
