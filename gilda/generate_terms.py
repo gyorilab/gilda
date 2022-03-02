@@ -38,7 +38,32 @@ def read_csv(fname, header=False, delimiter='\t'):
 
 
 def generate_hgnc_terms():
-    fname = os.path.join(indra_resources, 'hgnc_entries.tsv')
+    fname = os.path.join(resource_dir, 'hgnc_entries.tsv')
+
+    # Select relevant columns and parameters
+    cols = [
+        'gd_hgnc_id', 'gd_app_sym', 'gd_app_name', 'gd_status',
+        'gd_aliases', 'gd_prev_sym', 'gd_name_aliases'
+    ]
+
+    statuses = ['Approved', 'Entry%20Withdrawn']
+    params = {
+            'hgnc_dbtag': 'on',
+            'order_by': 'gd_app_sym_sort',
+            'format': 'text',
+            'submit': 'submit'
+            }
+
+    # Construct a download URL from the above parameters
+    url = 'https://www.genenames.org/cgi-bin/download/custom?'
+    url += '&'.join(['col=%s' % c for c in cols]) + '&'
+    url += '&'.join(['status=%s' % s for s in statuses]) + '&'
+    url += '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
+
+    res = requests.get(url)
+    with open(fname, 'w') as fh:
+        fh.write(res.text)
+
     logger.info('Loading %s' % fname)
     all_term_args = {}
     rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
@@ -87,6 +112,13 @@ def generate_hgnc_terms():
             for prev_symbol in prev_symbols:
                 term_args = (normalize(prev_symbol), prev_symbol, db, id, name,
                              'former_name', 'hgnc', organism)
+                all_term_args[term_args] = None
+
+        if row['Alias names']:
+            names = row['Alias names'].split(', ')
+            for name in names:
+                term_args = (normalize(name), name, db, id, name, 'synonym',
+                             'hgnc', 'organism')
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
