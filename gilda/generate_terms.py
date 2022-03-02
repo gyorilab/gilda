@@ -60,6 +60,8 @@ def generate_hgnc_terms():
     url += '&'.join(['status=%s' % s for s in statuses]) + '&'
     url += '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
 
+    # Download the file
+    logger.info('Downloading HGNC resource file')
     res = requests.get(url)
     with open(fname, 'w') as fh:
         fh.write(res.text)
