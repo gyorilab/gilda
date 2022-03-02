@@ -164,6 +164,7 @@ def generate_mesh_terms(ignore_mappings=False):
                        'mesh_supp_id_label_mappings.tsv']
     terms = []
     for fname in mesh_name_files:
+        logger.info('Loading %s' % fname)
         mesh_names_file = os.path.join(indra_resources, fname)
         for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
             db_id = row[0]
@@ -298,6 +299,7 @@ def generate_uniprot_terms(download=False, organisms=None):
         with open(path, 'w') as fh:
             fh.write(res.text)
     terms = []
+    logger.info('Loading %s' % path)
     for row in read_csv(path, delimiter='\t', header=True):
         terms += get_terms_from_uniprot_row(row)
 
@@ -308,6 +310,11 @@ def get_terms_from_uniprot_row(row):
     terms = []
     up_id = row['Entry']
     organism = row['Organism ID']
+
+    # As of 3/2/2022 there is an error in UniProt data that we need to manually
+    # patch here
+    if up_id == 'Q2QKR2':
+        row['Protein names'] = row['Protein names'][:-1]
     protein_names = parse_uniprot_synonyms(row['Protein names'])
 
     # These two lists are aligned and each separated by "; " if there
