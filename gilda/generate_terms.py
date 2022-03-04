@@ -25,9 +25,9 @@ indra_resources = os.path.join(indra_module_path, 'resources')
 logger = logging.getLogger('gilda.generate_terms')
 
 
-def read_csv(fname, header=False, delimiter='\t'):
+def read_csv(fname, header=False, delimiter='\t', quotechar='"'):
     with open(fname, 'r') as fh:
-        reader = csv.reader(fh, delimiter=delimiter)
+        reader = csv.reader(fh, delimiter=delimiter, quotechar=quotechar)
         if header:
             header_names = next(reader)
             for row in reader:
@@ -40,35 +40,37 @@ def read_csv(fname, header=False, delimiter='\t'):
 def generate_hgnc_terms():
     fname = os.path.join(resource_dir, 'hgnc_entries.tsv')
 
-    # Select relevant columns and parameters
-    cols = [
-        'gd_hgnc_id', 'gd_app_sym', 'gd_app_name', 'gd_status',
-        'gd_aliases', 'gd_prev_sym', 'gd_name_aliases'
-    ]
+    if not os.path.exists(fname):
+        # Select relevant columns and parameters
+        cols = [
+            'gd_hgnc_id', 'gd_app_sym', 'gd_app_name', 'gd_status',
+            'gd_aliases', 'gd_prev_sym', 'gd_name_aliases'
+        ]
 
-    statuses = ['Approved', 'Entry%20Withdrawn']
-    params = {
-            'hgnc_dbtag': 'on',
-            'order_by': 'gd_app_sym_sort',
-            'format': 'text',
-            'submit': 'submit'
-            }
+        statuses = ['Approved', 'Entry%20Withdrawn']
+        params = {
+                'hgnc_dbtag': 'on',
+                'order_by': 'gd_app_sym_sort',
+                'format': 'text',
+                'submit': 'submit'
+                }
 
-    # Construct a download URL from the above parameters
-    url = 'https://www.genenames.org/cgi-bin/download/custom?'
-    url += '&'.join(['col=%s' % c for c in cols]) + '&'
-    url += '&'.join(['status=%s' % s for s in statuses]) + '&'
-    url += '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
+        # Construct a download URL from the above parameters
+        url = 'https://www.genenames.org/cgi-bin/download/custom?'
+        url += '&'.join(['col=%s' % c for c in cols]) + '&'
+        url += '&'.join(['status=%s' % s for s in statuses]) + '&'
+        url += '&'.join(['%s=%s' % (k, v) for k, v in params.items()])
 
-    # Download the file
-    logger.info('Downloading HGNC resource file')
-    res = requests.get(url)
-    with open(fname, 'w') as fh:
-        fh.write(res.text)
+        # Download the file
+        logger.info('Downloading HGNC resource file')
+        res = requests.get(url)
+        with open(fname, 'w') as fh:
+            fh.write(res.text)
 
     logger.info('Loading %s' % fname)
     all_term_args = {}
-    rows = [r for r in read_csv(fname, header=True, delimiter='\t')]
+    rows = [r for r in read_csv(fname, header=True, delimiter='\t',
+                                quotechar=None)]
     id_name_map = {r['HGNC ID'].split(':')[1]: r['Approved symbol']
                    for r in rows}
     organism = '9606'  # human
@@ -117,15 +119,27 @@ def generate_hgnc_terms():
                 all_term_args[term_args] = None
 
         if row['Alias names']:
-            names = row['Alias names'].split(', ')
-            for name in names:
+            for name in extract_hgnc_alias_names(row['Alias names']):
+                name = name.strip()
+                # There are double quotes and sometimes spurious extra spaces
                 term_args = (normalize(name), name, db, id, name, 'synonym',
-                             'hgnc', 'organism')
+                             'hgnc_alias', organism)
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
     logger.info('Loaded %d terms' % len(terms))
     return terms
+
+
+def extract_hgnc_alias_names(alias_str):
+    # The string is a comma-separated list of aliases each within
+    # double quotes, and commas can appear within double quotes as well.
+    if re.match(r'^"([^"]+)"$', alias_str):
+        names = [alias_str.strip('"').strip()]
+    else:
+        names = [s.strip() for s in
+                 next(csv.reader([alias_str], skipinitialspace=True))]
+    return names
 
 
 def generate_chebi_terms():
