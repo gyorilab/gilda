@@ -119,7 +119,16 @@ term_model = api.model(
                      'the taxonomy identifier of the species to which '
                      'it belongs.',
          example='9606'
-     )}
+     ),
+     'source_db': fields.String(
+         description='In some cases the term\'s db/id was mapped from another '
+                     'db/id pair given in the original source. If this is the '
+                     'case, this field provides the original source db.'),
+     'source_id': fields.String(
+         description='In some cases the term\'s db/id was mapped from another '
+                     'db/id pair given in the original source. If this is the '
+                     'case, this field provides the original source ID.')
+    }
 )
 
 scored_match_model = api.model(
@@ -136,7 +145,15 @@ scored_match_model = api.model(
      ),
      'match': fields.Nested(api.model('Match', {}),
          description='Additional metadata about the nature of the match.'
-     )}
+     ),
+     'subsumed_terms': fields.List(fields.Nested(term_model),
+         description='In some cases multiple terms with the same db/id '
+                     'matched the input string, potentially with different '
+                     'scores, and only the first one is exposed in the '
+                     'scored match\'s term attribute (see above). This field '
+                     'provides additional terms with the same db/id that '
+                     'matched the input for additional traceability.')
+     }
 )
 
 
@@ -182,7 +199,7 @@ models_model = fields.List(
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
     # NOTE: formally this response should be a list
-    @base_ns.response(200, "Grounding results", scored_match_model)
+    @base_ns.response(200, "Grounding results", [scored_match_model])
     @base_ns.expect(grounding_input_model)
     def post(self):
         """Return a list of scored grounding matches for a given entity text.
