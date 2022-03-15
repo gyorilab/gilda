@@ -178,14 +178,18 @@ def generate_mesh_terms(ignore_mappings=False):
                 status = 'name'
                 name = text_name
             term = Term(normalize(text_name), text_name, db, db_id, name,
-                        status, 'mesh')
+                        status, 'mesh',
+                        source_db='MESH' if db != 'MESH' else None,
+                        source_id=row[0] if db != 'MESH' else None)
             terms.append(term)
             synonyms = row[2]
             if row[2]:
                 synonyms = synonyms.split('|')
                 for synonym in synonyms:
                     term = Term(normalize(synonym), synonym, db, db_id, name,
-                                'synonym', 'mesh')
+                                'synonym', 'mesh',
+                                source_db='MESH' if db != 'MESH' else None,
+                                source_id=row[0] if db != 'MESH' else None)
                     terms.append(term)
         logger.info('Loaded %d terms' % len(terms))
     return terms
@@ -271,7 +275,8 @@ def generate_famplex_terms(ignore_mappings=False):
             db, db_id, name = mesh_mapping if (mesh_mapping
                                                and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
-            term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex')
+            term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex',
+                        'MESH', groundings['MESH'])
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -350,13 +355,15 @@ def get_terms_from_uniprot_row(row):
             continue
         term = Term(normalize(name), name, ns, id,
                     standard_name, 'synonym', 'uniprot',
-                    organism)
+                    organism, None if ns == 'UP' else 'UP',
+                    None if ns == 'UP' else up_id)
         terms.append(term)
 
     # We add the standard name (usually the gene name)
     term = Term(normalize(standard_name), standard_name,
                 ns, id, standard_name, 'name', 'uniprot',
-                organism)
+                organism, None if ns == 'UP' else 'UP',
+                None if ns == 'UP' else up_id)
     terms.append(term)
 
     # If we have gene synonyms we include them according to the following logic.
@@ -376,7 +383,8 @@ def get_terms_from_uniprot_row(row):
                     continue
                 term = Term(normalize(synonym), synonym,
                             ns, id, standard_name, 'synonym', 'uniprot',
-                            organism)
+                            organism, None if ns == 'UP' else 'UP',
+                            None if ns == 'UP' else up_id)
                 terms.append(term)
     return terms
 
@@ -530,6 +538,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         entry_name=name,
         status='name',
         source=prefix,
+        source_db=prefix.upper() if db != prefix.upper() else None,
+        source_id=entry['id'] if db != prefix.upper() else None,
     )
     terms.append(name_term)
 
@@ -558,6 +568,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
             entry_name=name,
             status='synonym',
             source=prefix,
+            source_db=prefix.upper() if db != prefix.upper() else None,
+            source_id=entry['id'] if db != prefix.upper() else None,
         )
         terms.append(synonym_term)
     return terms
@@ -648,7 +660,7 @@ def main():
     from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
     header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
-              'source', 'organism']
+              'source', 'organism', 'source_db', 'source_id']
     with gzip.open(fname, 'wt', encoding='utf-8') as fh:
         writer = csv.writer(fh, delimiter='\t')
         writer.writerow(header)
