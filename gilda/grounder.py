@@ -300,6 +300,12 @@ class ScoredMatch(object):
         The Match object characterizing the match to the Term.
     disambiguation : Optional[dict]
         Meta-information about disambiguation, when available.
+    subsumed_terms : Optional[list[gilda.grounder.Term]]
+        A list of additional Term objects that also matched, have the same
+        db/id value as the term associated with the match, but were further
+        down the score ranking. In some cases examining the subsumed terms
+        associated with a match can provide additional metadata in
+        downstream applications.
     """
     def __init__(self, term, score, match, disambiguation=None,
                  subsumed_terms=None):

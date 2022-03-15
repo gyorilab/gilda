@@ -21,6 +21,14 @@ class Term(object):
         When the term represents a protein, this attribute provides the
         taxonomy code of the species for the protein.
         For non-proteins, not provided. Default: None
+    source_db : Optional[str]
+        If the term's db/id was mapped from a different, original db/id
+        from a given source, this attribute provides the original db value
+        before mapping.
+    source_id : Optional[str]
+        If the term's db/id was mapped from a different, original db/id
+        from a given source, this attribute provides the original ID value
+        before mapping.
     """
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
                  organism=None, source_db=None, source_id=None):
