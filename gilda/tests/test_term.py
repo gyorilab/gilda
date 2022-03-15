@@ -15,3 +15,10 @@ def test_term_get_url():
                 norm_text='x', text='X', source='test', status='name')
     assert term.get_idenfiers_url() == \
         'https://identifiers.org/CHEBI:12345'
+
+
+def test_term_source_db_id():
+    term = Term('mitochondria', 'Mitochondria', 'GO', 'GO:0005739',
+                'mitochondrion', 'synonym', 'mesh', None, 'MESH', 'D008928')
+    assert term.source_db == 'MESH'
+    assert term.source_id == 'D008928'
