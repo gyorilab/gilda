@@ -24,10 +24,10 @@ class GroundForm(FlaskForm):
         'Text',
         validators=[DataRequired()],
         description=dedent("""\
-            Input the entity text (e.g., <code>k-ras</code>) to ground. Click
-            <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
-            here <i class="far fa-question-circle">
-            </i></a> for more information."""
+            Input the entity text (e.g., <code>k-ras</code>) to ground."""
+            #Click <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
+            #here <i class="far fa-question-circle">
+            #</i></a> for more information
         ),
     )
     context = TextAreaField(
@@ -45,12 +45,10 @@ class GroundForm(FlaskForm):
         id='organism-select',
         description=dedent("""\
             Optionally select one or more taxonomy
-            species IDs to define a species priority list which is applied
-            in case matches are found to proteins from multiple species (human,
-            mouse, yeast, etc). Click
+            species IDs to define a species priority list.  Click
             <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
             here <i class="far fa-question-circle">
-            </i></a> for more information about species disambiguation.
+            </i></a> for more details.
         """),
     )
     submit = SubmitField('Submit')
