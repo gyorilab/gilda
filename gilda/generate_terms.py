@@ -164,6 +164,7 @@ def generate_mesh_terms(ignore_mappings=False):
                        'mesh_supp_id_label_mappings.tsv']
     terms = []
     for fname in mesh_name_files:
+        logger.info('Loading %s' % fname)
         mesh_names_file = os.path.join(indra_resources, fname)
         for row in read_csv(mesh_names_file, header=False, delimiter='\t'):
             db_id = row[0]
@@ -178,14 +179,18 @@ def generate_mesh_terms(ignore_mappings=False):
                 status = 'name'
                 name = text_name
             term = Term(normalize(text_name), text_name, db, db_id, name,
-                        status, 'mesh')
+                        status, 'mesh',
+                        source_db='MESH' if db != 'MESH' else None,
+                        source_id=row[0] if db != 'MESH' else None)
             terms.append(term)
             synonyms = row[2]
             if row[2]:
                 synonyms = synonyms.split('|')
                 for synonym in synonyms:
                     term = Term(normalize(synonym), synonym, db, db_id, name,
-                                'synonym', 'mesh')
+                                'synonym', 'mesh',
+                                source_db='MESH' if db != 'MESH' else None,
+                                source_id=row[0] if db != 'MESH' else None)
                     terms.append(term)
         logger.info('Loaded %d terms' % len(terms))
     return terms
@@ -271,7 +276,8 @@ def generate_famplex_terms(ignore_mappings=False):
             db, db_id, name = mesh_mapping if (mesh_mapping
                                                and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
-            term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex')
+            term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex',
+                        'MESH', groundings['MESH'])
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
@@ -293,6 +299,7 @@ def generate_uniprot_terms(download=False, organisms=None):
         with open(path, 'w') as fh:
             fh.write(res.text)
     terms = []
+    logger.info('Loading %s' % path)
     for row in read_csv(path, delimiter='\t', header=True):
         terms += get_terms_from_uniprot_row(row)
 
@@ -303,6 +310,11 @@ def get_terms_from_uniprot_row(row):
     terms = []
     up_id = row['Entry']
     organism = row['Organism ID']
+
+    # As of 3/2/2022 there is an error in UniProt data that we need to manually
+    # patch here
+    if up_id == 'Q2QKR2':
+        row['Protein names'] = row['Protein names'][:-1]
     protein_names = parse_uniprot_synonyms(row['Protein names'])
 
     # These two lists are aligned and each separated by "; " if there
@@ -350,13 +362,15 @@ def get_terms_from_uniprot_row(row):
             continue
         term = Term(normalize(name), name, ns, id,
                     standard_name, 'synonym', 'uniprot',
-                    organism)
+                    organism, None if ns == 'UP' else 'UP',
+                    None if ns == 'UP' else up_id)
         terms.append(term)
 
     # We add the standard name (usually the gene name)
     term = Term(normalize(standard_name), standard_name,
                 ns, id, standard_name, 'name', 'uniprot',
-                organism)
+                organism, None if ns == 'UP' else 'UP',
+                None if ns == 'UP' else up_id)
     terms.append(term)
 
     # If we have gene synonyms we include them according to the following logic.
@@ -376,7 +390,8 @@ def get_terms_from_uniprot_row(row):
                     continue
                 term = Term(normalize(synonym), synonym,
                             ns, id, standard_name, 'synonym', 'uniprot',
-                            organism)
+                            organism, None if ns == 'UP' else 'UP',
+                            None if ns == 'UP' else up_id)
                 terms.append(term)
     return terms
 
@@ -530,6 +545,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         entry_name=name,
         status='name',
         source=prefix,
+        source_db=prefix.upper() if db != prefix.upper() else None,
+        source_id=entry['id'] if db != prefix.upper() else None,
     )
     terms.append(name_term)
 
@@ -558,6 +575,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
             entry_name=name,
             status='synonym',
             source=prefix,
+            source_db=prefix.upper() if db != prefix.upper() else None,
+            source_id=entry['id'] if db != prefix.upper() else None,
         )
         terms.append(synonym_term)
     return terms
@@ -648,7 +667,7 @@ def main():
     from .resources import GROUNDING_TERMS_PATH as fname
     logger.info('Dumping into %s' % fname)
     header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
-              'source', 'organism']
+              'source', 'organism', 'source_db', 'source_id']
     with gzip.open(fname, 'wt', encoding='utf-8') as fh:
         writer = csv.writer(fh, delimiter='\t')
         writer.writerow(header)

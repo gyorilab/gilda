@@ -1,3 +1,4 @@
+import copy
 import csv
 import json
 import gzip
@@ -237,7 +238,10 @@ class Grounder(object):
         for _, entry_group in entry_groups:
             entries = sorted(list(entry_group), key=lambda x: x.score,
                              reverse=True)
-            unique_entries.append(entries[0])
+            first_entry = copy.deepcopy(entries[0])
+            first_entry.subsumed_terms = [copy.deepcopy(e.term)
+                                          for e in entries[1:]]
+            unique_entries.append(first_entry)
         # Return the list of unique entries
         return unique_entries
 
@@ -296,13 +300,21 @@ class ScoredMatch(object):
         The Match object characterizing the match to the Term.
     disambiguation : Optional[dict]
         Meta-information about disambiguation, when available.
+    subsumed_terms : Optional[list[gilda.grounder.Term]]
+        A list of additional Term objects that also matched, have the same
+        db/id value as the term associated with the match, but were further
+        down the score ranking. In some cases examining the subsumed terms
+        associated with a match can provide additional metadata in
+        downstream applications.
     """
-    def __init__(self, term, score, match, disambiguation=None):
+    def __init__(self, term, score, match, disambiguation=None,
+                 subsumed_terms=None):
         self.term = term
         self.url = term.get_idenfiers_url()
         self.score = score
         self.match = match
         self.disambiguation = disambiguation
+        self.subsumed_terms = subsumed_terms if subsumed_terms else None
 
     def __str__(self):
         disamb_str = '' if self.disambiguation is None else \
@@ -322,6 +334,9 @@ class ScoredMatch(object):
         }
         if self.disambiguation is not None:
             js['disambiguation'] = self.disambiguation
+        if self.subsumed_terms:
+            js['subsumed_terms'] = [term.to_json()
+                                    for term in self.subsumed_terms]
         return js
 
     def multiply(self, value):

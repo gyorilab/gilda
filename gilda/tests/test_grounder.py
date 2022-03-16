@@ -180,3 +180,14 @@ def test_unidecode():
         assert len(matches) == 1
         assert (matches[0].term.db, matches[0].term.id) == \
             ('MESH', 'C000605741')
+
+
+def test_subsumed_terms():
+    txt = 'mitochondria'
+    matches = gr.ground(txt)
+    assert len(matches) == 1
+    match = matches[0]
+    assert match.term.db == 'GO'
+    assert len(match.subsumed_terms) == 1
+    assert match.subsumed_terms[0].db == 'GO', match.subsumed_terms[0]
+    assert match.subsumed_terms[0].source_db == 'MESH', match.subsumed_terms[0]

@@ -21,9 +21,17 @@ class Term(object):
         When the term represents a protein, this attribute provides the
         taxonomy code of the species for the protein.
         For non-proteins, not provided. Default: None
+    source_db : Optional[str]
+        If the term's db/id was mapped from a different, original db/id
+        from a given source, this attribute provides the original db value
+        before mapping.
+    source_id : Optional[str]
+        If the term's db/id was mapped from a different, original db/id
+        from a given source, this attribute provides the original ID value
+        before mapping.
     """
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
-                 organism=None):
+                 organism=None, source_db=None, source_id=None):
         if not text:
             raise ValueError('Text for Term cannot be empty')
         self.norm_text = norm_text
@@ -34,11 +42,14 @@ class Term(object):
         self.status = status
         self.source = source
         self.organism = organism
+        self.source_db = source_db
+        self.source_id = source_id
 
     def __str__(self):
-        return 'Term(%s,%s,%s,%s,%s,%s,%s,%s)' % (
+        return 'Term(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)' % (
             self.norm_text, self.text, self.db, self.id, self.entry_name,
-            self.status, self.source, self.organism)
+            self.status, self.source, self.organism, self.source_db,
+            self.source_id)
 
     def __repr__(self):
         return str(self)
@@ -56,13 +67,17 @@ class Term(object):
         }
         if self.organism:
             js['organism'] = self.organism
+        if self.source_db:
+            js['source_db'] = self.source_db
+        if self.source_id:
+            js['source_id'] = self.source_id
         return js
 
     def to_list(self):
         """Return the term serialized into a list of strings."""
         return [self.norm_text, self.text, self.db, self.id,
                 self.entry_name, self.status, self.source,
-                self.organism]
+                self.organism, self.source_db, self.source_id]
 
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
