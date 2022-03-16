@@ -23,7 +23,7 @@ class GroundForm(FlaskForm):
         'Text',
         validators=[DataRequired()],
         description=dedent("""\
-            Input the entity text to ground, e.g., <a>k-ras</a>. Click
+            Input the entity text (e.g., <code>k-ras</code>) to ground. Click
             <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
             here <i class="far fa-question-circle">
             </i></a> for more information."""
