@@ -22,6 +22,22 @@ popular_organisms = ['9606', '10090', '10116', '9913', '7955', '7227',
                      '6239', '44689', '3702', '39947', '83333', '224308',
                      '559292']
 
+organism_labels = {
+    '9606': 'Homo sapiens',
+    '10090': 'Mus musculus',
+    '10116': 'Rattus norvegicus',
+    '9913': 'Bos taurus',
+    '7955': 'Danio rerio',
+    '7227': 'Drosophila melanogaster',
+    '6239': 'Caenorhabditis elegans',
+    '44689': 'Dictyostelium discoideum',
+    '3702': 'Arabidopsis thaliana',
+    '39947': 'Oryza sativa',
+    '83333': 'Escherichia coli',
+    '224308': 'Bacillus subtilis',
+    '559292': 'Saccharomyces cerevisiae',
+}
+
 # NOTE: these are not all exact mappings..
 # Several mappings here are to the closest match which works correctly
 # in this setting but isn't generally speaking a valid xref.

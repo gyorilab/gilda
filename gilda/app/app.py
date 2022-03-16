@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_restx import Api, Resource, fields
@@ -8,21 +10,47 @@ from wtforms.validators import DataRequired
 
 from gilda.api import *
 from gilda import __version__ as version
-from gilda.resources import popular_organisms
+from gilda.resources import popular_organisms, organism_labels
 
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = False
 app.config['WTF_CSRF_ENABLED'] = False
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 Bootstrap(app)
 
 
 class GroundForm(FlaskForm):
-    text = StringField('Text', validators=[DataRequired()])
-    context = TextAreaField('Context (optional)')
-    organisms = SelectMultipleField('Species priority (optional)',
-                                    choices=[(org, org)
-                                             for org in popular_organisms],
-                                    id='organism-select')
+    text = StringField(
+        'Text',
+        validators=[DataRequired()],
+        description=dedent("""\
+            Input the entity text (e.g., <code>k-ras</code>) to ground."""
+            #Click <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
+            #here <i class="far fa-question-circle">
+            #</i></a> for more information
+        ),
+    )
+    context = TextAreaField(
+        'Context (optional)',
+        description=dedent("""\
+            Optionally provide additional text context to help disambiguation. Click
+            <a type="button" href="#" data-toggle="modal" data-target="#context-modal">
+            here <i class="far fa-question-circle">
+            </i></a> for more details.
+        """)
+    )
+    organisms = SelectMultipleField(
+        'Species priority (optional)',
+        choices=[(org, organism_labels[org]) for org in popular_organisms],
+        id='organism-select',
+        description=dedent("""\
+            Optionally select one or more taxonomy
+            species IDs to define a species priority list.  Click
+            <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
+            here <i class="far fa-question-circle">
+            </i></a> for more details.
+        """),
+    )
     submit = SubmitField('Submit')
 
     def get_matches(self):
@@ -56,7 +84,9 @@ api = Api(app,
           description="A service for grounding entity strings",
           version=version,
           license="Code available under the BSD 2-Clause License",
-          contact="benjamin_gyori@hms.harvard.edu",
+          contact="INDRA labs",
+          contact_email="indra.sysbio@gmail.com",
+          contact_url="https://indralab.github.io",
           doc='/apidocs',
           )
 
