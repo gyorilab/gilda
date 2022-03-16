@@ -4,6 +4,11 @@
 {% import "bootstrap/fixes.html" as fixes %}
 {% import "bootstrap/utils.html" as util %}
 
+{% block head %}
+    {{ super() }}
+    <script src="https://kit.fontawesome.com/4c86883252.js" crossorigin="anonymous"></script>
+{% endblock %}
+
 {% block content %}
 
 <div class="container" style="margin-top: 30px;">
@@ -14,18 +19,10 @@
       </div>
       <div class="panel-body">
         <p>
-          This is version {{ version }} of the Gilda grounding service.
-        For interactive use, enter an entity text (example: k-ras)
-        to ground in the form below. You can optionally provide additional
-        context (e.g., the sentence in which the entity text appeared) to help
-        disambiguation. You can also optionally select one or more taxonomy
-        species IDs to define a species priority list which is applied in
-        in case matches are found to proteins from multiple species (human,
-        mouse, yeast, etc).
-      </p>
-      <p>
+            The Gilda grounding service (v{{ version }}) can be used to
+            identify structured identifiers for entity names like <code>k-ras</code>.
         For programmatic access, POST requests to the <code>/ground</code>
-        endpoint. See the <a href="apidocs">API documentation</a>.
+        endpoint. See the <a href="apidocs">API documentation</a>
         or the <a href="https://github.com/indralab/gilda/blob/master/README.md">user guide</a>
         for more information.
       </p>
@@ -44,7 +41,6 @@
       Point of contact: Benjamin M. Gyori (benjamin_gyori [AT]
       hms.harvard.edu).
       </p>
-    </small>
     </div>
   </div>
 </div>

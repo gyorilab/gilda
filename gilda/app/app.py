@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from flask import Flask, Response, abort, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_restx import Api, Resource, fields
@@ -17,12 +19,40 @@ Bootstrap(app)
 
 
 class GroundForm(FlaskForm):
-    text = StringField('Text', validators=[DataRequired()])
-    context = TextAreaField('Context (optional)')
-    organisms = SelectMultipleField('Species priority (optional)',
-                                    choices=[(org, org)
-                                             for org in popular_organisms],
-                                    id='organism-select')
+    text = StringField(
+        'Text',
+        validators=[DataRequired()],
+        description=dedent("""\
+            Input the entity text to ground, e.g., <a>k-ras</a>. Click
+            <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
+            here <i class="far fa-question-circle">
+            </i></a> for more information."""
+        ),
+    )
+    context = TextAreaField(
+        'Context (optional)',
+        description=dedent("""\
+            Provide additional context (e.g., the sentence or paragraph
+            in which the entity text appeared) to help disambiguation. Click
+            <a type="button" href="#" data-toggle="modal" data-target="#context-modal">
+            here <i class="far fa-question-circle">
+            </i></a> for more information about context disambiguation.
+        """)
+    )
+    organisms = SelectMultipleField(
+        'Species priority (optional)',
+        choices=[(org, org) for org in popular_organisms],
+        id='organism-select',
+        description=dedent("""\
+            You can also optionally select one or more taxonomy
+            species IDs to define a species priority list which is applied in
+            in case matches are found to proteins from multiple species (human,
+            mouse, yeast, etc). Click
+            <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
+            here <i class="far fa-question-circle">
+            </i></a> for more information about species disambiguation.
+        """),
+    )
     submit = SubmitField('Submit')
 
     def get_matches(self):
