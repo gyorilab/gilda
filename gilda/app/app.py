@@ -87,7 +87,9 @@ api = Api(app,
           description="A service for grounding entity strings",
           version=version,
           license="Code available under the BSD 2-Clause License",
-          contact="benjamin_gyori@hms.harvard.edu",
+          contact="INDRA labs",
+          contact_email="indra.sysbio@gmail.com",
+          contact_url="https://indralab.github.io",
           doc='/apidocs',
           )
 
