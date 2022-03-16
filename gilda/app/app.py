@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 
 from gilda.api import *
 from gilda import __version__ as version
-from gilda.resources import popular_organisms
+from gilda.resources import popular_organisms, organism_labels
 
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = False
@@ -33,20 +33,19 @@ class GroundForm(FlaskForm):
     context = TextAreaField(
         'Context (optional)',
         description=dedent("""\
-            Provide additional context (e.g., the sentence or paragraph
-            in which the entity text appeared) to help disambiguation. Click
+            Optionally provide additional text context to help disambiguation. Click
             <a type="button" href="#" data-toggle="modal" data-target="#context-modal">
             here <i class="far fa-question-circle">
-            </i></a> for more information about context disambiguation.
+            </i></a> for more details.
         """)
     )
     organisms = SelectMultipleField(
         'Species priority (optional)',
-        choices=[(org, org) for org in popular_organisms],
+        choices=[(org, organism_labels[org]) for org in popular_organisms],
         id='organism-select',
         description=dedent("""\
-            You can also optionally select one or more taxonomy
-            species IDs to define a species priority list which is applied in
+            Optionally select one or more taxonomy
+            species IDs to define a species priority list which is applied
             in case matches are found to proteins from multiple species (human,
             mouse, yeast, etc). Click
             <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
