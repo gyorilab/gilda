@@ -15,6 +15,7 @@ from gilda.resources import popular_organisms
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = False
 app.config['WTF_CSRF_ENABLED'] = False
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 Bootstrap(app)
 
 
