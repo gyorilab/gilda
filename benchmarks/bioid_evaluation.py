@@ -38,6 +38,7 @@ tqdm.pandas()
 BO_MISSING_XREFS = set()
 
 
+
 class BioIDBenchmarker:
     """Used for evaluating gilda using data from BioCreative VI BioID track
 
@@ -722,6 +723,9 @@ def get_famplex_members():
     return dict(fplx_children)
 
 
+fplx_members = get_famplex_members()
+
+
 def get_display_name(ns: str) -> str:
     """Gets row/column name associated to a namespace"""
     return nmspace_displaynames[ns] if ns in nmspace_displaynames else ns
@@ -860,5 +864,4 @@ def main(data: str, results: str):
 
 
 if __name__ == '__main__':
-    fplx_members = get_famplex_members()
     main()
