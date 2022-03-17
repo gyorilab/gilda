@@ -277,7 +277,7 @@ def generate_famplex_terms(ignore_mappings=False):
                                                and not ignore_mappings) else \
                 ('MESH', id, mesh_client.get_mesh_name(id))
             term = Term(norm_txt, txt, db, db_id, name, 'curated', 'famplex',
-                        'MESH', groundings['MESH'])
+                        None, 'MESH', groundings['MESH'])
         else:
             # TODO: handle HMDB, PUBCHEM, CHEMBL
             continue
