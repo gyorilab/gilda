@@ -238,10 +238,8 @@ class Grounder(object):
         for _, entry_group in entry_groups:
             entries = sorted(list(entry_group), key=lambda x: x.score,
                              reverse=True)
-            first_entry = copy.deepcopy(entries[0])
-            first_entry.subsumed_terms = [copy.deepcopy(e.term)
-                                          for e in entries[1:]]
-            unique_entries.append(first_entry)
+            entries[0].subsumed_terms = [e.term for e in entries[1:]]
+            unique_entries.append(entries[0])
         # Return the list of unique entries
         return unique_entries
 

@@ -220,14 +220,12 @@ def depluralize(word):
 
 
 def replace_roman_arabic(s):
-    for pattern, result in roman_arabic_patterns:
-        sr = pattern.sub(result, s)
-        # This is to make sure we don't replace the string and then apply the
-        # reverse replacement pattern
-        if sr != s:
-            return sr
-    return s
-
+    match = roman_arabic_prefilter.match(s)
+    if not match:
+        return s
+    else:
+        pattern = roman_arabic_patterns.get(match.groups()[0].upper())
+        return pattern[0].sub(pattern[1], s) if pattern else s
 
 
 def _make_roman_arabic_patterns():
@@ -244,12 +242,14 @@ def _make_roman_arabic_patterns():
         'X': '10'
     }
 
-    roman_arabic_patterns = []
+    roman_arabic_patterns = {}
     for r, a in roman_arabic.items():
-        roman_arabic_patterns += [(re.compile(r'^(.*[- ])(%s)$' % a,
-                                              re.IGNORECASE),
-                                   r'\g<1>%s' % b) for a, b in [(r, a), (a, r)]]
+        for a, b in [(r, a), (a, r)]:
+            roman_arabic_patterns[a] = (re.compile(r'^(.*[- ])(%s)$' % a,
+                                                  re.IGNORECASE),
+                                        r'\g<1>%s' % b)
     return roman_arabic_patterns
 
 
 roman_arabic_patterns = _make_roman_arabic_patterns()
+roman_arabic_prefilter = re.compile(r'^.*[- ](\d+|[IXV]+)$', re.IGNORECASE)
