@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <!-- The CSS package above applies Google styling to buttons and other elements. -->
+
+  <style>
+    .branding-below {
+      bottom: 56px;
+      top: 0;
+    }
+    .branding-text {
+      left: 7px;
+      position: relative;
+      top: 3px;
+    }
+    .col-contain {
+      overflow: hidden;
+    }
+    .col-one {
+      float: left;
+      width: 50%;
+    }
+    .logo {
+      vertical-align: middle;
+    }
+    .radio-spacer {
+      height: 20px;
+    }
+    .width-100 {
+      width: 100%;
+    }
+  </style>
+  <title></title>
+</head>
+<body>
+<div class="sidebar branding-below">
+  <form>
+    <div class="block" id="button-bar">
+      <button class="blue" id="run-grounding">Ground</button>
+      <button id="insert-text">Insert</button>
+    </div>
+    <div class="block form-group">
+      <label for="groundings-text"><b>Grounding details</b></label>
+      <textarea class="width-100" id="groundings-text" rows="3"></textarea>
+    </div>
+    <div class="block form-group">
+      <text id="grounding"></text>
+    </div>
+  </form>
+</div>
+
+<div class="sidebar bottom">
+  <img alt="Add-on logo" class="logo" src="https://bigmech.s3.amazonaws.com/indra-db/indralab_bare_logo.png" width="27" height="27">
+  <span class="gray branding-text">Grounding by Gilda</span>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+  /**
+   * On document load, assign click handlers to each button.
+   */
+  $(function() {
+    $('#run-grounding').click(run_ground);
+    $('#insert-text').click(insertText);
+    google.script.run.withSuccessHandler(loadPreferences)
+            .withFailureHandler(showError).getPreferences();
+  });
+
+  /**
+   * Runs a server-side function to ground the user-selected text and update
+   * the sidebar UI with the resulting grounding.
+   */
+  function run_ground() {
+    this.disabled = true;
+    $('#error').remove();
+    google.script.run
+            .withSuccessHandler(
+                    function(textAndGrounding, element) {
+                      $('#groundings-text').val(textAndGrounding.term);
+                      $('#grounding').val(textAndGrounding.grounding);
+                      element.disabled = false;
+                    })
+            .withFailureHandler(
+                    function(msg, element) {
+                      showError(msg, $('#button-bar'));
+                      element.disabled = false;
+                    })
+            .withUserObject(this)
+            .getTextAndGrounding();
+  }
+
+  /**
+   * Runs a server-side function to insert the grounding into the document
+   * after the user's selection.
+   */
+  function insertText() {
+    this.disabled = true;
+    $('#error').remove();
+    google.script.run
+            .withSuccessHandler(
+                    function(returnSuccess, element) {
+                      element.disabled = false;
+                    })
+            .withFailureHandler(
+                    function(msg, element) {
+                      showError(msg, $('#button-bar'));
+                      element.disabled = false;
+                    })
+            .withUserObject(this)
+            .insertText($('#grounding').val());
+  }
+
+  /**
+   * Inserts a div that contains an error message after a given element.
+   *
+   * @param {string} msg The error message to display.
+   * @param {DOMElement} element The element after which to display the error.
+   */
+  function showError(msg, element) {
+    const div = $('<div id="error" class="error">' + msg + '</div>');
+    $(element).after(div);
+  }
+</script>
+</body>
+</html>
+
