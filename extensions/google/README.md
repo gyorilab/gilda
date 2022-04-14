@@ -2,7 +2,7 @@ Gilda Google Docs add-on
 ========================
 
 This add-on allows grounding (i.e., finding identifiers for) bio-entities in
-Google Docs documents. The plugin also allows inserting a CURIE representation
+Google Docs documents. The add-on also allows inserting a CURIE representation
 of the grounding after the selected entity in the text. The code was partially
 adapted from [this tutorial](https://developers.google.com/apps-script/add-ons/editors/docs/quickstart/translate#sidebar.html).
 
