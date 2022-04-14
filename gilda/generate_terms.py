@@ -119,11 +119,11 @@ def generate_hgnc_terms():
                 all_term_args[term_args] = None
 
         if row['Alias names']:
-            for name in extract_hgnc_alias_names(row['Alias names']):
-                name = name.strip()
+            for alias_name in extract_hgnc_alias_names(row['Alias names']):
+                alias_name = alias_name.strip()
                 # There are double quotes and sometimes spurious extra spaces
-                term_args = (normalize(name), name, db, id, name, 'synonym',
-                             'hgnc_alias', organism)
+                term_args = (normalize(alias_name), alias_name, db, id, name,
+                             'synonym', 'synonym', organism)
                 all_term_args[term_args] = None
 
     terms = [Term(*args) for args in all_term_args.keys()]
