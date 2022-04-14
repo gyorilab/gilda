@@ -191,3 +191,8 @@ def test_subsumed_terms():
     assert len(match.subsumed_terms) == 1
     assert match.subsumed_terms[0].db == 'GO', match.subsumed_terms[0]
     assert match.subsumed_terms[0].source_db == 'MESH', match.subsumed_terms[0]
+
+
+def test_hgnc_alias_names():
+    matches = gr.ground("FP prostanoid receptor")
+    assert ('HGNC', '9600') in {(m.term.db, m.term.id) for m in matches}
