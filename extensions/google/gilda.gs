@@ -62,10 +62,16 @@ function getTextAndGrounding() {
   var ui = DocumentApp.getUi();
   const text = getSelectedText().join(' ');
   var term = ground(text)
-  var term_summary = '• Name: ' + term['entry_name'] + '\n' 
-    + '• Database: ' + term['db'].toLowerCase() + '\n'
-    + '• Identifier: ' + term['id']
-  var grounding = term['db'].toLowerCase() + ':' + term['id']
+  if (!term){
+    var term_summary = 'Could not ground "' + text + '".'
+    var grounding = ''
+  } else {
+    var term_summary = '• Name: ' + term['entry_name'] + '\n' 
+      + '• Database: ' + term['db'].toLowerCase() + '\n'
+      + '• Identifier: ' + term['id']
+    var grounding = term['db'].toLowerCase() + ':' + term['id']
+  }
+  
   return {
     text: text,
     term: term_summary,
@@ -107,12 +113,13 @@ function ground(text) {
     'contentType': 'application/json',
     'payload': JSON.stringify({'text': text})
   }
-
+  
   var response = UrlFetchApp.fetch("http://grounding.indra.bio/ground", options);
   var response_json = JSON.parse(response.getContentText())
   if (!response_json.length){
-    throw new Error('Couldn\'t ground ' + text);
+    var term = null
+  } else {
+    var term = response_json[0]['term']
   }
-  var term = response_json[0]['term']
   return term;
 }
