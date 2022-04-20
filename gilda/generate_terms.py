@@ -172,7 +172,7 @@ def generate_chebi_terms():
                         row['COMPOUND_ID'])
             continue
         db = 'CHEBI'
-        name = str(row['NAME'])
+        name = str(row['NAME']).strip()
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
         if chebi_name is None:
@@ -593,6 +593,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         if doid_name:
             db, db_id, name = 'DOID', doid, doid_name
 
+    name = name.strip()
+
     # Add a term for the name first
     name_term = Term(
         norm_text=normalize(name),
@@ -623,6 +625,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         match = re.match(r'([^"]+)', synonym)
         if match:
             synonym = match.groups()[0]
+
+        synonym = synonym.strip()
 
         synonym_term = Term(
             norm_text=normalize(synonym),
@@ -656,7 +660,8 @@ def _generate_obo_terms(prefix, ignore_mappings=False, map_to_ns=None):
 def generate_entrez_terms():
     import pandas as pd
     df = pd.read_csv('https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/'
-                     'Homo_sapiens.gene_info.gz', sep='\t')
+                     'Homo_sapiens.gene_info.gz', sep='\t',
+                     keep_default_na=False, na_values=['_'])
     terms = []
     for _, row in df.iterrows():
         entrez_id = str(row['GeneID'])
