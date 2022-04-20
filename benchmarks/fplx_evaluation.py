@@ -48,6 +48,8 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'integrin alpha': {'FPLX': 'ITGA'},
                       'DC': {'MESH': 'D003713'},
                       'BMD': {'MESH': 'D015519'}}
+                      'PTPMeg2': {'HGNC': '9661'},
+                      'alpha4': {'HGNC': '5461'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
