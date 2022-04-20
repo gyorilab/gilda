@@ -653,6 +653,27 @@ def _generate_obo_terms(prefix, ignore_mappings=False, map_to_ns=None):
     return terms
 
 
+def generate_entrez_terms():
+    import pandas as pd
+    df = pd.read_csv('https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/'
+                     'Homo_sapiens.gene_info.gz', sep='\t')
+    terms = []
+    for _, row in df.iterrows():
+        entrez_id = str(row['GeneID'])
+        hgnc_id = hgnc_client.get_hgnc_from_entrez(entrez_id)
+        if not hgnc_id:
+            continue
+        hgnc_symbol = hgnc_client.get_hgnc_name(hgnc_id)
+        synonyms = row['Synonyms'].split('|')
+        other_designations = row['Other_designations'].split('|')
+        for syn in synonyms + other_designations:
+            terms.append(
+                Term(normalize(syn), syn, 'HGNC', hgnc_id, hgnc_symbol,
+                     'synonym', 'entrez', '9606', 'EGID', entrez_id)
+            )
+    return terms
+
+
 def _make_mesh_mappings():
     # Load MeSH ID/label mappings
     from .resources import MESH_MAPPINGS_PATH
@@ -689,6 +710,7 @@ def get_all_terms():
         generate_uniprot_terms(),
         generate_famplex_terms(),
         generate_hgnc_terms(),
+        generate_entrez_terms(),
         generate_chebi_terms(),
         generate_go_terms(),
         generate_mesh_terms(),
