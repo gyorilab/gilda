@@ -664,9 +664,12 @@ def generate_entrez_terms():
         if not hgnc_id:
             continue
         hgnc_symbol = hgnc_client.get_hgnc_name(hgnc_id)
-        synonyms = row['Synonyms'].split('|')
-        other_designations = row['Other_designations'].split('|')
+        synonyms = row['Synonyms'].split('|') if row['Synonyms'] != '-' else []
+        other_designations = row['Other_designations'].split('|') \
+            if row['Other_designations'] != '-' else []
         for syn in synonyms + other_designations:
+            if syn.startswith('(') and syn.endswith(')'):
+                continue
             terms.append(
                 Term(normalize(syn), syn, 'HGNC', hgnc_id, hgnc_symbol,
                      'synonym', 'entrez', '9606', 'EGID', entrez_id)
