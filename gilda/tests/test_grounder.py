@@ -196,3 +196,10 @@ def test_subsumed_terms():
 def test_hgnc_alias_names():
     matches = gr.ground("FP prostanoid receptor")
     assert ('HGNC', '9600') in {(m.term.db, m.term.id) for m in matches}
+
+
+def test_namespaces():
+    matches = gr.ground('KRAS', namespaces=['CHEBI'])
+    assert not matches
+    matches = gr.ground('KRAS', namespaces=['HGNC'])
+    assert matches

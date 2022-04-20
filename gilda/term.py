@@ -82,6 +82,12 @@ class Term(object):
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
 
+    def get_namespaces(self):
+        namespaces = {self.db}
+        if self.source_db:
+            namespaces.add(self.source_db)
+        return namespaces
+
 
 def get_identifiers_url(db, id):
     url_pattern = 'https://identifiers.org/{db}:{id}'

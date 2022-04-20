@@ -97,7 +97,8 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None, organisms=None):
+    def ground(self, raw_str, context=None, organisms=None,
+               namespaces=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -109,6 +110,11 @@ class Grounder(object):
             Any additional text that serves as context for disambiguating the
             given entity text, used if a model exists for disambiguating the
             given text.
+        organisms : Optional[List[str]]
+            An optional list of organism identifiers defining a priority
+            ranking among organisms, if genes/proteins from multiple
+            organisms match the input. If not provided, the default
+            ['9606'] i.e., human is used.
 
         Returns
         -------
@@ -150,6 +156,14 @@ class Grounder(object):
         # Then sort by decreasing score
         rank_fun = lambda x: (x.score, score_namespace(x.term))
         unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
+
+        # If we have a namespace constraint, we filter to the given
+        # namespaces.
+        if namespaces:
+            unique_scores = [
+                scored_match for scored_match in unique_scores
+                if scored_match.get_namespaces() & set(namespaces)
+            ]
 
         return unique_scores
 
@@ -341,6 +355,13 @@ class ScoredMatch(object):
         logger.debug('Multiplying the score of "%s" with %.3f'
                      % (self.term.entry_name, value))
         self.score = self.score * value
+
+    def get_namespaces(self):
+        term_ns = self.term.get_namespaces()
+        if self.subsumed_terms:
+            for sub_term in self.subsumed_terms:
+                term_ns |= sub_term.get_namespaces()
+        return term_ns
 
 
 def load_terms_file(terms_file):
