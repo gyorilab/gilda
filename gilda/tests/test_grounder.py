@@ -15,13 +15,13 @@ def test_grounder():
             assert entry.id == '6407', entry
 
     scores = gr.ground('kras')
-    assert len(scores) == 1, scores
+    assert len(scores) == 2, scores
     assert appreq(scores[0].score, 0.9845), scores
     scores = gr.ground('k-ras')
-    assert len(scores) == 1, scores
+    assert len(scores) == 2, scores
     assert appreq(scores[0].score, 0.9936), scores
     scores = gr.ground('KRAS')
-    assert len(scores) == 1, scores
+    assert len(scores) == 2, scores
     assert appreq(scores[0].score, 1.0), scores
     scores = gr.ground('bRaf')
     assert len(scores) == 1, scores
@@ -38,7 +38,7 @@ def test_grounder_num_entries():
     entries = gr.lookup('NPM1')
     assert len(entries) == 4, entries
     entries = gr.lookup('H4')
-    assert len(entries) == 7, entries
+    assert len(entries) == 9, entries
 
 
 def test_grounder_depluralize():
