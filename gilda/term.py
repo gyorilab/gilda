@@ -1,3 +1,6 @@
+from typing import Set, Tuple
+
+
 class Term(object):
     """Represents a text entry corresponding to a grounded term.
 
@@ -82,7 +85,13 @@ class Term(object):
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
 
-    def get_namespaces(self):
+    def get_groundings(self) -> Set[Tuple[str, str]]:
+        groundings = {(self.db, self.id)}
+        if self.source_db:
+            groundings.add((self.source_db, self.source_id))
+        return groundings
+
+    def get_namespaces(self) -> Set[str]:
         namespaces = {self.db}
         if self.source_db:
             namespaces.add(self.source_db)

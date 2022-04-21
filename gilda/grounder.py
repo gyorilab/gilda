@@ -6,6 +6,7 @@ import pickle
 import logging
 import itertools
 from collections import defaultdict
+from typing import Set, Tuple
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -356,12 +357,15 @@ class ScoredMatch(object):
                      % (self.term.entry_name, value))
         self.score = self.score * value
 
-    def get_namespaces(self):
-        term_ns = self.term.get_namespaces()
+    def get_namespaces(self) -> Set[str]:
+        return {ns for ns, _ in self.get_groundings()}
+
+    def get_groundings(self) -> Set[Tuple[str, str]]:
+        term_groundings = self.term.get_groundings()
         if self.subsumed_terms:
             for sub_term in self.subsumed_terms:
-                term_ns |= sub_term.get_namespaces()
-        return term_ns
+                term_groundings |= sub_term.get_groundings()
+        return term_groundings
 
 
 def load_terms_file(terms_file):
