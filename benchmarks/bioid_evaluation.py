@@ -413,6 +413,11 @@ class BioIDBenchmarker:
                 tqdm.write(f'Bioontology v{bio_ontology.version} is missing mappings from {prefix} to {xref_prefix}')
             output.add(xref_curie)
 
+        if prefix == 'UBERON':
+            ub_curie = f'{prefix}:{identifier}'
+            if ub_curie in uberon_mesh_mappings:
+                output.add(uberon_mesh_mappings[ub_curie])
+
         if prefix == 'NCBI gene':
             hgnc_id = get_hgnc_from_entrez(identifier)
             if hgnc_id is not None:
@@ -737,6 +742,24 @@ def get_famplex_members():
 
 
 fplx_members = get_famplex_members()
+
+
+def get_uberon_mesh_mappings():
+    import obonet
+    from indra.databases import mesh_client
+    g = obonet.read_obo('/Users/ben/src/uberon/src/ontology/uberon-edit.obo')
+    mappings = {}
+    for node, data in g.nodes(data=True):
+        xrefs = [x[5:] for x in data.get('xref', []) if x.startswith('MESH')]
+        if len(xrefs) != 1:
+            continue
+        xref = xrefs[0]
+        if mesh_client.get_mesh_name(xref, offline=True):
+            mappings[node] = 'MESH:%s' % xref
+    return mappings
+
+
+uberon_mesh_mappings = get_uberon_mesh_mappings()
 
 
 def get_display_name(ns: str) -> str:
