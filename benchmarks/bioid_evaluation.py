@@ -424,7 +424,7 @@ class BioIDBenchmarker:
         if prefix == 'PubChem':
             chebi_id = get_chebi_id_from_pubchem(identifier)
             if chebi_id is not None:
-                output.add(f'CHEBI:CHEBI:{chebi_id}')
+                output.add(f'CHEBI:{chebi_id}')
         return output
 
     @staticmethod
