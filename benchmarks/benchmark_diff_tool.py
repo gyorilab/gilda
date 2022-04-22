@@ -62,8 +62,8 @@ def main(reference: str, comparison: str, key: str):
     print(dedent(f"""\
     Analysis of "{key}":
     
-    {new_idx.sum():,} success rows ({new_unique_count:,} unique) in v{comparison_base} but not v{reference_base}
-    {regressions_idx.sum():,} success rows ({regression_unique_count:,} unique) in v{reference_base} but not v{comparison_base}
+    {new_idx.sum():,} success rows ({new_unique_count:,} unique) in {comparison_base} but not {reference_base}
+    {regressions_idx.sum():,} success rows ({regression_unique_count:,} unique) in {reference_base} but not {comparison_base}
     {misses.sum():,} rows missed ({misses_unique_count:,} unique) in both
     {hits_idx.sum():,} successes rows ({hits_unique_count:,} unique) in both
     """))
