@@ -19,10 +19,10 @@ RESULTS = HERE.joinpath('results', 'bioid_performance')
 def main(reference: str, comparison: str, key: str):
     df1 = pd.read_json(reference, orient="record")
     df2 = pd.read_json(comparison, orient="record")
-    reference_base = os.basename(reference).splitext()[0]
-    comparison_base = os.basename(comparison).splitext()[0]
+    reference_base = os.path.splitext(os.path.basename(reference))[0]
+    comparison_base = os.path.splitext(os.path.basename(comparison))[0]
     output = RESULTS.joinpath(f"{reference_base}_{comparison_base}", key)
-    output.mkdir(exist_ok=True)
+    output.mkdir(exist_ok=True, parents=True)
 
     fig, ax = plt.subplots()
     venn2(
