@@ -2,6 +2,7 @@
 It dumps multiple result tables in the results folder."""
 import json
 import os
+import pathlib
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -17,6 +18,7 @@ from lxml import etree
 from tqdm import tqdm
 
 import famplex
+from gilda import __version__
 from gilda.grounder import Grounder, logger
 from gilda.resources import mesh_to_taxonomy, popular_organisms
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
@@ -61,7 +63,6 @@ class BioIDBenchmarker:
         grounder: Optional[Grounder] = None,
         equivalences: Optional[Dict[str, Any]] = None,
     ):
-        print("using tabulate", tabulate.__version__)
         print("Instantiating benchmarker...")
         if grounder is None:
             grounder = Grounder()
@@ -745,7 +746,7 @@ def f1(precision: float, recall: float) -> float:
 @click.option(
     '--results',
     type=click.Path(dir_okay=True, file_okay=False),
-    default=os.path.join(HERE, 'results'),
+    default=os.path.join(HERE, 'results', "bioid_performance", __version__),
 )
 def main(data: str, results: str):
     """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
@@ -786,6 +787,8 @@ def main(data: str, results: str):
     # Gilda Benchmarking
     
     Bio-ontology: v{bio_ontology.version}
+    Gilda: v{__version__}
+    Date: {datetime.now().strftime('%y-%m-%d %H:%M')}
     """)
     caption1 = dedent("""\
         ## Table 1
@@ -840,9 +843,8 @@ def main(data: str, results: str):
         caption4, table4,
         caption5, table5,
     ])
-    time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
-    outname = f'benchmark_{time}'
-    md_path = os.path.join(results_path, f'{outname}.md')
+    result_stub = pathlib.Path(results_path).joinpath("benchmark")
+    md_path = result_stub.with_suffix(".md")
     with open(md_path, 'w') as f:
         f.write(output)
     print(f'Output summary at {md_path}')
@@ -855,12 +857,14 @@ def main(data: str, results: str):
         {precision_recall.round(3).to_latex(index=False, caption=caption4, label='tab:precision-recall')}
         {disamb_table.to_latex(index=False, caption=caption5, label='tab:disambiguation')}
     ''')
-    latex_path = os.path.join(results_path, f'{outname}.tex')
+    latex_path = result_stub.with_suffix(".tex")
     with open(latex_path, 'w') as file:
         print(latex_output, file=file)
 
-    tsv_path = os.path.join(results_path, f'{outname}.tsv')
+    tsv_path = result_stub.with_suffix(".tsv")
+    json_path = result_stub.with_suffix(".json")
     benchmarker.processed_data.to_csv(tsv_path, sep='\t', index=False)
+    benchmarker.processed_data.to_json(json_path, force_ascii=False, orient="records", indent=2)
 
 
 if __name__ == '__main__':

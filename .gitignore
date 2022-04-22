@@ -132,3 +132,4 @@ doc/_build/
 # Benchmark data files
 benchmarks/data/**
 benchmarks/results/**
+.DS_Store
