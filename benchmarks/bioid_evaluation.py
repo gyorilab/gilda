@@ -782,7 +782,7 @@ def main(data: str, results: str):
     counts, precision_recall, disamb_table = \
         benchmarker.get_results_tables(match='strict')
     print(precision_recall.to_markdown(index=False))
-    time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
+    time = datetime.now().strftime('%y%m%d-%H%M%S')
     outname = f'benchmark_{time}'
 
     # Generate output document
