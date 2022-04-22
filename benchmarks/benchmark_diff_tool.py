@@ -1,5 +1,5 @@
 """This is a script that helps deal with diffs of benchmarks."""
-
+import os
 from pathlib import Path
 from textwrap import dedent
 
@@ -13,15 +13,15 @@ RESULTS = HERE.joinpath('results', 'bioid_performance')
 
 
 @click.command()
-@click.option("--reference-version", default="0.8.3")
-@click.option("--comparison-version", default="0.8.4")
+@click.option("--reference")
+@click.option("--comparison")
 @click.option("--key", default="exists_correct")
-def main(reference_version: str, comparison_version: str, key: str):
-    reference_json = RESULTS.joinpath(reference_version, "benchmark.json")
-    df1 = pd.read_json(reference_json, orient="record")
-    comparison_json = RESULTS.joinpath(comparison_version, "benchmark.json")
-    df2 = pd.read_json(comparison_json, orient="record")
-    output = RESULTS.joinpath(f"{reference_version}_{comparison_version}", key)
+def main(reference: str, comparison: str, key: str):
+    df1 = pd.read_json(reference, orient="record")
+    df2 = pd.read_json(comparison, orient="record")
+    reference_base = os.basename(reference).splitext()[0]
+    comparison_base = os.basename(comparison).splitext()[0]
+    output = RESULTS.joinpath(f"{reference_base}_{comparison_base}", key)
     output.mkdir(exist_ok=True)
 
     fig, ax = plt.subplots()
@@ -31,8 +31,8 @@ def main(reference_version: str, comparison_version: str, key: str):
             set(df2[df2[key]].index),
         ],
         [
-            reference_version,
-            comparison_version,
+            reference_base,
+            comparison_base,
         ],
         ax=ax,
     )
@@ -62,8 +62,8 @@ def main(reference_version: str, comparison_version: str, key: str):
     print(dedent(f"""\
     Analysis of "{key}":
     
-    {new_idx.sum():,} success rows ({new_unique_count:,} unique) in v{comparison_version} but not v{reference_version}
-    {regressions_idx.sum():,} success rows ({regression_unique_count:,} unique) in v{reference_version} but not v{comparison_version}
+    {new_idx.sum():,} success rows ({new_unique_count:,} unique) in v{comparison_base} but not v{reference_base}
+    {regressions_idx.sum():,} success rows ({regression_unique_count:,} unique) in v{reference_base} but not v{comparison_base}
     {misses.sum():,} rows missed ({misses_unique_count:,} unique) in both
     {hits_idx.sum():,} successes rows ({hits_unique_count:,} unique) in both
     """))

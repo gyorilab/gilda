@@ -782,13 +782,16 @@ def main(data: str, results: str):
     counts, precision_recall, disamb_table = \
         benchmarker.get_results_tables(match='strict')
     print(precision_recall.to_markdown(index=False))
+    time = datetime.now().strftime('%y-%m-%d-%H:%M:%S')
+    outname = f'benchmark_{time}'
+
     # Generate output document
     caption0 = dedent(f"""\
     # Gilda Benchmarking
-    
+
     Bio-ontology: v{bio_ontology.version}
     Gilda: v{__version__}
-    Date: {datetime.now().strftime('%y-%m-%d %H:%M')}
+    Date: {time}
     """)
     caption1 = dedent("""\
         ## Table 1
@@ -843,7 +846,7 @@ def main(data: str, results: str):
         caption4, table4,
         caption5, table5,
     ])
-    result_stub = pathlib.Path(results_path).joinpath("benchmark")
+    result_stub = pathlib.Path(results_path).joinpath(outname)
     md_path = result_stub.with_suffix(".md")
     with open(md_path, 'w') as f:
         f.write(output)
