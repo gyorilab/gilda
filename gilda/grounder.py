@@ -304,6 +304,12 @@ class Grounder(object):
                     names.add(entry.text)
         return sorted(names)
 
+    def get_ambiguities(self, use_exact_name=False, use_status=False):
+        def is_ambiguous(use_exact_name, use_status):
+            pass
+
+        return {norm_text: terms for norm_text, terms in self.entries.items()}
+
 
 class ScoredMatch(object):
     """Class representing a scored match to a grounding term.
