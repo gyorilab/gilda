@@ -25,13 +25,14 @@ class Grounder(object):
 
     Parameters
     ----------
-    terms : str or dict or None
+    terms : str or dict or list or None
         Specifies the grounding terms that should be loaded in the Grounder.
         If None, the default grounding terms are loaded from the versioned
         resource folder. If str, it is interpreted as a path to a grounding
-        terms TSV file which is then loaded. If dict, it is assumed to be
-        a grounding terms dict with normalized entity strings as keys
-        and Term objects as values. Default: None
+        terms gzipped TSV file which is then loaded. If list, it is assumed to
+        be a flat list of Terms. If dict, it is assumed to be a grounding terms
+        dict with normalized entity strings as keys and Term objects as values.
+        Default: None
     """
     def __init__(self, terms=None):
         if terms is None:
@@ -39,11 +40,16 @@ class Grounder(object):
 
         if isinstance(terms, str):
             self.entries = load_terms_file(terms)
+        elif isinstance(terms, list):
+            self.entries = defaultdict(list)
+            for term in terms:
+                self.entries[term.norm_text].append(term)
+            self.entries = dict(self.entries)
         elif isinstance(terms, dict):
             self.entries = terms
         else:
-            raise TypeError('terms is neither a path nor a normalized'
-                            ' entry name to term dictionary')
+            raise TypeError('terms is neither a path nor a list of terms,'
+                            'nor a normalized entry name to term dictionary')
 
         self.adeft_disambiguators = load_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
