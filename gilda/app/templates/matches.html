@@ -18,6 +18,7 @@
         <th>Identifier</th>
         <th>Name</th>
         <th>Score</th>
+        <th>Groundings</th>
     </tr>
     </thead>
     <tbody>
@@ -27,6 +28,15 @@
         <td><a href="{{ match['url'] }}">{{ match['term']['id'] }}</a></td>
         <td>{{ match['term']['entry_name'] }}</td>
         <td class="text-right">{{ match['score'] | round(4)}}</td>
+        <td>
+            {% for xref_ns, xref_id in match.get_groundings() %}
+            {% if xref_ns != match.term.db and xref_id != match.term.id %}
+            <a class="badge badge-light" href="https://bioregistry.io/{{ xref_ns }}:{{ xref_id }}">
+                {{ xref_ns }}:{{ xref_id }}
+            </a>
+            {% endif %}
+            {% endfor %}
+        </td>
     </tr>
     {% endfor %}
     </tbody>
