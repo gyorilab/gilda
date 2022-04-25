@@ -82,7 +82,8 @@ class Term(object):
                 self.entry_name, self.status, self.source,
                 self.organism, self.source_db, self.source_id]
 
-    def get_identifiers_curie(self):
+    def get_curie(self) -> str:
+        """Get the compact URI for this term."""
         return get_identifiers_curie(self.db, self.id)
 
     def get_idenfiers_url(self):
