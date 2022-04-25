@@ -5,11 +5,11 @@ import pickle
 import logging
 import itertools
 from collections import defaultdict
-from typing import Set, Tuple
+from typing import Mapping, Set, Tuple
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term
+from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -394,6 +394,13 @@ class ScoredMatch(object):
             for sub_term in self.subsumed_terms:
                 term_groundings |= sub_term.get_groundings()
         return term_groundings
+
+    def get_grounding_dict(self) -> Mapping[str, str]:
+        """Get the groundings as CURIEs and URLs."""
+        return {
+            get_identifiers_curie(db, db_id): get_identifiers_url(db, db_id)
+            for db, db_id in self.get_groundings()
+        }
 
 
 def load_terms_file(terms_file):

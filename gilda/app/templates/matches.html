@@ -23,18 +23,19 @@
     <tbody>
     {% for match in matches %}
     <tr>
+    {% set match_curie = match.term.get_curie() %}
         <td>
             <a class="label label-primary" href="{{ match['url'] }}">
-                {{ match.term.get_curie() }}
+                {{ match_curie }}
             </a>
         </td>
         <td>{{ match['term']['entry_name'] }}</td>
         <td class="text-right">{{ match['score'] | round(4)}}</td>
         <td>
-            {% for xref_ns, xref_id in match.get_groundings() %}
-            {% if xref_ns != match.term.db and xref_id != match.term.id %}
-            <a class="label label-info" href="https://bioregistry.io/{{ xref_ns }}:{{ xref_id }}">
-                {{ xref_ns }}:{{ xref_id }}
+            {% for xref_curie, xref_url in match.get_grounding_dict().items() %}
+            {% if xref_curie != match_curie %}
+            <a class="label label-info" href="{{ xref_url }}">
+                {{ xref_curie }}
             </a>
             {% endif %}
             {% endfor %}
