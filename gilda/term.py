@@ -86,12 +86,30 @@ class Term(object):
         return get_identifiers_url(self.db, self.id)
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
+        """Return all groundings for this term, including from a mapped source.
+
+        Returns
+        -------
+        :
+            A set of tuples representing the main grounding for this term,
+            as well as any source grounding from which the main grounding
+            was mapped.
+        """
         groundings = {(self.db, self.id)}
         if self.source_db:
             groundings.add((self.source_db, self.source_id))
         return groundings
 
     def get_namespaces(self) -> Set[str]:
+        """Return all namespaces for this term, including from a mapped source.
+
+        Returns
+        -------
+        :
+            A set of strings including the main namespace for this term,
+            as well as any source namespace from which the main grounding
+            was mapped.
+        """
         namespaces = {self.db}
         if self.source_db:
             namespaces.add(self.source_db)

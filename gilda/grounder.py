@@ -358,9 +358,32 @@ class ScoredMatch(object):
         self.score = self.score * value
 
     def get_namespaces(self) -> Set[str]:
+        """Return all namespaces for this match including from mapped and
+        subsumed terms.
+
+        Returns
+        -------
+        :
+            A set of strings representing namespaces for terms involved in
+            this match, including the namespace for the primary term as well
+            as any subsumed terms, and groundings that come from having
+            mapped an original source grounding during grounding resource
+            construction.
+        """
         return {ns for ns, _ in self.get_groundings()}
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
+        """Return all groundings for this match including from mapped and
+        subsumed terms.
+
+        Returns
+        -------
+        :
+            A set of tuples representing groundings for this match including
+            the grounding for the primary term as well as any subsumed
+            terms, and groundings that come from having mapped an original
+            source grounding during grounding resource construction.
+        """
         term_groundings = self.term.get_groundings()
         if self.subsumed_terms:
             for sub_term in self.subsumed_terms:
