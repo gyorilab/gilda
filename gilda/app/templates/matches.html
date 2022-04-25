@@ -8,7 +8,14 @@
     <p>
         Results for <code>{{ text }}</code>
         {% if context %} with context
-        <i>{{ context }}</i>{% endif %}
+        <i>{{ context }}</i>{% endif %}.
+
+
+        The table below contains the retrieved Groundings ordered by descreasing
+        score. The standard name for the entry is given in the Name column.
+        Additional groundings are provided for some entries where a match was
+        found to an equivalent term in a namespace different from the primary
+        grounding's.
     </p>
 </div>
 <table class="table table-striped table-hover">
