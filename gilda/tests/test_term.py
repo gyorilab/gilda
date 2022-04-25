@@ -13,6 +13,8 @@ def test_standalone_get_url():
 def test_term_get_url():
     term = Term(db='CHEBI', id='CHEBI:12345', entry_name='X',
                 norm_text='x', text='X', source='test', status='name')
+    assert term.get_identifiers_curie() == \
+           'CHEBI:12345'
     assert term.get_idenfiers_url() == \
         'https://identifiers.org/CHEBI:12345'
 

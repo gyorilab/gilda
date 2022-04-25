@@ -14,24 +14,26 @@
 <table class="table table-striped table-hover">
     <thead>
     <tr>
-        <th>Database</th>
-        <th>Identifier</th>
+        <th>Grounding</th>
         <th>Name</th>
         <th>Score</th>
-        <th>Groundings</th>
+        <th>Additional Groundings</th>
     </tr>
     </thead>
     <tbody>
     {% for match in matches %}
     <tr>
-        <td>{{ match['term']['db'] }}</td>
-        <td><a href="{{ match['url'] }}">{{ match['term']['id'] }}</a></td>
+        <td>
+            <a class="label label-primary" href="{{ match['url'] }}">
+                {{ match.term.get_identifiers_curie() }}
+            </a>
+        </td>
         <td>{{ match['term']['entry_name'] }}</td>
         <td class="text-right">{{ match['score'] | round(4)}}</td>
         <td>
             {% for xref_ns, xref_id in match.get_groundings() %}
             {% if xref_ns != match.term.db and xref_id != match.term.id %}
-            <a class="badge badge-light" href="https://bioregistry.io/{{ xref_ns }}:{{ xref_id }}">
+            <a class="label label-info" href="https://bioregistry.io/{{ xref_ns }}:{{ xref_id }}">
                 {{ xref_ns }}:{{ xref_id }}
             </a>
             {% endif %}

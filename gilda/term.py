@@ -1,4 +1,4 @@
-from typing import Set, Tuple
+from typing import Optional, Set, Tuple
 
 
 class Term(object):
@@ -82,6 +82,9 @@ class Term(object):
                 self.entry_name, self.status, self.source,
                 self.organism, self.source_db, self.source_id]
 
+    def get_identifiers_curie(self):
+        return get_identifiers_curie(self.db, self.id)
+
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
 
@@ -116,12 +119,18 @@ class Term(object):
         return namespaces
 
 
-def get_identifiers_url(db, id):
-    url_pattern = 'https://identifiers.org/{db}:{id}'
+def get_identifiers_curie(db, id) -> Optional[str]:
+    curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
     id_parts = id.split(':')
     if len(id_parts) == 1:
-        return url_pattern.format(db=db.lower(), id=id)
+        return curie_pattern.format(db=db.lower(), id=id)
     elif len(id_parts) == 2:
-        return url_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+        return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+
+
+def get_identifiers_url(db, id):
+    curie = get_identifiers_curie(db, id)
+    if curie is not None:
+        return f'https://identifiers.org/{curie}'
