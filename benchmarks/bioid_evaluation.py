@@ -417,7 +417,10 @@ class BioIDBenchmarker:
             ub_curie = f'{prefix}:{identifier}'
             if ub_curie in uberon_mesh_mappings:
                 output.add(uberon_mesh_mappings[ub_curie])
-
+        if prefix == 'CL':
+            cl_curie = f'{prefix}:{identifier}'
+            if cl_curie in cl_mesh_mappings:
+                output.add(cl_mesh_mappings[cl_curie])
         if prefix == 'NCBI gene':
             hgnc_id = get_hgnc_from_entrez(identifier)
             if hgnc_id is not None:
@@ -759,7 +762,25 @@ def get_uberon_mesh_mappings():
     return mappings
 
 
+def get_cl_mesh_mappings():
+    import re
+    classdef_prefix = "# Class: obo:"
+    mesh_id_pattern = re.compile(r'MESH:[CD][0-9]+')
+    mappings = {}
+    with open('/Users/ben/src/cell-ontology/src/ontology/cl-edit.owl', 'r') as fh:
+        node = None
+        for line in fh:
+            if line.startswith(classdef_prefix):
+                node_owl = line[len(classdef_prefix):len(classdef_prefix) + 10]
+                node = node_owl.replace('_', ':')
+            mesh_ids = set(mesh_id_pattern.findall(line))
+            if node and len(mesh_ids) == 1:
+                mappings[node] = list(mesh_ids)[0]
+    return mappings
+
+
 uberon_mesh_mappings = get_uberon_mesh_mappings()
+cl_mesh_mappings = get_cl_mesh_mappings()
 
 
 def get_display_name(ns: str) -> str:
