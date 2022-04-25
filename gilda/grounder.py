@@ -1,4 +1,3 @@
-import copy
 import csv
 import json
 import gzip
@@ -116,6 +115,12 @@ class Grounder(object):
             ranking among organisms, if genes/proteins from multiple
             organisms match the input. If not provided, the default
             ['9606'] i.e., human is used.
+        namespaces : Optional[List[str]]
+            A list of namespaces to restrict matches to. This will apply to
+            both the primary namespace of a matched term, to any subsumed
+            matches, and to the source namespaces of terms if they were
+            created using cross-reference mappings. By default, no
+            restriction is applied.
 
         Returns
         -------
