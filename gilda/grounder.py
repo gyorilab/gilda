@@ -1,4 +1,3 @@
-import copy
 import csv
 import json
 import gzip
@@ -6,10 +5,11 @@ import pickle
 import logging
 import itertools
 from collections import defaultdict
+from typing import Mapping, Set, Tuple
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term
+from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -97,7 +97,8 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def ground(self, raw_str, context=None, organisms=None):
+    def ground(self, raw_str, context=None, organisms=None,
+               namespaces=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -109,6 +110,17 @@ class Grounder(object):
             Any additional text that serves as context for disambiguating the
             given entity text, used if a model exists for disambiguating the
             given text.
+        organisms : Optional[List[str]]
+            An optional list of organism identifiers defining a priority
+            ranking among organisms, if genes/proteins from multiple
+            organisms match the input. If not provided, the default
+            ['9606'] i.e., human is used.
+        namespaces : Optional[List[str]]
+            A list of namespaces to restrict matches to. This will apply to
+            both the primary namespace of a matched term, to any subsumed
+            matches, and to the source namespaces of terms if they were
+            created using cross-reference mappings. By default, no
+            restriction is applied.
 
         Returns
         -------
@@ -150,6 +162,14 @@ class Grounder(object):
         # Then sort by decreasing score
         rank_fun = lambda x: (x.score, score_namespace(x.term))
         unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
+
+        # If we have a namespace constraint, we filter to the given
+        # namespaces.
+        if namespaces:
+            unique_scores = [
+                scored_match for scored_match in unique_scores
+                if scored_match.get_namespaces() & set(namespaces)
+            ]
 
         return unique_scores
 
@@ -341,6 +361,46 @@ class ScoredMatch(object):
         logger.debug('Multiplying the score of "%s" with %.3f'
                      % (self.term.entry_name, value))
         self.score = self.score * value
+
+    def get_namespaces(self) -> Set[str]:
+        """Return all namespaces for this match including from mapped and
+        subsumed terms.
+
+        Returns
+        -------
+        :
+            A set of strings representing namespaces for terms involved in
+            this match, including the namespace for the primary term as well
+            as any subsumed terms, and groundings that come from having
+            mapped an original source grounding during grounding resource
+            construction.
+        """
+        return {ns for ns, _ in self.get_groundings()}
+
+    def get_groundings(self) -> Set[Tuple[str, str]]:
+        """Return all groundings for this match including from mapped and
+        subsumed terms.
+
+        Returns
+        -------
+        :
+            A set of tuples representing groundings for this match including
+            the grounding for the primary term as well as any subsumed
+            terms, and groundings that come from having mapped an original
+            source grounding during grounding resource construction.
+        """
+        term_groundings = self.term.get_groundings()
+        if self.subsumed_terms:
+            for sub_term in self.subsumed_terms:
+                term_groundings |= sub_term.get_groundings()
+        return term_groundings
+
+    def get_grounding_dict(self) -> Mapping[str, str]:
+        """Get the groundings as CURIEs and URLs."""
+        return {
+            get_identifiers_curie(db, db_id): get_identifiers_url(db, db_id)
+            for db, db_id in self.get_groundings()
+        }
 
 
 def load_terms_file(terms_file):

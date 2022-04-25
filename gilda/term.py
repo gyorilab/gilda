@@ -1,3 +1,6 @@
+from typing import Optional, Set, Tuple
+
+
 class Term(object):
     """Represents a text entry corresponding to a grounded term.
 
@@ -79,16 +82,56 @@ class Term(object):
                 self.entry_name, self.status, self.source,
                 self.organism, self.source_db, self.source_id]
 
+    def get_curie(self) -> str:
+        """Get the compact URI for this term."""
+        return get_identifiers_curie(self.db, self.id)
+
     def get_idenfiers_url(self):
         return get_identifiers_url(self.db, self.id)
 
+    def get_groundings(self) -> Set[Tuple[str, str]]:
+        """Return all groundings for this term, including from a mapped source.
 
-def get_identifiers_url(db, id):
-    url_pattern = 'https://identifiers.org/{db}:{id}'
+        Returns
+        -------
+        :
+            A set of tuples representing the main grounding for this term,
+            as well as any source grounding from which the main grounding
+            was mapped.
+        """
+        groundings = {(self.db, self.id)}
+        if self.source_db:
+            groundings.add((self.source_db, self.source_id))
+        return groundings
+
+    def get_namespaces(self) -> Set[str]:
+        """Return all namespaces for this term, including from a mapped source.
+
+        Returns
+        -------
+        :
+            A set of strings including the main namespace for this term,
+            as well as any source namespace from which the main grounding
+            was mapped.
+        """
+        namespaces = {self.db}
+        if self.source_db:
+            namespaces.add(self.source_db)
+        return namespaces
+
+
+def get_identifiers_curie(db, id) -> Optional[str]:
+    curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
     id_parts = id.split(':')
     if len(id_parts) == 1:
-        return url_pattern.format(db=db.lower(), id=id)
+        return curie_pattern.format(db=db.lower(), id=id)
     elif len(id_parts) == 2:
-        return url_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+        return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+
+
+def get_identifiers_url(db, id):
+    curie = get_identifiers_curie(db, id)
+    if curie is not None:
+        return f'https://identifiers.org/{curie}'

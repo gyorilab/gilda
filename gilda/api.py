@@ -12,9 +12,11 @@ class GrounderInstance(object):
             self.grounder = Grounder()
         return self.grounder
 
-    def ground(self, text, context=None, organisms=None):
+    def ground(self, text, context=None, organisms=None,
+               namespaces=None):
         return self.get_grounder().ground(text, context=context,
-                                          organisms=organisms)
+                                          organisms=organisms,
+                                          namespaces=namespaces)
 
     def get_models(self):
         return self.get_grounder().get_models()
@@ -28,7 +30,7 @@ class GrounderInstance(object):
 grounder = GrounderInstance()
 
 
-def ground(text, context=None, organisms=None):
+def ground(text, context=None, organisms=None, namespaces=None):
     """Return a list of scored matches for a text to ground.
 
     Parameters
@@ -39,6 +41,12 @@ def ground(text, context=None, organisms=None):
         Any additional text that serves as context for disambiguating the
         given entity text, used if a model exists for disambiguating the
         given text.
+    organisms : Optional[List[str]]
+        A list of taxonomy identifiers to use as a priority list
+        when surfacing matches for proteins/genes from multiple organisms.
+    namespaces : Optional[List[str]]
+        A list of namespaces to restrict the matches to. By default, no
+        restriction is applied.
 
     Returns
     -------

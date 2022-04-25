@@ -13,8 +13,12 @@ def test_standalone_get_url():
 def test_term_get_url():
     term = Term(db='CHEBI', id='CHEBI:12345', entry_name='X',
                 norm_text='x', text='X', source='test', status='name')
+    assert term.get_curie() == \
+           'CHEBI:12345'
     assert term.get_idenfiers_url() == \
         'https://identifiers.org/CHEBI:12345'
+    assert term.get_groundings() == {(term.db, term.id)}
+    assert term.get_namespaces() == {term.db}
 
 
 def test_term_source_db_id():
@@ -22,3 +26,7 @@ def test_term_source_db_id():
                 'mitochondrion', 'synonym', 'mesh', None, 'MESH', 'D008928')
     assert term.source_db == 'MESH'
     assert term.source_id == 'D008928'
+    assert term.get_groundings() == {(term.db, term.id),
+                                     (term.source_db, term.source_id)}
+
+    assert term.get_namespaces() == {term.db, term.source_db}

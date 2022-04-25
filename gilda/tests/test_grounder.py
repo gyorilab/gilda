@@ -192,7 +192,20 @@ def test_subsumed_terms():
     assert match.subsumed_terms[0].db == 'GO', match.subsumed_terms[0]
     assert match.subsumed_terms[0].source_db == 'MESH', match.subsumed_terms[0]
 
+    assert match.get_groundings() == {(match.term.db, match.term.id),
+                                      (match.subsumed_terms[0].source_db,
+                                       match.subsumed_terms[0].source_id)}
+    assert match.get_namespaces() == {match.term.db,
+                                      match.subsumed_terms[0].source_db}
+
 
 def test_hgnc_alias_names():
     matches = gr.ground("FP prostanoid receptor")
     assert ('HGNC', '9600') in {(m.term.db, m.term.id) for m in matches}
+
+
+def test_namespaces():
+    matches = gr.ground('KRAS', namespaces=['CHEBI'])
+    assert not matches
+    matches = gr.ground('KRAS', namespaces=['HGNC'])
+    assert matches
