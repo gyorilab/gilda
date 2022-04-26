@@ -243,7 +243,7 @@ class BioIDBenchmarker:
         else:
             return 'Nonhuman Gene'
 
-    def ground_entities_with_gilda(self, context=True):
+    def ground_entities_with_gilda(self, context=True, species=True):
         """Compute gilda groundings of entity texts in corpus
 
         Adds two columns to the internal dataframe for groundings with
@@ -254,11 +254,18 @@ class BioIDBenchmarker:
         df.loc[:, 'groundings_no_context'] = df.text. \
             progress_apply(self._get_grounding_list)
 
-        if context:
+        if context and species:
             tqdm.write("Grounding with-context corpus with Gilda...")
             # use from tqdm.contrib.concurrent import thread_map
             df.loc[:, 'groundings'] = df. \
                 progress_apply(self._get_row_grounding_list, axis=1)
+        elif not context and species:
+            df.loc[:, 'groundings'] = df.text. \
+                progress_apply(
+                self._build_grounding_function(context=context, species=species)
+            )
+        elif context and not species:
+            raise NotImplementedError
         else:
             tqdm.write("Skipping grounding with context.")
             df.loc[:, 'groundings'] = df.groundings_no_context
@@ -271,6 +278,17 @@ class BioIDBenchmarker:
             context=self._get_plaintext(row.don_article),
             organisms=self._get_organism_priority(row.don_article),
         )
+
+    def _build_grounding_function(self, context: bool = True, species: bool = True):
+        def _f(row):
+            context = self._get_plaintext(row.don_article) if context else None
+            organisms=self._get_organism_priority(row.don_article) if species else None
+            return self._get_grounding_list(
+                row.text,
+                context=context,
+                organisms=organisms,
+            )
+        return _f
 
     @lru_cache(maxsize=None)
     def _get_plaintext(self, don_article: str) -> str:
@@ -748,7 +766,8 @@ def f1(precision: float, recall: float) -> float:
     type=click.Path(dir_okay=True, file_okay=False),
     default=os.path.join(HERE, 'results', "bioid_performance", __version__),
 )
-def main(data: str, results: str):
+@click.option("--no-model-disambiguation", is_flag=True)
+def main(data: str, results: str, no_model_disambiguation: bool):
     """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
 
     It has two optional arguments, --datapath and --resultspath that specify
@@ -775,7 +794,7 @@ def main(data: str, results: str):
     except FileNotFoundError:
         equivalences = {}
     benchmarker = BioIDBenchmarker(equivalences=equivalences)
-    benchmarker.ground_entities_with_gilda()
+    benchmarker.ground_entities_with_gilda(context=not no_model_disambiguation, species=True)
     print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
     print("Constructing results table...")
