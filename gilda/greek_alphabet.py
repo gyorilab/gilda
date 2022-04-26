@@ -1,5 +1,13 @@
-#from https://gist.github.com/beniwohli/765262
+"""
+Utilities for greek characters from https://gist.github.com/beniwohli/765262.
+"""
 
+__all__ = [
+    "greek_alphabet",
+    "greek_to_latin",
+]
+
+#: A mapping from unicode greek characters to latin names for greek characters
 greek_alphabet = {
     u'\u0391': 'Alpha',
     u'\u0392': 'Beta',
@@ -51,6 +59,8 @@ greek_alphabet = {
     u'\u03C9': 'omega',
 }
 
+
+#: A mapping from latin names for greek characters to latin characters
 greek_to_latin = {
    'alpha': 'a',
    'Alpha': 'A',

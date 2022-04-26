@@ -10,3 +10,4 @@ adeft
 pystow
 docutils<0.18
 unidecode
+m2r2

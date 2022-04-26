@@ -2,7 +2,8 @@ __all__ = ['ground', 'get_models', 'get_names', 'get_grounder', 'make_grounder']
 
 from typing import List, Mapping, Union, Optional
 
-from gilda.grounder import Grounder, Term
+from gilda.grounder import Grounder
+from gilda.term import Term
 
 
 class GrounderInstance(object):
@@ -54,8 +55,45 @@ def ground(text, context=None, organisms=None, namespaces=None):
     -------
     list[gilda.grounder.ScoredMatch]
         A list of ScoredMatch objects representing the groundings.
+
+    Examples
+    --------
+    Ground a string corresponding to an entity name, label, or synonym
+
+    >>> import gilda
+    >>> scored_matches = gilda.ground('mapt')
+
+    The matches are sorted in descending order by score, and in the event of
+    a tie, by the namespace of the primary grounding. Each scored match has a
+    :class:`gilda.term.Term` object that contain information about the primary
+    grounding.
+
+    >>> scored_matches[0].term.db
+    'hgnc'
+    >>> scored_matches[0].term.id
+    '6893'
+    >>> scored_matches[0].term.get_curie()
+    'hgnc:6893'
+
+    The score for each match can be accessed directly:
+
+    >>> scored_matches[0].score
+    0.7623
+
+    The rational for each match is contained in the ``match`` attribute
+    whose fields are described in :class:`gilda.scorer.Match`:
+
+    >>> match_object = scored_matches[0].match
+
+    Give optional context to be used by Gilda's disambiguation models, if available
+
+    >>> scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
+
+    Only return results from a certain namespace, such as when a family and gene have the same name
+
+    >>> scored_matches = gilda.ground('ESR', namespaces=["hgnc"])
     """
-    return grounder.ground(text=text, context=context, organisms=organisms)
+    return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces)
 
 
 def get_models():
@@ -102,7 +140,8 @@ def get_grounder() -> Grounder:
 
 
 def make_grounder(
-        terms: Union[str, List[Term], Mapping[str, List[Term]]]) -> Grounder:
+    terms: Union[str, List[Term], Mapping[str, List[Term]]],
+) -> Grounder:
     """Create a custom grounder from a list of Terms.
 
     Parameters
@@ -122,5 +161,65 @@ def make_grounder(
         A Grounder instance, initialized with either the default terms
         loaded from the resource file or a custom set of terms
         if the terms argument was specified.
+
+    Examples
+    --------
+    The following example shows how to get an ontology with :mod:`obonet` and
+    load custom terms:
+
+    .. code-block:: python
+
+        from gilda import make_grounder
+        from gilda.process import normalize
+        from gilda import Term
+
+        prefix = "UBERON"
+        url = "http://purl.obolibrary.org/obo/uberon/basic.obo"
+        g = obonet.read_obo(url)
+        custom_obo_terms = []
+        it = tqdm(g.nodes(data=True), unit_scale=True, unit="node")
+        for node, data in it:
+            # Skip entries imported from other ontologies
+            if not node.startswith(f"{prefix}:"):
+                continue
+
+            identifier = node.removeprefix(f"{prefix}:")
+
+            name = data["name"]
+            custom_obo_terms.append(gilda.Term(
+                norm_text=normalize(name),
+                text=name,
+                db=prefix,
+                id=identifier,
+                entry_name=name,
+                status="name",
+                source=prefix,
+            ))
+
+            # Add terms for all synonyms
+            for synonym_raw in data.get("synonym", []):
+                try:
+                    # Try to parse out of the quoted OBO Field
+                    synonym = synonym_raw.split('"')[1].strip()
+                except IndexError:
+                    continue  # the synonym was malformed
+
+                custom_obo_terms.append(gilda.Term(
+                    norm_text=normalize(synonym),
+                    text=synonym,
+                    db=prefix,
+                    id=identifier,
+                    entry_name=name,
+                    status="synonym",
+                    source=prefix,
+                ))
+
+        custom_grounder = gilda.make_grounder(custom_obo_terms)
+        scored_matches = custom_grounder.ground("head")
+
+    Additional examples for loading custom content from OBO Graph JSON,
+    :mod:`pyobo`, and more can be found in the `Jupyter notebooks
+    <https://github.com/indralab/gilda/tree/master/notebooks>`_
+    in the Gilda repository on GitHub.
     """
     return Grounder(terms=terms)

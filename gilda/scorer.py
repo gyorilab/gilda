@@ -2,6 +2,15 @@ from copy import deepcopy
 from .process import replace_dashes, replace_whitespace, normalize, \
     get_capitalization_pattern
 
+__all__ = [
+    "Match",
+    "generate_match",
+    "score_string_match",
+    "score_status",
+    "score_namespace",
+    "score",
+]
+
 
 class Match(object):
     """Class representing a match between a query and a reference string"""

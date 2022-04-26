@@ -24,6 +24,13 @@ configure the location of this folder).
 Given some additional dependencies, the grounding resource file can
 also be regenerated locally by running `python -m gilda.generate_terms`.
 
+## Documentation and notebooks
+Documentation for Gilda is available [here](https://gilda.readthedocs.io).
+[This notebook](https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb) provides an interactive tutorial for using Gilda, and
+[this notebook](https://github.com/indralab/gilda/blob/master/notebooks/custom_grounders.ipynb) shows several examples of how Gilda can be instantiated with custom
+grounding resources. Finally, [this notebook](https://github.com/indralab/gilda/blob/master/models/model_training.ipynb) provides interactive sample code for training
+new disambiguation models.
+
 ## Usage
 Gilda can either be used as a REST web service or used programmatically
 via its Python API. An introduction Jupyter notebook for using Gilda
@@ -42,8 +49,8 @@ scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
 
 ### Use as a web service
 The REST service accepts POST requests with a JSON header on the /ground
-endpoint.  There is a public REST service running on AWS but the service can
-also be run locally as
+endpoint. There is a public REST service running at http://grounding.indra.bio
+but the service can also be run locally as
 
 ```bash
 python -m gilda.app

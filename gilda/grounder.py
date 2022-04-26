@@ -4,8 +4,10 @@ import gzip
 import pickle
 import logging
 import itertools
-from collections import defaultdict
-from typing import List, Mapping, Set, Tuple
+from pathlib import Path
+from collections import defaultdict, Counter
+from textwrap import dedent
+from typing import List, Mapping, Optional, Set, Tuple, Union
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -13,11 +15,23 @@ from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
-from .scorer import generate_match, score, score_namespace
+from .scorer import Match, generate_match, score, score_namespace
 from .resources import get_gilda_models, get_grounding_terms
 
+__all__ = [
+    "Grounder",
+    "GrounderInput",
+    "ScoredMatch",
+    "load_terms_file",
+    "filter_for_organism",
+    "load_adeft_models",
+    "load_gilda_models",
+]
 
 logger = logging.getLogger(__name__)
+
+
+GrounderInput = Union[str, Path, List[Term], Mapping[str, List[Term]]]
 
 
 class Grounder(object):
@@ -25,20 +39,28 @@ class Grounder(object):
 
     Parameters
     ----------
-    terms : str or dict or list or None
+    terms :
         Specifies the grounding terms that should be loaded in the Grounder.
-        If None, the default grounding terms are loaded from the versioned
-        resource folder. If str, it is interpreted as a path to a grounding
-        terms gzipped TSV file which is then loaded. If list, it is assumed to
-        be a flat list of Terms. If dict, it is assumed to be a grounding terms
-        dict with normalized entity strings as keys and Term objects as values.
-        Default: None
+
+        - If ``None``, the default grounding terms are loaded from the
+          versioned resource folder.
+        - If :class:`str` or :class:`pathlib.Path`, it is interpreted
+          as a path to a grounding terms gzipped TSV file which is then
+          loaded.
+        - If :class:`list`, it is assumed to be a flat list of
+          :class:`gilda.term.Term` instances.
+        - If :class:`dict`, it is assumed to be a grounding terms dict with
+          normalized entity strings as keys and :class:`gilda.term.Term`
+          instances as values.
     """
-    def __init__(self, terms=None):
+
+    entries: Mapping[str, List[Term]]
+
+    def __init__(self, terms: Optional[GrounderInput] = None):
         if terms is None:
             terms = get_grounding_terms()
 
-        if isinstance(terms, str):
+        if isinstance(terms, (str, Path)):
             self.entries = load_terms_file(terms)
         elif isinstance(terms, list):
             self.entries = defaultdict(list)
@@ -54,18 +76,18 @@ class Grounder(object):
         self.adeft_disambiguators = load_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
 
-    def lookup(self, raw_str):
+    def lookup(self, raw_str: str) -> List[Term]:
         """Return matching Terms for a given raw string.
 
         Parameters
         ----------
-        raw_str : str
+        raw_str :
             A string to be looked up in the set of Terms that the Grounder
             contains.
 
         Returns
         -------
-        list of Term
+        :
             A list of Terms that are potential matches for the given string.
         """
         lookups = self._generate_lookups(raw_str)
@@ -74,7 +96,7 @@ class Grounder(object):
             entries += self.entries.get(lookup, [])
         return entries
 
-    def _generate_lookups(self, raw_str):
+    def _generate_lookups(self, raw_str: str) -> Set[str]:
         # TODO: we should propagate flags about depluralization and possible
         #  other modifications made here and take them into account when
         #  scoring
@@ -382,6 +404,27 @@ class Grounder(object):
             ambigs.append(entries)
         return ambigs
 
+    def _iter_terms(self):
+        for terms in self.entries.values():
+            yield from terms
+
+    def summary_str(self) -> str:
+        """Summarize the contents of the grounder."""
+        namespaces = {ns for term in self._iter_terms() for ns in term.get_namespaces()}
+        status_counter = dict(Counter(term.status for term in self._iter_terms()))
+        return dedent(f"""\
+        Lookups: {len(self.entries):,}
+        Terms: {sum(len(terms) for terms in self.entries.values()):,}
+        Term Namespaces: {namespaces}
+        Term Statuses: {status_counter}
+        Adeft Disambiguators: {len(self.adeft_disambiguators):,}
+        Gilda Disambiguators: {len(self.gilda_disambiguators):,}
+        """)
+
+    def print_summary(self, **kwargs) -> None:
+        """Print the summary of this grounder."""
+        print(self.summary_str(), **kwargs)
+
 
 class ScoredMatch(object):
     """Class representing a scored match to a grounding term.
@@ -403,7 +446,7 @@ class ScoredMatch(object):
         associated with a match can provide additional metadata in
         downstream applications.
     """
-    def __init__(self, term, score, match, disambiguation=None,
+    def __init__(self, term: Term, score, match: Match, disambiguation=None,
                  subsumed_terms=None):
         self.term = term
         self.url = term.get_idenfiers_url()
@@ -481,18 +524,18 @@ class ScoredMatch(object):
         }
 
 
-def load_terms_file(terms_file):
+def load_terms_file(terms_file: Union[str, Path]) -> Mapping[str, List[Term]]:
     """Load a TSV file containing terms into a lookup dictionary.
 
     Parameters
     ----------
-    terms_file : str
+    terms_file :
         Path to a TSV terms file with columns corresponding to the serialized
         elements of a Term.
 
     Returns
     -------
-    dict
+    :
         A lookup dictionary whose keys are normalized entity texts, and values
         are lists of Terms with that normalized entity text.
     """
