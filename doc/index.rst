@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Gilda documentation
-===================
+Software documentation
+======================
 
 .. toctree::
    :maxdepth: 3
@@ -12,6 +12,5 @@ Gilda documentation
    modules/index
 
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. mdinclude:: ../README.md
+
