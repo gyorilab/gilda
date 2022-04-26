@@ -7,13 +7,14 @@
 
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Gilda grounding results</h3>
+            <h3 class="panel-title">Grounding Results for <code>{{ text }}</code></h3>
         </div>
         <div class="panel-body">
+            {% if context %}
             <p>
-                Results for <code>{{ text }}</code>
-                {% if context %} with context <i>{{ context }}</i>{% endif %}.
+                Using context: <i>{{ context }}</i>
             </p>
+            {% endif %}
             <p>
                 The table below contains the retrieved Groundings ordered by decreasing
                 score. The standard name for the entry is given in the Name column.
