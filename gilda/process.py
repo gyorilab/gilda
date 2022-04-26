@@ -5,7 +5,7 @@ import unidecode
 from .greek_alphabet import greek_alphabet, greek_to_latin
 
 
-# We try to list all kinds of dashes here
+#: A list of all kinds of dashes
 dashes = [chr(0x2212), chr(0x002d)] + [chr(c) for c in range(0x2010, 0x2016)]
 
 

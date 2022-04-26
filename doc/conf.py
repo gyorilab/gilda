@@ -14,17 +14,18 @@
 #
 import os
 import sys
+import datetime
 sys.path.insert(0, os.path.abspath('..'))
 from gilda import __version__ as gilda_version
 
 # -- Project information -----------------------------------------------------
 
 project = 'gilda'
-copyright = '2020, Benjamin M. Gyori'
+copyright = f'2020-{datetime.datetime.today().year}, Benjamin M. Gyori'
 author = 'Benjamin M. Gyori'
 
 # The short X.Y version
-version = '.'.join(gilda_version.split('.')[:1])
+version = '.'.join(gilda_version.split('.')[1:])
 # The full version, including alpha/beta/rc tags
 release = gilda_version
 
@@ -40,12 +41,13 @@ release = gilda_version
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    # Autodoc typehints needs to come after napoleon
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -92,7 +94,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -167,4 +169,7 @@ texinfo_documents = [
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {
+    'https://docs.python.org/': None,
+    'pyobo': ('https://pyobo.readthedocs.io/en/latest/', None),
+}

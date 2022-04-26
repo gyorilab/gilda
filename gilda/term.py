@@ -1,5 +1,11 @@
 from typing import Optional, Set, Tuple
 
+__all__ = [
+    "Term",
+    "get_identifiers_curie",
+    "get_identifiers_url",
+]
+
 
 class Term(object):
     """Represents a text entry corresponding to a grounded term.
