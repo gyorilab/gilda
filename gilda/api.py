@@ -1,6 +1,8 @@
-__all__ = ['ground', 'get_models', 'get_names']
+__all__ = ['ground', 'get_models', 'get_names', 'get_grounder', 'make_grounder']
 
-from gilda.grounder import Grounder
+from typing import List, Mapping, Union, Optional
+
+from gilda.grounder import Grounder, Term
 
 
 class GrounderInstance(object):
@@ -85,3 +87,40 @@ def get_names(db, id, status=None, source=None):
         are returned.
     """
     return grounder.get_names(db, id, status=status, source=source)
+
+
+def get_grounder() -> Grounder:
+    """Initialize and return the default Grounder instance.
+
+    Returns
+    -------
+    :
+        A Grounder instance whose attributes and methods can be used
+        directly.
+    """
+    return grounder.get_grounder()
+
+
+def make_grounder(
+        terms: Union[str, List[Term], Mapping[str, List[Term]]]) -> Grounder:
+    """Create a custom grounder from a list of Terms.
+
+    Parameters
+    ----------
+    terms :
+        Specifies the grounding terms that should be loaded in the Grounder.
+        If str, it is interpreted as a path to a grounding
+        terms gzipped TSV file which is then loaded. If list, it is assumed to
+        be a flat list of Terms. If dict, it is assumed to be a grounding terms
+        dict with normalized entity strings as keys and lists of Term objects
+        as values.
+        Default: None
+
+    Returns
+    -------
+    :
+        A Grounder instance, initialized with either the default terms
+        loaded from the resource file or a custom set of terms
+        if the terms argument was specified.
+    """
+    return Grounder(terms=terms)

@@ -5,7 +5,7 @@ import pickle
 import logging
 import itertools
 from collections import defaultdict
-from typing import Mapping, Set, Tuple
+from typing import List, Mapping, Set, Tuple
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -25,13 +25,14 @@ class Grounder(object):
 
     Parameters
     ----------
-    terms : str or dict or None
+    terms : str or dict or list or None
         Specifies the grounding terms that should be loaded in the Grounder.
         If None, the default grounding terms are loaded from the versioned
         resource folder. If str, it is interpreted as a path to a grounding
-        terms TSV file which is then loaded. If dict, it is assumed to be
-        a grounding terms dict with normalized entity strings as keys
-        and Term objects as values. Default: None
+        terms gzipped TSV file which is then loaded. If list, it is assumed to
+        be a flat list of Terms. If dict, it is assumed to be a grounding terms
+        dict with normalized entity strings as keys and Term objects as values.
+        Default: None
     """
     def __init__(self, terms=None):
         if terms is None:
@@ -39,11 +40,16 @@ class Grounder(object):
 
         if isinstance(terms, str):
             self.entries = load_terms_file(terms)
+        elif isinstance(terms, list):
+            self.entries = defaultdict(list)
+            for term in terms:
+                self.entries[term.norm_text].append(term)
+            self.entries = dict(self.entries)
         elif isinstance(terms, dict):
             self.entries = terms
         else:
-            raise TypeError('terms is neither a path nor a normalized'
-                            ' entry name to term dictionary')
+            raise TypeError('terms is neither a path nor a list of terms,'
+                            'nor a normalized entry name to term dictionary')
 
         self.adeft_disambiguators = load_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
@@ -303,6 +309,78 @@ class Grounder(object):
                    (not source or entry.source == source):
                     names.add(entry.text)
         return sorted(names)
+
+    def get_ambiguities(self,
+                        skip_names: bool = True,
+                        skip_curated: bool = True,
+                        skip_name_matches: bool = True,
+                        skip_species_ambigs: bool = True) -> List[List[Term]]:
+        """Return a list of ambiguous term groups in the grounder.
+
+        Parameters
+        ----------
+        skip_names :
+            If True, groups of terms where one has the "name" status are
+            skipped. This makes sense usually since these are prioritized over
+            synonyms anyway.
+        skip_curated :
+            If True, groups of terms where one has the "curated" status
+            are skipped. This makes sense usually since these are prioritized
+            over synonyms anyway.
+        skip_name_matches :
+            If True, groups of terms that all share the same standard name
+            are skipped. This is effective at eliminating spurious ambiguities
+            due to unresolved cross-references between equivalent terms
+            in different namespaces.
+        skip_species_ambigs :
+            If True, groups of terms that are all genes or proteins, and are
+            all from different species (one term from each species) are skipped.
+            This is effective at eliminating ambiguities between orthologous
+            genes in different species that are usually resolved using the
+            organism priority list.
+        """
+        ambig_entries = defaultdict(list)
+        for terms in self.entries.values():
+            for term in terms:
+                # We consider it an ambiguity if the same text entry appears
+                # multiple times
+                key = term.text
+                ambig_entries[key].append(term)
+
+        # It's only an ambiguity if there are two entries at least
+        ambig_entries = {k: v for k, v in ambig_entries.items()
+                         if len(v) >= 2}
+
+        ambigs = []
+        for text, entries in ambig_entries.items():
+            dbs = {e.db for e in entries}
+            db_ids = {(e.db, e.id) for e in entries}
+            statuses = {e.status for e in entries}
+            sources = {e.source for e in entries}
+            names = {e.entry_name for e in entries}
+            # If the entries all point to the same ID, we skip it
+            if len(db_ids) <= 1:
+                continue
+            # If there is a name in statuses, we skip it because it's
+            # prioritized
+            if skip_names and 'name' in statuses:
+                continue
+            # We skip curated terms because they are prioritized anyway
+            if skip_curated and 'curated' in statuses:
+                continue
+            # If there is an adeft model already, we skip it
+            if 'adeft' in sources:
+                continue
+            if skip_name_matches:
+                if len({e.entry_name.lower() for e in entries}) == 1:
+                    continue
+            if skip_species_ambigs:
+                if dbs <= {'HGNC', 'UP'} and \
+                        len({e.organism for e in entries}) == len(entries):
+                    continue
+            # Everything else is an ambiguity
+            ambigs.append(entries)
+        return ambigs
 
 
 class ScoredMatch(object):

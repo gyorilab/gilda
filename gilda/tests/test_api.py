@@ -1,5 +1,6 @@
 from gilda.tests import appreq
 from gilda.api import *
+from gilda.term import Term
 
 
 def test_api_ground():
@@ -48,3 +49,12 @@ def test_organisms():
     assert len(matches5) == 1, matches5
     assert matches5[0].term.db == 'HGNC', matches5
     assert matches5[0].term.id == '11117', matches5
+
+
+def test_make_grounder():
+    grounder = make_grounder([
+        Term('a', 'A', 'X', '1', 'A', 'name', 'test'),
+        Term('b', 'B', 'X', '2', 'B', 'name', 'test')
+    ])
+    assert grounder.ground('a')
+    assert not grounder.ground('x')
