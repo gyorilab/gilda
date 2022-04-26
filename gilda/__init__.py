@@ -4,8 +4,6 @@ import logging
 
 from .api import get_grounder, get_models, get_names, ground, make_grounder
 from .term import Term
-from .scorer import Match
-from .grounder import Grounder, ScoredMatch
 
 __all__ = [
     'ground',
