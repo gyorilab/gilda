@@ -261,9 +261,7 @@ class BioIDBenchmarker:
                 progress_apply(self._get_row_grounding_list, axis=1)
         elif not context and species:
             df.loc[:, 'groundings'] = df.text. \
-                progress_apply(
-                self._build_grounding_function(context=context, species=species)
-            )
+                progress_apply(self._get_row_grounding_list_no_model, axis=1)
         elif context and not species:
             raise NotImplementedError
         else:
@@ -279,16 +277,11 @@ class BioIDBenchmarker:
             organisms=self._get_organism_priority(row.don_article),
         )
 
-    def _build_grounding_function(self, context: bool = True, species: bool = True):
-        def _f(row):
-            context = self._get_plaintext(row.don_article) if context else None
-            organisms=self._get_organism_priority(row.don_article) if species else None
-            return self._get_grounding_list(
-                row.text,
-                context=context,
-                organisms=organisms,
-            )
-        return _f
+    def _get_row_grounding_list_no_model(self, row):
+        return self._get_grounding_list(
+            row.text,
+            organisms=self._get_organism_priority(row.don_article),
+        )
 
     @lru_cache(maxsize=None)
     def _get_plaintext(self, don_article: str) -> str:
