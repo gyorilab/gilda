@@ -76,25 +76,6 @@
             </form>
         </div>
 
-        <div class="modal fade" id="text-modal" tabindex="-1" role="dialog" aria-labelledby="textModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="textModalLabel">Text Modal Header</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>
-                            Text modal main text
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="modal fade" id="context-modal" tabindex="-1" role="dialog" aria-labelledby="contextModalLabel"
              aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -108,15 +89,15 @@
                     <div class="modal-body">
                         <p>
                             There is no hard requirement for how much context should be (optionally) provided for
-                            disambiguation. In practice, the context provided could be a sentence, a paragraph, or even an
-                            entire article. While it is not required that the context contain the entity text being
-                            grounded, in practice, context usually consists of text surrounding and including the entity.
-                            Overall, given that disambiguation models integrated from Adeft as well as the models made
-                            available independently by Gilda rely on word frequency-derived features, it is generally
-                            helpful if context text contains terms characteristic to the given sense of the ambiguous
-                            string. Additionally, since Adeft models have the ability to recognize defining patterns (i.e.,
-                            an explicit spelled out definition of an ambiguous acronym), any context text containing such
-                            patterns is useful.
+                            disambiguation. In practice, the context provided could be a sentence, a paragraph, or even
+                            an entire article. While it is not required that the context contain the entity text being
+                            grounded, in practice, context usually consists of text surrounding and including the
+                            entity. Overall, given that disambiguation models integrated from Adeft as well as the
+                            models made available independently by Gilda rely on word frequency-derived features, it is
+                            generally helpful if context text contains terms characteristic to the given sense of the
+                            ambiguous string. Additionally, since Adeft models have the ability to recognize defining
+                            patterns (i.e., an explicit spelled out definition of an ambiguous acronym), any context
+                            text containing such patterns is useful.
                         </p>
                     </div>
                 </div>
@@ -135,13 +116,12 @@
                     </div>
                     <div class="modal-body">
                         <p>
-                            Species prioritization is applied in case matches are found to proteins from multiple species
-                            (human,
-                            mouse, yeast, etc). In case of matches to multiple species for a given input,
-                            this (optional) input list is used to prioritize matches. The priority list can be determined
-                            based on the user case or knowledge about the context in which the given entity text
-                            appeared. The species list is adopted from UniProt's "popular organisms" list
-                            (https://www.uniprot.org/help/filter_options).
+                            Species prioritization is applied in case matches are found to proteins from multiple
+                            species (human, mouse, yeast, etc). In case of matches to multiple species for a given
+                            input, this (optional) input list is used to prioritize matches. The priority list can be
+                            determined based on the user case or knowledge about the context in which the given entity
+                            text appeared. The species list is adopted from UniProt's
+                            <a href="https://www.uniprot.org/help/filter_options">popular organisms</a> list.
                         </p>
                     </div>
                 </div>
