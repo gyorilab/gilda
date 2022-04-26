@@ -164,56 +164,28 @@ def make_grounder(
 
     Examples
     --------
-    While the NCBITaxon namespace is often used as the gold standard for species,
-    there are several complementary other species- and taxonomy-centric
-    namespaces, such as the `Integrated Taxonomic Information System
-    <https://bioregistry.io/registry/itis>`_. These can be loaded in Gilda via
-    :mod:`pyobo` like in the following example
-    (note, sometimes ITIS is unresponsive):
-
+    The following example shows how to get an ontology with :mod:`obonet` and
+    load custom terms:
     .. code-block:: python
 
-        import gilda, pyobo
+        from gilda import make_grounder
         from gilda.process import normalize
-        custom_species_terms: list[gilda.Term] = []
-        itis_names = pyobo.get_id_name_mapping("itis")
-        itis_synonyms = pyobo.get_id_synonyms_mapping("itis")
-        for identifier, name in itis_names.items():
-            custom_species_terms.append(gilda.Term(
-                norm_text=normalize(name),
-                text=name,
-                db="itis",
-                id=identifier,
-                entry_name=name,
-                status="name",
-                source="itis",
-            ))
-            for synonym in itis_synonyms.get(identifier, []):
-                custom_species_terms.append(gilda.Term(
-                    norm_text=normalize(synonym),
-                    text=synonym,
-                    db="itis",
-                    id=identifier,
-                    entry_name=name,
-                    status="synonym",
-                    source="itis",
-                ))
-        custom_grounder = gilda.make_grounder(custom_species_terms)
-        custom_grounder.ground("e coli")
+        from gilda import Term
 
-    Similarly, PyOBO can be used to generate a grounder containing
-    multiple pathway databases' names
+        prefix = "UBERON"
+        url = "http://purl.obolibrary.org/obo/uberon/basic.obo"
+        g = obonet.read_obo(url)
+        custom_obo_terms = []
+        it = tqdm(g.nodes(data=True), unit_scale=True, unit="node")
+        for node, data in it:
+            # Skip entries imported from other ontologies
+            if not node.startswith(f"{prefix}:"):
+                continue
 
-    .. code-block:: python
+            identifier = node.removeprefix(f"{prefix}:")
 
-        import gilda, pyobo
-        from gilda.process import normalize
-
-        custom_pathway_terms = []
-        for prefix in ["reactome", "wikipathways", "pw"]:
-            names = pyobo.get_id_name_mapping(prefix)
-            synonyms = pyobo.get_id_synonyms_mapping(prefix)
-            custom_pathway_terms.append(gilda.Term(
+            name = data["name"]
+            custom_obo_terms.append(gilda.Term(
                 norm_text=normalize(name),
                 text=name,
                 db=prefix,
@@ -222,8 +194,16 @@ def make_grounder(
                 status="name",
                 source=prefix,
             ))
-            for synonym in synonyms.get(identifier, []):
-                custom_pathway_terms.append(gilda.Term(
+
+            # Add terms for all synonyms
+            for synonym_raw in data.get("synonym", []):
+                try:
+                    # Try to parse out of the quoted OBO Field
+                    synonym = synonym_raw.split('"')[1].strip()
+                except IndexError:
+                    continue  # the synonym was malformed
+
+                custom_obo_terms.append(gilda.Term(
                     norm_text=normalize(synonym),
                     text=synonym,
                     db=prefix,
@@ -232,7 +212,13 @@ def make_grounder(
                     status="synonym",
                     source=prefix,
                 ))
-        custom_pathway_grounder = gilda.make_grounder(custom_species_terms)
-        custom_pathway_grounder.ground("apoptosis")
+
+        custom_grounder = gilda.make_grounder(custom_obo_terms)
+        scored_matches = custom_grounder.ground("head")
+
+    Additional examples for loading custom content from OBO Graph JSON,
+    :mod:`pyobo`, and more can be found in the `Jupyter notebooks
+    <https://github.com/indralab/gilda/tree/master/notebooks>`_
+    in the Gilda repository on GitHub.
     """
     return Grounder(terms=terms)
