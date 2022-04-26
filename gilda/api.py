@@ -166,6 +166,7 @@ def make_grounder(
     --------
     The following example shows how to get an ontology with :mod:`obonet` and
     load custom terms:
+
     .. code-block:: python
 
         from gilda import make_grounder
