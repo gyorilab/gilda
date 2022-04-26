@@ -25,7 +25,7 @@ copyright = f'2020-{datetime.datetime.today().year}, Benjamin M. Gyori'
 author = 'Benjamin M. Gyori'
 
 # The short X.Y version
-version = '.'.join(gilda_version.split('.')[1:])
+version = '.'.join(gilda_version.split('.')[:2])
 # The full version, including alpha/beta/rc tags
 release = gilda_version
 
