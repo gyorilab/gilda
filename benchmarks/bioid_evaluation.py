@@ -410,7 +410,7 @@ class BioIDBenchmarker:
             xref_prefix, xref_id = xref_curie.split(':', maxsplit=1)
             if (prefix, xref_prefix) not in BO_MISSING_XREFS:
                 BO_MISSING_XREFS.add((prefix, xref_prefix))
-                tqdm.write(f'Bioontology is missing mappings from {prefix} to {xref_prefix}')
+                tqdm.write(f'Bioontology v{bio_ontology.version} is missing mappings from {prefix} to {xref_prefix}')
             output.add(xref_curie)
 
         if prefix == 'NCBI gene':
@@ -798,6 +798,11 @@ def main(data: str, results: str, no_model_disambiguation: bool, no_species_disa
     print("Constructing results table...")
     counts, precision_recall, disamb_table = \
         benchmarker.get_results_tables(match='strict')
+    print(
+        f"Gilda v{__version__}, Bio-ontology v{bio_ontology.version},"
+        f" model-based disambiguation={not no_model_disambiguation},"
+        f" species-based disambiguation={not no_species_disambiguation}"
+    )
     print(precision_recall.to_markdown(index=False))
     time = datetime.now().strftime('%y%m%d-%H%M%S')
     if no_model_disambiguation and no_species_disambiguation:
