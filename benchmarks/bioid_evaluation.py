@@ -258,26 +258,27 @@ class BioIDBenchmarker:
             tqdm.write("Grounding with-context corpus with Gilda...")
             # use from tqdm.contrib.concurrent import thread_map
             df.loc[:, 'groundings'] = df. \
-                progress_apply(self._get_row_grounding_list, axis=1)
+                progress_apply(self._get_row_grounding_list_with_model, axis=1)
         elif not context and species:
-            df.loc[:, 'groundings'] = df.text. \
-                progress_apply(self._get_row_grounding_list_no_model, axis=1)
+            df.loc[:, 'groundings'] = df. \
+                progress_apply(self._get_row_grounding_list_sans_model, axis=1)
         elif context and not species:
             raise NotImplementedError
         else:
-            tqdm.write("Skipping grounding with context.")
-            df.loc[:, 'groundings'] = df.groundings_no_context
+            raise ValueError("why would we ever do this")
+            # tqdm.write("Skipping grounding with context.")
+            # df.loc[:, 'groundings'] = df.groundings_no_context
         tqdm.write("Finished grounding corpus with Gilda...")
         self._evaluate_gilda_performance()
 
-    def _get_row_grounding_list(self, row):
+    def _get_row_grounding_list_with_model(self, row):
         return self._get_grounding_list(
             row.text,
             context=self._get_plaintext(row.don_article),
             organisms=self._get_organism_priority(row.don_article),
         )
 
-    def _get_row_grounding_list_no_model(self, row):
+    def _get_row_grounding_list_sans_model(self, row):
         return self._get_grounding_list(
             row.text,
             organisms=self._get_organism_priority(row.don_article),
@@ -760,7 +761,8 @@ def f1(precision: float, recall: float) -> float:
     default=os.path.join(HERE, 'results', "bioid_performance", __version__),
 )
 @click.option("--no-model-disambiguation", is_flag=True)
-def main(data: str, results: str, no_model_disambiguation: bool):
+@click.option("--no-species-disambiguation", is_flag=True)
+def main(data: str, results: str, no_model_disambiguation: bool, no_species_disambiguation: bool):
     """Run this script to evaluate gilda on the BioCreative VI BioID corpus.
 
     It has two optional arguments, --datapath and --resultspath that specify
@@ -787,7 +789,10 @@ def main(data: str, results: str, no_model_disambiguation: bool):
     except FileNotFoundError:
         equivalences = {}
     benchmarker = BioIDBenchmarker(equivalences=equivalences)
-    benchmarker.ground_entities_with_gilda(context=not no_model_disambiguation, species=True)
+    benchmarker.ground_entities_with_gilda(
+        context=not no_model_disambiguation,
+        species=not no_species_disambiguation,
+    )
     print("Constructing mappings table...")
     mappings_table, mappings_table_unique = benchmarker.get_mappings_tables()
     print("Constructing results table...")
@@ -795,7 +800,14 @@ def main(data: str, results: str, no_model_disambiguation: bool):
         benchmarker.get_results_tables(match='strict')
     print(precision_recall.to_markdown(index=False))
     time = datetime.now().strftime('%y%m%d-%H%M%S')
-    outname = f'benchmark_{time}'
+    if no_model_disambiguation and no_species_disambiguation:
+        outname = f'benchmark_no_disambiguation_{time}'
+    elif no_model_disambiguation and not no_species_disambiguation:
+        outname = f'benchmark_no_model_disambiguation_{time}'
+    elif not no_model_disambiguation and no_species_disambiguation:
+        outname = f'benchmark_no_species_disambiguation_{time}'
+    else:
+        outname = f'benchmark_{time}'
 
     # Generate output document
     caption0 = dedent(f"""\
