@@ -46,13 +46,14 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       '293T': {'EFO': '0001082'},
                       'GR': {'HGNC': '7978'},
                       'integrin alpha': {'FPLX': 'ITGA'},
-                      'DC': {'MESH': 'D003713'}}
+                      'DC': {'MESH': 'D003713'},
+                      'BMD': {'MESH': 'D015519'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'DHM': {'CHEBI': 'CHEBI:71175'},
                         'SM': {'CHEBI': 'CHEBI:17076'},
-                        'BMD': {'HGNC': '2928'},
+                        'BMD': {'HGNC': ['2928', '12703']},
                         'DC': {'HGNC': '2714'},
                         'ARs': {'HGNC': '644'},
                         'BA': {'CHEBI': 'CHEBI:32594'},
@@ -63,7 +64,8 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'Hrs': {'GO': 'GO:0000725'},
                         'thioredoxin-1': {'UP': 'P47938'},
                         'alpha4': {'HGNC': '10809'},
-                        'NT': {'HGNC': '17941'}}
+                        'NT': {'HGNC': '17941'},
+                        'IMP1': {'HGNC': '16435'}}
 
 
 def process_fplx_groundings(df):
@@ -116,10 +118,14 @@ def evaluate_new_grounding(grounding, term):
     if grounding['text'] in correct_assertions:
         if term.id == correct_assertions[grounding['text']].get(term.db):
             return 'correct'
-    elif grounding['text'] in incorrect_assertions:
-        if term.id == \
-                incorrect_assertions[grounding['text']].get(term.db):
-            return 'incorrect'
+    if grounding['text'] in incorrect_assertions:
+        incorrect_val = incorrect_assertions[grounding['text']].get(term.db)
+        if isinstance(incorrect_val, str):
+            if term.id == incorrect_val:
+                return 'incorrect'
+        elif isinstance(incorrect_val, list):
+            if term.id in incorrect_val:
+                return 'incorrect'
 
     if not grounding['correct']:
         # If the grounding matches one of the known incorrect ones
@@ -132,7 +138,7 @@ def evaluate_new_grounding(grounding, term):
     return 'unknown'
 
 
-def make_comparison(groundings):
+def make_comparison(groundings, use_disamb=True):
     # Generate an initial comparison matrix
     # This dict contains counts of all the possible relationships between
     # the reference grounding and the one produced by Gilda
@@ -146,8 +152,9 @@ def make_comparison(groundings):
     for idx, grounding in enumerate(tqdm(groundings, desc='Making comparison')):
         old_eval = evaluate_old_grounding(grounding)
         # Send grounding requests
+        context = grounding['context'] if use_disamb else None
         matches = ground(text=grounding['text'],
-                         context=grounding['context'])
+                         context=context)
         if not matches:
             comparison['%s_ungrounded' % old_eval].append((idx, grounding,
                                                            None))
@@ -250,13 +257,13 @@ def print_statistics(comparison):
                        label="tab:famplex-confusion"))
 
 
-def run_comparison():
+def run_comparison(use_disamb=True):
     df = pandas.read_csv(url)
     groundings = process_fplx_groundings(df)
-    comparison = make_comparison(groundings)
+    comparison = make_comparison(groundings, use_disamb)
     print_statistics(comparison)
     return comparison
 
 
 if __name__ == '__main__':
-    comparison = run_comparison()
+    comparison = run_comparison(use_disamb=True)

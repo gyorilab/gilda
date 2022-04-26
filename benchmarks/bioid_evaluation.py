@@ -424,7 +424,7 @@ class BioIDBenchmarker:
         if prefix == 'PubChem':
             chebi_id = get_chebi_id_from_pubchem(identifier)
             if chebi_id is not None:
-                output.add(f'CHEBI:CHEBI:{chebi_id}')
+                output.add(f'CHEBI:{chebi_id}')
         return output
 
     @staticmethod
@@ -737,6 +737,40 @@ def get_famplex_members():
 
 
 fplx_members = get_famplex_members()
+
+
+# NOTE: these mappings are already integrated into equivalences.json
+def get_uberon_mesh_mappings():
+    import obonet
+    from indra.databases import mesh_client
+    g = obonet.read_obo('/Users/ben/src/uberon/src/ontology/uberon-edit.obo')
+    mappings = {}
+    for node, data in g.nodes(data=True):
+        xrefs = [x[5:] for x in data.get('xref', []) if x.startswith('MESH')]
+        if len(xrefs) != 1:
+            continue
+        xref = xrefs[0]
+        if mesh_client.get_mesh_name(xref, offline=True):
+            mappings[node] = 'MESH:%s' % xref
+    return mappings
+
+
+# NOTE: these mappings are already integrated into equivalences.json
+def get_cl_mesh_mappings():
+    import re
+    classdef_prefix = "# Class: obo:"
+    mesh_id_pattern = re.compile(r'MESH:[CD][0-9]+')
+    mappings = {}
+    with open('/Users/ben/src/cell-ontology/src/ontology/cl-edit.owl', 'r') as fh:
+        node = None
+        for line in fh:
+            if line.startswith(classdef_prefix):
+                node_owl = line[len(classdef_prefix):len(classdef_prefix) + 10]
+                node = node_owl.replace('_', ':')
+            mesh_ids = set(mesh_id_pattern.findall(line))
+            if node and len(mesh_ids) == 1:
+                mappings[node] = list(mesh_ids)[0]
+    return mappings
 
 
 def get_display_name(ns: str) -> str:
