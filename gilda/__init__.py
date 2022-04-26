@@ -15,9 +15,6 @@ __all__ = [
     'make_grounder',
     # Classes
     'Term',
-    'Match',
-    'Grounder',
-    'ScoredMatch',
     # Meta
     '__version__',
 ]
