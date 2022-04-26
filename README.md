@@ -18,7 +18,7 @@ pip install gilda
 ```
 Note that Gilda uses a single large resource file for grounding, which is
 automatically downloaded into the `~/.data/gilda/<version>` folder during
-runtime (see [pystow](https://github.com/cthoyt/pystow#%EF%B8%8F-configuration) for options to
+runtime (see [pystow](https://github.com/cthoyt/pystow#%EF%B8%8F%EF%B8%8F-configuration) for options to
 configure the location of this folder).
 
 Given some additional dependencies, the grounding resource file can
