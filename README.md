@@ -93,14 +93,16 @@ $ docker-compose up
 ## Citation
 
 ```bibtex
-@article{gyori2021gilda,
-  author = {Gyori, Benjamin M and Hoyt, Charles Tapley and Steppi, Albert},
-  doi = {10.1101/2021.09.10.459803},
-  journal = {bioRxiv},
-  publisher = {Cold Spring Harbor Laboratory},
-  title = {{Gilda: biomedical entity text normalization with machine-learned disambiguation as a service}},
-  url = {https://www.biorxiv.org/content/10.1101/2021.09.10.459803v1},
-  year = {2021}
+@article{gyori2022gilda,
+    author = {Gyori, Benjamin M and Hoyt, Charles Tapley and Steppi, Albert},
+    title = "{{Gilda: biomedical entity text normalization with machine-learned disambiguation as a service}}",
+    journal = {Bioinformatics Advances},
+    year = {2022},
+    month = {05},
+    issn = {2635-0041},
+    doi = {10.1093/bioadv/vbac034},
+    url = {https://doi.org/10.1093/bioadv/vbac034},
+    note = {vbac034}
 }
 ```
 
