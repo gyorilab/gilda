@@ -3,9 +3,12 @@
 [![Build](https://github.com/indralab/gilda/actions/workflows/tests.yml/badge.svg)](https://github.com/indralab/gilda/actions)
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/gilda.svg)](https://badge.fury.io/py/gilda)
+[![DOI](https://img.shields.io/badge/DOI-10.1093/bioadv/vbac034-green.svg)](https://doi.org/10.1093/bioadv/vbac034)
 
 Gilda is a Python package and REST service that grounds (i.e., finds
 appropriate identifiers in namespaces for) named entities in biomedical text.
+
+Gyori BM, Hoyt CT, Steppi A (2022). Gilda: biomedical entity text normalization with machine-learned disambiguation as a service. Bioinformatics Advances, 2022; vbac034 [https://doi.org/10.1093/bioadv/vbac034](https://doi.org/10.1093/bioadv/vbac034).
 
 ## Installation
 Gilda is deployed as a web service at http://grounding.indra.bio/ (see
