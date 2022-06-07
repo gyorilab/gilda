@@ -33,6 +33,21 @@ logger = logging.getLogger(__name__)
 GrounderInput = Union[str, Path, List[Term], Mapping[str, List[Term]]]
 
 
+import sqlite3
+import json
+
+class SqliteEntities:
+    def __init__(self, db):
+        self.db = db
+        self.conn = sqlite3.connect(self.db)
+
+    def get(self, key, default=None):
+        res = self.conn.execute("SELECT terms FROM terms WHERE norm_text=?", (key,))
+        result = res.fetchone()
+        if not result:
+            return default
+        return [Term(**j) for j in json.loads(result[0])]
+
 class Grounder(object):
     """Class to look up and ground query texts in a terms file.
 
@@ -63,6 +78,8 @@ class Grounder(object):
             if terms.endswith('shelve'):
                 import shelve
                 self.entries = shelve.open(terms, 'r')
+            elif terms.endswith('db'):
+                self.entries = SqliteEntities(terms)
             else:
                 self.entries = load_terms_file(terms)
         elif isinstance(terms, list):
