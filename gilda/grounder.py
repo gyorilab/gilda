@@ -60,7 +60,11 @@ class Grounder(object):
             terms = get_grounding_terms()
 
         if isinstance(terms, (str, Path)):
-            self.entries = load_terms_file(terms)
+            if terms.endswith('shelve'):
+                import shelve
+                self.entries = shelve.open(terms, 'r')
+            else:
+                self.entries = load_terms_file(terms)
         elif isinstance(terms, list):
             self.entries = defaultdict(list)
             for term in terms:
