@@ -1,3 +1,4 @@
+import os
 import csv
 import json
 import gzip
@@ -60,7 +61,12 @@ class Grounder(object):
             terms = get_grounding_terms()
 
         if isinstance(terms, (str, Path)):
-            self.entries = load_terms_file(terms)
+            extension = os.path.splitext(terms)[1]
+            if extension == '.db':
+                from .resources.sqlite_adapter import SqliteEntries
+                self.entries = SqliteEntries(terms)
+            else:
+                self.entries = load_terms_file(terms)
         elif isinstance(terms, list):
             self.entries = defaultdict(list)
             for term in terms:
