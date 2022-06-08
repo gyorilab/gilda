@@ -213,7 +213,6 @@ def test_namespaces():
 
 def test_sqlite():
     from gilda.resources.sqlite_adapter import build
-    gr = Grounder()
     matches = gr.ground('braf')
     entries = {'braf': gr.entries['braf']}
     build(entries, 'test.db')
