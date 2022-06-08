@@ -73,7 +73,7 @@ class Grounder(object):
                             'nor a normalized entry name to term dictionary')
 
         self.adeft_disambiguators = find_adeft_models()
-        self.gilda_disambiguators = load_gilda_models()
+        self.gilda_disambiguators = None
 
     def lookup(self, raw_str: str) -> List[Term]:
         """Return matching Terms for a given raw string.
@@ -201,6 +201,10 @@ class Grounder(object):
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
+        # This is only called if context was passed in so we do lazy
+        # loading here
+        if self.gilda_disambiguators is None:
+            self.gilda_disambiguators = load_gilda_models()
         # If we don't have a disambiguator for this string, we return with
         # the original scores intact. Otherwise, we attempt to disambiguate.
         if raw_str in self.adeft_disambiguators:
