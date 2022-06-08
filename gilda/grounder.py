@@ -1,7 +1,6 @@
 import csv
 import json
 import gzip
-import pickle
 import logging
 import itertools
 from pathlib import Path
@@ -73,8 +72,8 @@ class Grounder(object):
             raise TypeError('terms is neither a path nor a list of terms,'
                             'nor a normalized entry name to term dictionary')
 
-        self.adeft_disambiguators = load_adeft_models()
-        self.gilda_disambiguators = load_gilda_models()
+        self.adeft_disambiguators = find_adeft_models()
+        self.gilda_disambiguators = None
 
     def lookup(self, raw_str: str) -> List[Term]:
         """Return matching Terms for a given raw string.
@@ -202,6 +201,10 @@ class Grounder(object):
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
+        # This is only called if context was passed in so we do lazy
+        # loading here
+        if self.gilda_disambiguators is None:
+            self.gilda_disambiguators = load_gilda_models()
         # If we don't have a disambiguator for this string, we return with
         # the original scores intact. Otherwise, we attempt to disambiguate.
         if raw_str in self.adeft_disambiguators:
@@ -224,6 +227,8 @@ class Grounder(object):
     def disambiguate_adeft(self, raw_str, scored_matches, context):
         # We find the disambiguator for the given string and pass in
         # context
+        if self.adeft_disambiguators[raw_str] is None:
+            self.adeft_disambiguators[raw_str] = load_disambiguator(raw_str)
         res = self.adeft_disambiguators[raw_str].disambiguate([context])
         # The actual grounding dict is at this index in the result
         grounding_dict = res[0][2]
@@ -574,16 +579,21 @@ def filter_for_organism(terms, organisms):
     return all_terms
 
 
-def load_adeft_models():
+def find_adeft_models():
     adeft_disambiguators = {}
     for shortform in available_adeft_models:
-        adeft_disambiguators[shortform] = load_disambiguator(shortform)
+        adeft_disambiguators[shortform] = None
     return adeft_disambiguators
 
 
+def load_adeft_models():
+    return {shortform: load_disambiguator(shortform)
+            for shortform in find_adeft_models()}
+
+
 def load_gilda_models(cutoff=0.7):
-    with gzip.open(get_gilda_models(), 'rb') as fh:
-        models_raw = pickle.load(fh)
-    models = {k: load_model_info(v['cl']) for k, v in models_raw.items()}
-    models = {k: v for k, v in models.items() if v.stats['f1']['mean'] > cutoff}
+    with gzip.open(get_gilda_models(), 'rt') as fh:
+        models = {k: load_model_info(v)
+                  for k, v in json.loads(fh.read()).items()
+                  if v['stats']['f1']['mean'] > cutoff}
     return models
