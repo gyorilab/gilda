@@ -209,3 +209,17 @@ def test_namespaces():
     assert not matches
     matches = gr.ground('KRAS', namespaces=['HGNC'])
     assert matches
+
+
+def test_sqlite():
+    from gilda.resources.sqlite_adapter import build
+    gr = Grounder()
+    matches = gr.ground('braf')
+    entries = {'braf': gr.entries['braf']}
+    build(entries, 'test.db')
+
+    grsql = Grounder('test.db')
+    matchessql = grsql.ground('braf')
+    assert len(matches) == len(matchessql)
+
+    assert grsql.ground('kras') == []
