@@ -46,6 +46,7 @@ class SqliteEntries:
 
 def build(grounding_entries, path=None):
     path = path if path else os.path.join(resource_dir, 'grounding_terms.db')
+    logger.info('Starting SQLite database at %s' % path)
     conn = sqlite3.connect(path)
     cur = conn.cursor()
 

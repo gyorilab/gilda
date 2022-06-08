@@ -89,7 +89,8 @@ approrpiate for a narrow use case.
 3. Gilda also offers an optional sqlite back-end which significantly decreases
 memory usage and results in minor drop in the number of strings grounder per
 unit time. The sqlite back-end database can be built as follows with an
-optional `[db_path]` argument, which if used, should use the .db extension.
+optional `[db_path]` argument, which if used, should use the .db extension. If
+not specified, the .db file is generated in Gilda's default resource folder.
 
 ```bash
 python -m gilda.resources.sqlite_adapter [db_path]
@@ -100,7 +101,7 @@ A Grounder instance can then be instantiated as follows:
 ```python
 from gilda.grounder import Grounder
 gr = Grounder(db_path)
-matches = gr.ground(...)
+matches = gr.ground('kras')
 ```
 
 ## Run web service with Docker
