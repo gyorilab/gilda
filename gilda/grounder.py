@@ -1,7 +1,6 @@
 import csv
 import json
 import gzip
-import pickle
 import logging
 import itertools
 from pathlib import Path
@@ -582,8 +581,8 @@ def load_adeft_models():
 
 
 def load_gilda_models(cutoff=0.7):
-    with gzip.open(get_gilda_models(), 'rb') as fh:
-        models_raw = pickle.load(fh)
-    models = {k: load_model_info(v['cl']) for k, v in models_raw.items()}
-    models = {k: v for k, v in models.items() if v.stats['f1']['mean'] > cutoff}
+    with gzip.open(get_gilda_models(), 'rt') as fh:
+        models = {k: load_model_info(v)
+                  for k, v in json.loads(fh.read()).items()
+                  if v['stats']['f1']['mean'] > cutoff}
     return models
