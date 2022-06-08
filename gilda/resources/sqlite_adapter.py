@@ -1,3 +1,6 @@
+"""This module implements an optional SQLite database back-end for Gilda
+as an alternative to loading Terms directly into memory."""
+
 import os
 import json
 import sys
@@ -10,6 +13,17 @@ logger = logging.getLogger('gilda.resources.sqlite_adapter')
 
 
 class SqliteEntries:
+    """A class exposing lists of Terms similar to a string-keyed dict.
+
+    From the perspective of a Grounder instance, instances of this class
+    have an interface similar to a dict ot lists of Terms and can therefore
+    be used seamlessly as a Grounder instance's entries attribute.
+
+    Parameters
+    ----------
+    db : str
+        A path to a SQLite database file.
+    """
     def __init__(self, db):
         self.db = db
         self.conn = None
@@ -45,6 +59,17 @@ class SqliteEntries:
 
 
 def build(grounding_entries, path=None):
+    """Build a SQLite database file from a set of grounding entries.
+
+    Parameters
+    ----------
+    grounding_entries : dict[str, list[Term]]
+        A grounding entries data structure from which the DB is generated.
+    path : Optional[str, Path]
+        Optional path to the output file which should use the .db extension.
+        If not given, the .db file is generated in Gilda's default resources
+        folder.
+    """
     path = path if path else os.path.join(resource_dir, 'grounding_terms.db')
     logger.info('Starting SQLite database at %s' % path)
     conn = sqlite3.connect(path)
