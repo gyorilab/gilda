@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 import logging
 import sqlite3
 from gilda.term import Term
@@ -43,9 +44,9 @@ class SqliteEntries:
         return res.fetchone()[0]
 
 
-def build(grounding_entries):
-    db = os.path.join(resource_dir, 'grounding_terms.db')
-    conn = sqlite3.connect(db)
+def build(grounding_entries, path=None):
+    path = path if path else os.path.join(resource_dir, 'grounding_terms.db')
+    conn = sqlite3.connect(path)
     cur = conn.cursor()
 
     # Create the table
@@ -65,3 +66,12 @@ def build(grounding_entries):
     cur.execute(q)
     conn.commit()
     conn.close()
+
+
+if __name__ == '__main__':
+    from gilda.grounder import Grounder
+
+    path = sys.argv[1] if len(sys.argv) > 1 else None
+    logger.info('Loading default grounder')
+    gr = Grounder()
+    build(gr.entries, path=path)
