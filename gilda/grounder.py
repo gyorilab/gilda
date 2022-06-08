@@ -72,7 +72,7 @@ class Grounder(object):
             raise TypeError('terms is neither a path nor a list of terms,'
                             'nor a normalized entry name to term dictionary')
 
-        self.adeft_disambiguators = load_adeft_models()
+        self.adeft_disambiguators = find_adeft_models()
         self.gilda_disambiguators = load_gilda_models()
 
     def lookup(self, raw_str: str) -> List[Term]:
@@ -223,6 +223,8 @@ class Grounder(object):
     def disambiguate_adeft(self, raw_str, scored_matches, context):
         # We find the disambiguator for the given string and pass in
         # context
+        if self.adeft_disambiguators[raw_str] is None:
+            self.adeft_disambiguators[raw_str] = load_disambiguator(raw_str)
         res = self.adeft_disambiguators[raw_str].disambiguate([context])
         # The actual grounding dict is at this index in the result
         grounding_dict = res[0][2]
@@ -573,11 +575,16 @@ def filter_for_organism(terms, organisms):
     return all_terms
 
 
-def load_adeft_models():
+def find_adeft_models():
     adeft_disambiguators = {}
     for shortform in available_adeft_models:
-        adeft_disambiguators[shortform] = load_disambiguator(shortform)
+        adeft_disambiguators[shortform] = None
     return adeft_disambiguators
+
+
+def load_adeft_models():
+    return {shortform: load_disambiguator(shortform)
+            for shortform in find_adeft_models()}
 
 
 def load_gilda_models(cutoff=0.7):
