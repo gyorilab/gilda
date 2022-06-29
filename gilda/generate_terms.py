@@ -339,7 +339,7 @@ def generate_uniprot_terms(download=False, organisms=None):
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
     org_filter_str = ' OR '.join(organisms)
     if not os.path.exists(path) or download:
-        url = (f'https://www.uniprot.org/uniprot/?format=tab&columns=id,'
+        url = (f'https://legacy.uniprot.org/uniprot/?format=tab&columns=id,'
                f'genes(PREFERRED),genes(ALTERNATIVE),protein%20names,organism-id&sort=score&'
                f'query=reviewed:yes&fil=organism:{org_filter_str}')
         logger.info('Downloading UniProt resource file')
