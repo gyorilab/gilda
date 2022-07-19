@@ -228,7 +228,6 @@ models_model = fields.List(
 
 @base_ns.route('/ground', methods=['POST'])
 class Ground(Resource):
-    # NOTE: formally this response should be a list
     @base_ns.response(200, "Grounding results", [scored_match_model])
     @base_ns.expect(grounding_input_model)
     def post(self):
@@ -248,6 +247,32 @@ class Ground(Resource):
         scored_matches = ground(text, context=context, organisms=organisms)
         res = [sm.to_json() for sm in scored_matches]
         return jsonify(res)
+
+
+@base_ns.route('/ground_multi', methods=['POST'])
+class GroundMulti(Resource):
+    @base_ns.response(200, "Grounding results", [[scored_match_model]])
+    @base_ns.expect([grounding_input_model])
+    def post(self):
+        """Return a list of grounding matches for a list of inputs.
+
+        This endpoint is useful for batch processing of inputs. The input
+        is a list with each entry containing a text key as well as optional
+        context and organism keys. The returned value is a list corresponding
+        to each input in order, each entry of the returned list being a list
+        of scored matches.
+        """
+        if request.json is None:
+            abort(Response('Missing application/json header.', 415))
+        # Get input parameters
+        all_matches = []
+        for input in request.json:
+            text = input.get('text')
+            context = input.get('context')
+            organisms = input.get('organisms')
+            scored_matches = ground(text, context=context, organisms=organisms)
+            all_matches.append([sm.to_json() for sm in scored_matches])
+        return jsonify(all_matches)
 
 
 @base_ns.route('/names', methods=['POST'])
