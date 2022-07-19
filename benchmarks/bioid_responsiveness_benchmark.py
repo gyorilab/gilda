@@ -9,6 +9,7 @@ import pathlib
 import random
 import time
 from typing import Optional
+from itertools import zip_longest
 
 import click
 import matplotlib.pyplot as plt
@@ -42,6 +43,19 @@ def ground_package_context(text, context):
     return gilda.ground(text, context=context)
 
 
+def ground_app_local_multi(batch):
+    return requests.post(
+            "http://localhost:8001/ground_multi",
+            json=[{'text': text} for text, _ in batch]).json()
+
+
+def ground_app_local_multi_context(batch):
+    return requests.post(
+            "http://localhost:8001/ground_multi",
+            json=[{'text': text, 'context': context}
+                   for text, context in batch]).json()
+
+
 def ground_app_local(text, **_kwargs):
     return requests.post("http://localhost:8001/ground", json={"text": text}).json()
 
@@ -50,7 +64,6 @@ def ground_app_local_context(text, context):
     return requests.post(
         "http://localhost:8001/ground", json={"text": text, "context": context}
     ).json()
-
 
 def ground_app_remote(text, **_kwargs):
     return requests.post(
@@ -67,29 +80,42 @@ def ground_app_remote_context(text, context):
 #: A list of benchmarks to run with three columns:
 #:  type, uses context, function
 FUNCTIONS = [
-    ("Python package", False, ground_package),
-    ("Python package", True, ground_package_context),
-    ("Local web app", False, ground_app_local),
-    ("Local web app", True, ground_app_local_context),
-    ("Public web app", False, ground_app_remote),
-    ("Public web app", True, ground_app_remote_context),
+    ("Python package", False, ground_package, None),
+    ("Python package", True, ground_package_context, None),
+    ("Local web app", False, ground_app_local, None),
+    ("Local web app", True, ground_app_local_context, None),
+    ("Local web app multi", False, ground_app_local_multi, 100),
+    ("Local web app multi", True, ground_app_local_multi_context, 100),
+    ("Public web app", False, ground_app_remote, None),
+    ("Public web app", True, ground_app_remote_context, None),
 ]
 
 
 def run_trial(
-    *, trials, corpus, func, desc: Optional[str] = None, chunk: Optional[int] = None
+    *, trials, corpus, func, desc: Optional[str] = None, chunk: Optional[int] = None,
+    batching: Optional[int] = None
 ):
     rv = []
     outer_it = trange(trials, desc=desc)
     for trial in outer_it:
         random.shuffle(corpus)
         test_corpus = corpus[:chunk] if chunk else corpus
-        inner_it = tqdm(test_corpus, desc="Examples", unit_scale=True, leave=False)
-        for text, context in inner_it:
-            with logging_redirect_tqdm():
-                start = time.time()
-                matches = func(text, context=context)
-                rv.append((trial, len(matches), time.time() - start))
+        if batching:
+            it = zip_longest(*[iter(test_corpus)]*batching, fillvalue=None)
+            for batch in tqdm(it, desc="Examples", unit_scale=True, leave=False):
+                items = [x for x in batch if x is not None]
+                with logging_redirect_tqdm():
+                    start = time.time()
+                    all_matches = func(items)
+                    for matches in all_matches:
+                        rv.append((trial, len(matches),
+                                   (time.time() - start)/len(items)))
+        else:
+            for text, context in tqdm(test_corpus, desc="Examples", unit_scale=True, leave=False):
+                with logging_redirect_tqdm():
+                    start = time.time()
+                    matches = func(text, context=context)
+                    rv.append((trial, len(matches), time.time() - start))
     return rv
 
 
@@ -116,12 +142,13 @@ def build(trials: int, chunk: Optional[int] = None) -> pd.DataFrame:
     corpus = list(iter_corpus())
 
     rows = []
-    for tag, uses_context, func in FUNCTIONS:
+    for tag, uses_context, func, batching in FUNCTIONS:
         rv = run_trial(
             trials=trials,
             chunk=chunk,
             corpus=corpus,
             func=func,
+            batching=batching,
             desc=f"{tag}{' with context' if uses_context else ''} trial",
         )
         rows.extend((tag, uses_context, *row) for row in rv)
