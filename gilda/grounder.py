@@ -311,6 +311,8 @@ class Grounder(object):
             The list of entity texts for which a disambiguation model is
             available.
         """
+        if self.gilda_disambiguators is None:
+            self.gilda_disambiguators = load_gilda_models()
         return sorted(list(self.gilda_disambiguators.keys()))
 
     def get_names(self, db, id, status=None, source=None):
