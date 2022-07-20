@@ -76,6 +76,19 @@ import requests
 requests.post('http://grounding.indra.bio/ground', json={'text': 'kras'})
 ```
 
+The web service also supports multiple inputs in a single request on the
+`ground_multi` endpoint, for instance
+
+```python
+import requests
+requests.post('http://grounding.indra.bio/ground_multi',
+              json=[
+                  {'text': 'braf'},
+                  {'text': 'ER', 'context': 'endoplasmic reticulum (ER) is a cellular component'}
+              ]
+          )
+```
+
 ## Resource usage
 Gilda loads grounding terms into memory when first used. If memory usage
 is an issue, the following options are recommended.
