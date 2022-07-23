@@ -239,7 +239,7 @@ class Ground(Resource):
         return value means that no grounding matches were found for the input.
         """
         if request.json is None:
-            abort(Response('Missing application/json header.', 415))
+            abort(415, 'Missing application/json header.')
         # Get input parameters
         text = request.json.get('text')
         context = request.json.get('context')
@@ -263,7 +263,7 @@ class GroundMulti(Resource):
         of scored matches.
         """
         if request.json is None:
-            abort(Response('Missing application/json header.', 415))
+            abort(415, 'Missing application/json header.')
         # Get input parameters
         all_matches = []
         for input in request.json:
@@ -287,7 +287,7 @@ class GetNames(Resource):
         texts (names, synonyms, etc.) are known for a given grounded entity.
         """
         if request.json is None:
-            abort(Response('Missing application/json header.', 415))
+            abort(415, 'Missing application/json header.')
         # Get input parameters
         kwargs = {key: request.json.get(key) for key in {'db', 'id', 'status',
                                                          'source'}}
