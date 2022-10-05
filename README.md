@@ -13,7 +13,7 @@ Gyori BM, Hoyt CT, Steppi A (2022). Gilda: biomedical entity text normalization 
 ## Installation
 Gilda is deployed as a web service at http://grounding.indra.bio/ (see
 Usage instructions below), however, it can also be used locally as a Python
-package.
+package. 
 
 The recommended method to install Gilda is through PyPI as
 ```bash
