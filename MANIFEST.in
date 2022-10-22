@@ -1,5 +1,6 @@
 graft doc
 graft gilda/resources
+graft gilda/app/templates
 include README.md LICENSE
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .DS_Store *.gpickle
