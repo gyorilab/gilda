@@ -14,7 +14,7 @@ import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
 from indra.statements.resources import amino_acids
-from .term import Term
+from .term import Term, filter_out_duplicates
 from .process import normalize
 from .resources import resource_dir, popular_organisms
 
@@ -657,21 +657,6 @@ def _make_mesh_mappings():
 
 
 mesh_mappings, mesh_mappings_reverse = _make_mesh_mappings()
-
-
-def filter_out_duplicates(terms):
-    logger.info('Filtering %d terms for uniqueness...' % len(terms))
-    term_key = lambda term: (term.db, term.id, term.text)
-    statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
-    new_terms = []
-    for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
-                                      key=lambda x: term_key(x)):
-        terms = sorted(terms, key=lambda x: statuses[x.status])
-        new_terms.append(terms[0])
-    # Re-sort the terms
-    new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
-    logger.info('Got %d unique terms...' % len(new_terms))
-    return new_terms
 
 
 def terms_from_obo_url(url, prefix, ignore_mappings=False, map_to_ns=None):
