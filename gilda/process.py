@@ -169,7 +169,7 @@ def get_capitalization_pattern(word, beginning_of_sentence=False):
 
 
 def depluralize(word):
-    """Return the depluralized version of the word, along with a status  flag.
+    """Return the depluralized version of the word, along with a status flag.
 
     Parameters
     ----------
@@ -182,7 +182,7 @@ def depluralize(word):
         The original word, if it is detected to be non-plural, or the
         depluralized version of the word.
     str
-        A status flag represeting the detected pluralization status of the
+        A status flag representing the detected pluralization status of the
         word, with non_plural (e.g., BRAF), plural_oes (e.g., mosquitoes),
         plural_ies (e.g., antibodies), plural_es (e.g., switches),
         plural_cap_s (e.g., MAPKs), and plural_s (e.g., receptors).
