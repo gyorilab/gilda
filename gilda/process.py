@@ -169,7 +169,7 @@ def get_capitalization_pattern(word, beginning_of_sentence=False):
 
 
 def depluralize(word):
-    """Return the depluralized version of the word, along with a status  flag.
+    """Return the depluralized version of the word, along with a status flag.
 
     Parameters
     ----------
