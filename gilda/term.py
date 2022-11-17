@@ -1,10 +1,15 @@
+import itertools
+import logging
 from typing import Optional, Set, Tuple
 
 __all__ = [
     "Term",
     "get_identifiers_curie",
     "get_identifiers_url",
+    "filter_out_duplicates",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class Term(object):
@@ -39,6 +44,7 @@ class Term(object):
         from a given source, this attribute provides the original ID value
         before mapping.
     """
+
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
                  organism=None, source_db=None, source_id=None):
         if not text:
@@ -141,3 +147,18 @@ def get_identifiers_url(db, id):
     curie = get_identifiers_curie(db, id)
     if curie is not None:
         return f'https://identifiers.org/{curie}'
+
+
+def filter_out_duplicates(terms):
+    logger.info('Filtering %d terms for uniqueness...' % len(terms))
+    term_key = lambda term: (term.db, term.id, term.text)
+    statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
+    new_terms = []
+    for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
+                                      key=lambda x: term_key(x)):
+        terms = sorted(terms, key=lambda x: statuses[x.status])
+        new_terms.append(terms[0])
+    # Re-sort the terms
+    new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
+    logger.info('Got %d unique terms...' % len(new_terms))
+    return new_terms
