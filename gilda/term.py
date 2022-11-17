@@ -1,3 +1,5 @@
+import itertools
+import logging
 from typing import Optional, Set, Tuple
 
 __all__ = [
@@ -6,6 +8,8 @@ __all__ = [
     "get_identifiers_url",
     "filter_out_duplicates",
 ]
+
+logger = logging.getLogger("gilda.term")
 
 
 class Term(object):

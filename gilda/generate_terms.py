@@ -9,7 +9,6 @@ import gzip
 import json
 import logging
 import requests
-import itertools
 import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
