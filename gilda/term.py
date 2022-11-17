@@ -9,7 +9,7 @@ __all__ = [
     "filter_out_duplicates",
 ]
 
-logger = logging.getLogger("gilda.term")
+logger = logging.getLogger(__name__)
 
 
 class Term(object):
