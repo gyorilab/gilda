@@ -123,8 +123,8 @@ class Grounder(object):
         roman_arabic = normalize(replace_roman_arabic(raw_str))
         lookups.add(roman_arabic)
         # Finally, we attempt to depluralize the word
-        depluralized = normalize(depluralize(raw_str)[0])
-        lookups.add(depluralized)
+        for singular, rule in depluralize(raw_str):
+            lookups.add(normalize(singular))
 
         logger.debug('Looking up the following strings: %s' %
                      ', '.join(lookups))
