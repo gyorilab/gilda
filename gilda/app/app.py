@@ -71,8 +71,15 @@ def home():
     form = GroundForm()
     if form.validate_on_submit():
         matches = form.get_matches()
-        return render_template('matches.html', matches=matches, version=version,
-                               text=form.text.data, context=form.context.data)
+        return render_template(
+            'matches.html',
+            matches=matches,
+            version=version,
+            text=form.text.data,
+            context=form.context.data,
+            # Add a new form that doesn't auto-populate
+            form=GroundForm(formdata=None),
+        )
     return render_template('home.html', form=form, version=version)
 
 
