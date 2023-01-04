@@ -163,6 +163,11 @@ class Grounder(object):
         """
         if not organisms:
             organisms = ['9606']
+        # Stripping whitespaces is done up front directly on the raw string
+        # so that all lookups and comparisons are done with respect to the
+        # stripped string
+        raw_str = raw_str.strip()
+        # Initial lookup of all possible matches
         entries = self.lookup(raw_str)
         logger.debug('Filtering %d entries by organism' % len(entries))
         entries = filter_for_organism(entries, organisms)

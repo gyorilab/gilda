@@ -222,3 +222,8 @@ def test_sqlite():
     assert len(matches) == len(matchessql)
 
     assert grsql.ground('kras') == []
+
+
+def test_strip_whitespace():
+    matches = gr.ground(' inflammatory response ')
+    assert matches
