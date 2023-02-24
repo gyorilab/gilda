@@ -18,6 +18,7 @@ __all__ = [
 def ground_df(
     df: "pandas.DataFrame",
     source_column: Union[str, int],
+    *,
     target_column: Union[None, str, int] = None,
     grounder: Optional[Grounder] = None,
     **kwargs,
@@ -53,6 +54,7 @@ def ground_df(
 def ground_df_map(
     df: "pandas.DataFrame",
     source_column: Union[str, int],
+    *,
     grounder: Optional[Grounder] = None,
     **kwargs,
 ) -> "pandas.Series":
