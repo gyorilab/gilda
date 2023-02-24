@@ -35,3 +35,9 @@ Process
 .. automodule:: gilda.process
     :members:
     :show-inheritance:
+
+Pandas Utilities
+----------------
+.. automodule:: gilda.pandas_utils
+    :members:
+    :show-inheritance:
