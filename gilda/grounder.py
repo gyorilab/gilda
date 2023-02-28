@@ -7,7 +7,7 @@ import itertools
 from pathlib import Path
 from collections import defaultdict, Counter
 from textwrap import dedent
-from typing import List, Mapping, Optional, Set, Tuple, Union
+from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -23,6 +23,7 @@ __all__ = [
     "GrounderInput",
     "ScoredMatch",
     "load_terms_file",
+    "load_entries_from_terms_file",
     "filter_for_organism",
     "load_adeft_models",
     "load_gilda_models",
@@ -542,20 +543,19 @@ class ScoredMatch(object):
         }
 
 
-def load_terms_file(terms_file: Union[str, Path]) -> Mapping[str, List[Term]]:
-    """Load a TSV file containing terms into a lookup dictionary.
+def load_entries_from_terms_file(terms_file: Union[str, Path]) -> Iterator[Term]:
+    """Yield Terms from a compressed terms TSV file path.
 
     Parameters
     ----------
     terms_file :
-        Path to a TSV terms file with columns corresponding to the serialized
-        elements of a Term.
+        Path to a compressed TSV terms file with columns corresponding to the
+        serialized elements of a Term.
 
     Returns
     -------
     :
-        A lookup dictionary whose keys are normalized entity texts, and values
-        are lists of Terms with that normalized entity text.
+        Terms loaded from the file yielded by a generator.
     """
     with gzip.open(terms_file, 'rt', encoding='utf-8') as fh:
         entries = {}
@@ -564,12 +564,31 @@ def load_terms_file(terms_file: Union[str, Path]) -> Mapping[str, List[Term]]:
         next(reader)
         for row in reader:
             row_nones = [r if r else None for r in row]
-            entry = Term(*row_nones)
-            if row[0] in entries:
-                entries[row[0]].append(entry)
-            else:
-                entries[row[0]] = [entry]
-        return entries
+            yield Term(*row_nones)
+
+
+def load_terms_file(terms_file: Union[str, Path]) -> Mapping[str, List[Term]]:
+    """Load a TSV file containing terms into a lookup dictionary.
+
+    Parameters
+    ----------
+    terms_file :
+        Path to a compressed TSV terms file with columns corresponding to the
+        serialized elements of a Term.
+
+    Returns
+    -------
+    :
+        A lookup dictionary whose keys are normalized entity texts, and values
+        are lists of Terms with that normalized entity text.
+    """
+    entries = {}
+    for term in load_entries_from_terms_file(terms_file):
+        if term.norm_text in entries:
+            entries[term.norm_text].append(term)
+        else:
+            entries[term.norm_text] = [term]
+    return entries
 
 
 def filter_for_organism(terms, organisms):
