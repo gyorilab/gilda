@@ -694,9 +694,8 @@ def get_all_terms():
     return terms
 
 
-def main():
-    terms = get_all_terms()
-    from .resources import GROUNDING_TERMS_PATH as fname
+def dump_terms(terms, fname):
+    """Dump a list of terms to a tsv.gz file."""
     logger.info('Dumping into %s' % fname)
     header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
               'source', 'organism', 'source_db', 'source_id']
@@ -704,6 +703,12 @@ def main():
         writer = csv.writer(fh, delimiter='\t')
         writer.writerow(header)
         writer.writerows(t.to_list() for t in terms)
+
+
+def main():
+    from .resources import GROUNDING_TERMS_PATH as fname
+    terms = get_all_terms()
+    dump_terms(terms, fname)
 
 
 if __name__ == '__main__':
