@@ -2,21 +2,25 @@
 
 import unittest
 
-from gilda.app.app import app
+from gilda.app.app import get_app
 
 
 class TestApp(unittest.TestCase):
     """A test case for the Gilda Flask application."""
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = get_app()
+
     def test_get_home(self):
         """Test the GET response on the home page."""
-        with app.test_client() as client:
+        with self.app.test_client() as client:
             res = client.get("/?text=Raf1")
             self.assert_raf1_ui(res)
 
     def test_post_home(self):
         """Test the POST response on the home page."""
-        with app.test_client() as client:
+        with self.app.test_client() as client:
             res = client.post("/", json={"text": "Raf1"})
             self.assert_raf1_ui(res)
 
@@ -30,7 +34,7 @@ class TestApp(unittest.TestCase):
 
     def test_post_grounding(self):
         """Test the POST response with text."""
-        with app.test_client() as client:
+        with self.app.test_client() as client:
             res = client.post("/ground")
             self.assertIn("message", res.json)
 
@@ -47,13 +51,13 @@ class TestApp(unittest.TestCase):
             self.assert_found(res.json, "UP", "Q99N57")
 
     def test_get_names(self):
-        with app.test_client() as client:
+        with self.app.test_client() as client:
             res = client.post('/names', json={"db": "FPLX", "id": "ERK"})
             self.assertIsInstance(res.json, list)
             self.assertIn('ERK 1/2', res.json)
 
     def test_get_models(self):
-        with app.test_client() as client:
+        with self.app.test_client() as client:
             res = client.get('/models')
             self.assertIsInstance(res.json, list)
             self.assertIn('ABC1', res.json)

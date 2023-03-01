@@ -1,22 +1,27 @@
 from textwrap import dedent
+from typing import Optional
 
-from flask import Flask, Response, abort, jsonify, render_template, request
+from flask import Blueprint, Flask, abort, jsonify, \
+    render_template, request, current_app
 from flask_bootstrap import Bootstrap
 from flask_restx import Api, Resource, fields
 from flask_wtf import FlaskForm
+from werkzeug.local import LocalProxy
 from wtforms import StringField, SubmitField, TextAreaField, \
     SelectMultipleField
 from wtforms.validators import DataRequired
 
-from gilda.api import *
 from gilda import __version__ as version
 from gilda.resources import popular_organisms, organism_labels
+from gilda.grounder import GrounderInput, Grounder
 
-app = Flask(__name__)
-app.config['RESTX_MASK_SWAGGER'] = False
-app.config['WTF_CSRF_ENABLED'] = False
-app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
-Bootstrap(app)
+ui_blueprint = Blueprint("ui", __name__, url_prefix="/")
+
+# The way that local proxies work is that when the app gets
+# instantiated, you can stick objects into the `app.config`
+# dictionary, then the local proxy lets you access them through
+# a fake "current_app" object.
+grounder = LocalProxy(lambda: current_app.config["grounder"])
 
 
 class GroundForm(FlaskForm):
@@ -54,17 +59,17 @@ class GroundForm(FlaskForm):
     submit = SubmitField('Submit')
 
     def get_matches(self):
-        return ground(self.text.data, context=self.context.data,
-                      organisms=self.organisms.data)
+        return grounder.ground(self.text.data, context=self.context.data,
+                               organisms=self.organisms.data)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@ui_blueprint.route('/', methods=['GET', 'POST'])
 def home():
     text = request.args.get('text')
     if text is not None:
         context = request.args.get('context')
         organisms = request.args.getlist('organisms')
-        matches = ground(text, context=context, organisms=organisms)
+        matches = grounder.ground(text, context=context, organisms=organisms)
         return render_template('matches.html', matches=matches, version=version,
                                text=text, context=context)
 
@@ -86,8 +91,7 @@ def home():
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
 
-api = Api(app,
-          title="Gilda",
+api = Api(title="Gilda",
           description="A service for grounding entity strings",
           version=version,
           license="Code available under the BSD 2-Clause License",
@@ -251,7 +255,7 @@ class Ground(Resource):
         text = request.json.get('text')
         context = request.json.get('context')
         organisms = request.json.get('organisms')
-        scored_matches = ground(text, context=context, organisms=organisms)
+        scored_matches = grounder.ground(text, context=context, organisms=organisms)
         res = [sm.to_json() for sm in scored_matches]
         return jsonify(res)
 
@@ -277,7 +281,7 @@ class GroundMulti(Resource):
             text = input.get('text')
             context = input.get('context')
             organisms = input.get('organisms')
-            scored_matches = ground(text, context=context, organisms=organisms)
+            scored_matches = grounder.ground(text, context=context, organisms=organisms)
             all_matches.append([sm.to_json() for sm in scored_matches])
         return jsonify(all_matches)
 
@@ -298,21 +302,21 @@ class GetNames(Resource):
         # Get input parameters
         kwargs = {key: request.json.get(key) for key in {'db', 'id', 'status',
                                                          'source'}}
-        names = get_names(**kwargs)
+        names = grounder.get_names(**kwargs)
         return jsonify(names)
 
 
 @base_ns.route('/models', methods=['GET', 'POST'])
 class GetModels(Resource):
     @base_ns.response(200, "Get models result", models_model)
-    def post(selt):
+    def post(self):
         """Return a list of texts with Gilda disambiguation models.
 
         Gilda makes available more than one thousand disambiguation models
         between synonyms shared by multiple genes. This endpoint returns
         the list of entity texts for which such a model is available.
         """
-        return jsonify(get_models())
+        return jsonify(grounder.get_models())
 
     def get(self):
         """Return a list of texts with Gilda disambiguation models.
@@ -321,4 +325,17 @@ class GetModels(Resource):
         between synonyms shared by multiple genes. This endpoint returns
         the list of entity texts for which such a model is available.
         """
-        return jsonify(get_models())
+        return jsonify(grounder.get_models())
+
+
+def get_app(terms: Optional[GrounderInput] = None) -> Flask:
+    app = Flask(__name__)
+    app.config['RESTX_MASK_SWAGGER'] = False
+    app.config['WTF_CSRF_ENABLED'] = False
+    app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
+    app.config["grounder"] = Grounder(terms=terms)
+    Bootstrap(app)
+    app.register_blueprint(ui_blueprint, url_prefix="/")
+    # has to be put after defining the UI blueprint otherwise it reserves "/"
+    api.init_app(app)
+    return app
