@@ -162,13 +162,17 @@ def _priority_key(term: Term) -> Tuple[int, int]:
     based on status, and if the status is the same, give priority
     to the ones that are from primary resources
     """
-    return statuses[term.status], 0 if term.db.casefold() == term.source.casefold() else 1
+    return (
+        statuses[term.status],
+        0 if term.db.casefold() == term.source.casefold() else 1
+    )
 
 
 def filter_out_duplicates(terms):
     logger.info('Filtering %d terms for uniqueness...' % len(terms))
     new_terms = []
-    for _, terms in itertools.groupby(sorted(terms, key=_term_key), key=_term_key):
+    for _, terms in itertools.groupby(sorted(terms, key=_term_key),
+                                      key=_term_key):
         terms = sorted(terms, key=_priority_key)
         new_terms.append(terms[0])
     # Re-sort the terms
