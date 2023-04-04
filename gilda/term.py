@@ -149,14 +149,27 @@ def get_identifiers_url(db, id):
         return f'https://identifiers.org/{curie}'
 
 
+def _term_key(term: Term) -> Tuple[str, str, str]:
+    return term.db, term.id, term.text
+
+
+statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
+
+
+def _priority_key(term: Term) -> Tuple[int, int]:
+    """
+    Prioritize terms (that are pre-grouped by db/id/text) first
+    based on status, and if the status is the same, give priority
+    to the ones that are from primary resources
+    """
+    return statuses[term.status], 0 if term.db.casefold() == term.source.casefold() else 1
+
+
 def filter_out_duplicates(terms):
     logger.info('Filtering %d terms for uniqueness...' % len(terms))
-    term_key = lambda term: (term.db, term.id, term.text)
-    statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
     new_terms = []
-    for _, terms in itertools.groupby(sorted(terms, key=lambda x: term_key(x)),
-                                      key=lambda x: term_key(x)):
-        terms = sorted(terms, key=lambda x: statuses[x.status])
+    for _, terms in itertools.groupby(sorted(terms, key=_term_key), key=_term_key):
+        terms = sorted(terms, key=_priority_key)
         new_terms.append(terms[0])
     # Re-sort the terms
     new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
