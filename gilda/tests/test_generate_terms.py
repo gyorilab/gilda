@@ -75,6 +75,21 @@ def test_filter_priority():
     assert term.status == 'synonym'
 
 
+def test_filter_priority_by_source():
+    term1 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
+                 'synonym', 'hgnc', '9606')
+    term2 = Term('mekk2', 'MEKK2', 'HGNC', '6854', 'MAP3K2',
+                 'synonym', 'up', '9606')
+    terms = filter_out_duplicates([term1, term2])
+    assert len(terms) == 1
+    assert terms[0] == term1
+
+    # now test the other way, to make sure order doesn't matter
+    terms = filter_out_duplicates([term2, term1])
+    assert len(terms) == 1
+    assert terms[0] == term1
+
+
 def test_get_terms_simple():
     row = {'Entry': 'P15056',
            'Gene names  (primary )': 'BRAF',
