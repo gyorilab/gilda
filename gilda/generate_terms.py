@@ -505,12 +505,22 @@ def generate_adeft_terms():
     from adeft.disambiguate import load_disambiguator
     from indra.ontology.standardize import get_standard_name
     all_term_args = set()
+    add_prefix = ['BTO', 'HP', 'DOID']
+    remove_prefix = ['EFO', 'NCIT', 'OMIT']
     for shortform in available_shortforms:
         da = load_disambiguator(shortform)
         for grounding, name in da.names.items():
             if grounding == 'ungrounded' or ':' not in grounding:
                 continue
             db_ns, db_id = grounding.split(':', maxsplit=1)
+            if db_ns in remove_prefix:
+                if db_id.startswith(db_ns + ':'):
+                    db_id = db_id[len(db_ns) + 1:]
+            if db_ns in add_prefix:
+                if not db_id.startswith(db_ns + ':'):
+                    db_id = db_ns + ':' + db_id
+            if db_id == 'PF00112)':
+                db_id = 'PF00112'
             # Here we do a name standardization via INDRA just in case
             # there is a discrepancy
             indra_standard_name = get_standard_name({db_ns: db_id})
