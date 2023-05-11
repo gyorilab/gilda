@@ -47,8 +47,12 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
             spans = grounder.prefix_index.get(word, set())
             if not spans:
                 continue
+
+            # Only consider spans that are within the sentence
             applicable_spans = {span for span in spans
                                 if idx + span <= len(words)}
+
+            # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
                 txt_span = ' '.join(words[idx:idx+span])
                 matches = grounder.ground(txt_span)
