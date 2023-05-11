@@ -69,6 +69,20 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
 
 
 def get_brat(entities):
+    """Return brat-formatted annotation strings for the given entities.
+
+    Parameters
+    ----------
+    entities : list[tuple[int, int, str, ScoredMatch]]
+        A list of tuples of start and end character offsets of the text
+        corresponding to the entity, the entity text, and the ScoredMatch
+        object corresponding to the entity.
+
+    Returns
+    -------
+    str
+        A string containing the brat-formatted annotations.
+    """
     brat = []
     for idx, (start, end, raw_span, matches) in enumerate(entities, 1):
         match = matches[0]
