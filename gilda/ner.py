@@ -5,8 +5,30 @@ from gilda.process import normalize
 stop_words = set(stopwords.words('english'))
 
 
-def annotate(grounder, text):
-    sentences = sent_tokenize(text)
+def annotate(grounder, text, sent_split_fun=sent_tokenize):
+    """Annotate a given text with Gilda.
+
+    Parameters
+    ----------
+    grounder : gilda.grounder.Grounder
+        The Gilda grounder to use for grounding.
+    text : str
+        The text to be annotated.
+    sent_split_fun : Callable, optional
+        A function that splits the text into sentences. The default is
+        nltk.tokenize.sent_tokenize. The function should take a string as
+        input and return an iterable of strings corresponding to the sentences
+        in the input text.
+
+    Returns
+    -------
+    list[tuple[int, int, str, ScoredMatch]]
+        A list of tuples of start and end character offsets of the text
+        corresponding to the entity, the entity text, and the ScoredMatch
+        object corresponding to the entity.
+    """
+    # Get sentences
+    sentences = sent_split_fun(text)
     text_coord = 0
     entities = []
     for sentence in sentences:
