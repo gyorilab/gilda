@@ -33,7 +33,7 @@ def annotate(grounder, text):
                 if matches:
                     start_coord = word_coords[idx]
                     end_coord = word_coords[idx+span-1] + \
-                        len(words[idx+span-1])
+                        len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
                     entities.append((start_coord, end_coord,
                                      raw_span, matches))
