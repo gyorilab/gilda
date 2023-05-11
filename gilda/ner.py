@@ -38,9 +38,9 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
             word_coords.append(word_coords[-1] + len(word) + 1)
         text_coord += len(sentence) + 1
         words = [normalize(w) for w in raw_words]
-        skip_until = None
+        skip_until = 0
         for idx, word in enumerate(words):
-            if skip_until is not None and idx < skip_until:
+            if idx < skip_until:
                 continue
             if word in stop_words:
                 continue
