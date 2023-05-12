@@ -68,7 +68,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
     return entities
 
 
-def get_brat(entities):
+def get_brat(entities, entity_type="Entity"):
     """Return brat-formatted annotation strings for the given entities.
 
     Parameters
@@ -77,6 +77,10 @@ def get_brat(entities):
         A list of tuples of start and end character offsets of the text
         corresponding to the entity, the entity text, and the ScoredMatch
         object corresponding to the entity.
+    entity_type : str, optional
+        The brat entity type to use for the annotations. The default is
+        'Entity'. This is useful for differentiating between annotations
+        extracted from different reading systems.
 
     Returns
     -------
@@ -86,8 +90,10 @@ def get_brat(entities):
     brat = []
     for idx, (start, end, raw_span, matches) in enumerate(entities, 1):
         match = matches[0]
-        grounding = match.term.db + ':' + match.term.id
-        row = f'T{idx}\tEntity {start} {end}\t{raw_span}'
+        grounding = match.term.db + ":" + match.term.id
+        if entity_type != "Entity":
+            grounding += f" Reading system: {entity_type}"
+        row = f'T{idx}\t{entity_type} {start} {end}\t{raw_span}'
         brat.append(row)
         row = f'#{idx}\tAnnotatorNotes T{idx}\t{grounding}'
         brat.append(row)
