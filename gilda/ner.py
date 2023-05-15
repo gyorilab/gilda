@@ -90,6 +90,7 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
         A string containing the brat-formatted annotations.
     """
     brat = []
+    ix_offset = max(1, ix_offset)
     for idx, (start, end, raw_span, matches) in enumerate(entities, ix_offset):
         match = matches[0]
         grounding = match.term.db + ":" + match.term.id
