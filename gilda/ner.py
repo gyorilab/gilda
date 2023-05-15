@@ -68,7 +68,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
     return entities
 
 
-def get_brat(entities, entity_type="Entity"):
+def get_brat(entities, entity_type="Entity", ix_offset=1):
     """Return brat-formatted annotation strings for the given entities.
 
     Parameters
@@ -81,6 +81,8 @@ def get_brat(entities, entity_type="Entity"):
         The brat entity type to use for the annotations. The default is
         'Entity'. This is useful for differentiating between annotations
         extracted from different reading systems.
+    ix_offset : int, optional
+        The index offset to use for the brat annotations. The default is 1.
 
     Returns
     -------
@@ -88,7 +90,7 @@ def get_brat(entities, entity_type="Entity"):
         A string containing the brat-formatted annotations.
     """
     brat = []
-    for idx, (start, end, raw_span, matches) in enumerate(entities, 1):
+    for idx, (start, end, raw_span, matches) in enumerate(entities, ix_offset):
         match = matches[0]
         grounding = match.term.db + ":" + match.term.id
         if entity_type != "Entity":
