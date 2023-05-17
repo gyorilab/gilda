@@ -103,4 +103,4 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
         brat.append(row)
         row = f'#{idx}\tAnnotatorNotes T{idx}\t{curie}'
         brat.append(row)
-    return '\n'.join(brat)
+    return '\n'.join(brat) + '\n'
