@@ -61,8 +61,14 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
                     end_coord = word_coords[idx+span-1] + \
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
-                    entities.append((start_coord, end_coord,
-                                     raw_span, matches))
+
+                    # Append raw_span, curie, start, end
+                    match = matches[0]
+                    curie = match.term.db + ":" + match.term.id
+                    entities.append(
+                        (raw_span, curie, start_coord, end_coord)
+                    )
+
                     skip_until = idx + span
                     break
     return entities
@@ -73,14 +79,13 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
 
     Parameters
     ----------
-    entities : list[tuple[int, int, str, ScoredMatch]]
-        A list of tuples of start and end character offsets of the text
-        corresponding to the entity, the entity text, and the ScoredMatch
-        object corresponding to the entity.
+    entities : list[tuple[str, str, int, int]]
+        A list of tuples of entity text, grounded curie, start and end
+        character offsets in the text corresponding to an entity.
     entity_type : str, optional
         The brat entity type to use for the annotations. The default is
-        'Entity'. This is useful for differentiating between annotations
-        extracted from different reading systems.
+        'Entity'. This is useful for differentiating between annotations in
+        the same text extracted from different reading systems.
     ix_offset : int, optional
         The index offset to use for the brat annotations. The default is 1.
 
@@ -91,13 +96,11 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
     """
     brat = []
     ix_offset = max(1, ix_offset)
-    for idx, (start, end, raw_span, matches) in enumerate(entities, ix_offset):
-        match = matches[0]
-        grounding = match.term.db + ":" + match.term.id
+    for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
         if entity_type != "Entity":
-            grounding += f" Reading system: {entity_type}"
+            curie += f"; Reading system: {entity_type}"
         row = f'T{idx}\t{entity_type} {start} {end}\t{raw_span}'
         brat.append(row)
-        row = f'#{idx}\tAnnotatorNotes T{idx}\t{grounding}'
+        row = f'#{idx}\tAnnotatorNotes T{idx}\t{curie}'
         brat.append(row)
     return '\n'.join(brat)
