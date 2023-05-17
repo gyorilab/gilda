@@ -22,7 +22,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
 
     Returns
     -------
-    list[tuple[int, int, str, ScoredMatch]]
+    list[tuple[str, str, int, int]]
         A list of tuples of start and end character offsets of the text
         corresponding to the entity, the entity text, and the ScoredMatch
         object corresponding to the entity.
