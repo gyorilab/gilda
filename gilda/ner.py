@@ -74,7 +74,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
     return entities
 
 
-def get_brat(entities, entity_type="Entity", ix_offset=1):
+def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     """Return brat-formatted annotation strings for the given entities.
 
     Parameters
@@ -88,6 +88,10 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
         the same text extracted from different reading systems.
     ix_offset : int, optional
         The index offset to use for the brat annotations. The default is 1.
+    include_text : bool, optional
+        Whether to include the text of the entity in the brat annotations.
+        The default is True. If not provided, the text that matches the span
+        will be written to the annotation file.
 
     Returns
     -------
@@ -99,7 +103,9 @@ def get_brat(entities, entity_type="Entity", ix_offset=1):
     for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
-        row = f'T{idx}\t{entity_type} {start} {end}\t{raw_span}'
+        row = f'T{idx}\t{entity_type} {start} {end}' + (
+            f'\t{raw_span}' if include_text else ''
+        )
         brat.append(row)
         row = f'#{idx}\tAnnotatorNotes T{idx}\t{curie}'
         brat.append(row)
