@@ -22,7 +22,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
 
     Returns
     -------
-    list[tuple[str, str, int, int]]
+    list[tuple[str, ScoredMatch, int, int]]
         A list of tuples of start and end character offsets of the text
         corresponding to the entity, the entity text, and the ScoredMatch
         object corresponding to the entity.
@@ -64,9 +64,8 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
 
                     # Append raw_span, curie, start, end
                     match = matches[0]
-                    curie = match.term.db + ":" + match.term.id
                     entities.append(
-                        (raw_span, curie, start_coord, end_coord)
+                        (raw_span, match, start_coord, end_coord)
                     )
 
                     skip_until = idx + span
@@ -100,7 +99,8 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     """
     brat = []
     ix_offset = max(1, ix_offset)
-    for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
+    for idx, (raw_span, match, start, end) in enumerate(entities, ix_offset):
+        curie = match.term.get_curie()
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
         row = f'T{idx}\t{entity_type} {start} {end}' + (
