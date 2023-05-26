@@ -1,5 +1,7 @@
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
+
+from gilda import ScoredMatch
 from gilda.process import normalize
 
 stop_words = set(stopwords.words('english'))
@@ -62,7 +64,7 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
 
-                    # Append raw_span, curie, start, end
+                    # Append raw_span, (best) match, start, end
                     match = matches[0]
                     entities.append(
                         (raw_span, match, start_coord, end_coord)
@@ -78,7 +80,7 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
 
     Parameters
     ----------
-    entities : list[tuple[str, str, int, int]]
+    entities : list[tuple[str, str | ScoredMatch, int, int]]
         A list of tuples of entity text, grounded curie, start and end
         character offsets in the text corresponding to an entity.
     entity_type : str, optional
@@ -99,8 +101,9 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     """
     brat = []
     ix_offset = max(1, ix_offset)
-    for idx, (raw_span, match, start, end) in enumerate(entities, ix_offset):
-        curie = match.term.get_curie()
+    for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
+        if isinstance(curie, ScoredMatch):
+            curie = curie.term.get_curie()
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
         row = f'T{idx}\t{entity_type} {start} {end}' + (
