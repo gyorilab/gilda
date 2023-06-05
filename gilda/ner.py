@@ -1,19 +1,20 @@
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
+from gilda import api
 from gilda.process import normalize
 
 stop_words = set(stopwords.words('english'))
 
 
-def annotate(grounder, text, sent_split_fun=sent_tokenize):
+def annotate(text, grounder=None, sent_split_fun=sent_tokenize):
     """Annotate a given text with Gilda.
 
     Parameters
     ----------
-    grounder : gilda.grounder.Grounder
-        The Gilda grounder to use for grounding.
     text : str
         The text to be annotated.
+    grounder : gilda.grounder.Grounder, optional
+        The Gilda grounder to use for grounding.
     sent_split_fun : Callable, optional
         A function that splits the text into sentences. The default is
         nltk.tokenize.sent_tokenize. The function should take a string as
@@ -27,6 +28,8 @@ def annotate(grounder, text, sent_split_fun=sent_tokenize):
         corresponding to the entity, the entity text, and the ScoredMatch
         object corresponding to the entity.
     """
+    if grounder is None:
+        grounder = api.grounder
     # Get sentences
     sentences = sent_split_fun(text)
     text_coord = 0
