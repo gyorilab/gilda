@@ -23,6 +23,18 @@ ui_blueprint = Blueprint("ui", __name__, url_prefix="/")
 # a fake "current_app" object.
 grounder = LocalProxy(lambda: current_app.config["grounder"])
 
+ORGANISMS_FIELD = SelectMultipleField(
+    'Species priority (optional)',
+    choices=[(org, organism_labels[org]) for org in popular_organisms],
+    id='organism-select',
+    description=dedent("""\
+        Optionally select one or more taxonomy
+        species IDs to define a species priority list.  Click
+        <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
+        here <i class="far fa-question-circle">
+        </i></a> for more details.
+    """),
+)
 
 class GroundForm(FlaskForm):
     text = StringField(
@@ -44,18 +56,7 @@ class GroundForm(FlaskForm):
             </i></a> for more details.
         """)
     )
-    organisms = SelectMultipleField(
-        'Species priority (optional)',
-        choices=[(org, organism_labels[org]) for org in popular_organisms],
-        id='organism-select',
-        description=dedent("""\
-            Optionally select one or more taxonomy
-            species IDs to define a species priority list.  Click
-            <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
-            here <i class="far fa-question-circle">
-            </i></a> for more details.
-        """),
-    )
+    organisms = ORGANISMS_FIELD
     submit = SubmitField('Submit')
 
     def get_matches(self):
@@ -66,15 +67,19 @@ class GroundForm(FlaskForm):
 class NERForm(FlaskForm):
     text = TextAreaField(
         'Text',
+        validators=[DataRequired()],
         description=dedent("""\
             Text from which to identify and ground named entities.
         """)
     )
+    organisms = ORGANISMS_FIELD
     submit = SubmitField('Submit')
 
     def get_annotations(self):
         from gilda.ner import annotate
-        return annotate(self.text.data, grounder)
+
+        return annotate(self.text.data, grounder=grounder,
+                        organisms=self.organisms.data)
 
 
 @ui_blueprint.route('/', methods=['GET', 'POST'])
