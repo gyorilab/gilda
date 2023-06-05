@@ -59,7 +59,7 @@ def annotate(text, grounder=None, sent_split_fun=sent_tokenize):
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
                 txt_span = ' '.join(words[idx:idx+span])
-                matches = grounder.ground(txt_span)
+                matches = grounder.ground(txt_span, context=text)
                 if matches:
                     start_coord = word_coords[idx]
                     end_coord = word_coords[idx+span-1] + \
