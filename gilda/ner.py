@@ -1,6 +1,7 @@
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
-from gilda import api
+
+from gilda import api, ScoredMatch
 from gilda.process import normalize
 
 stop_words = set(stopwords.words('english'))
@@ -23,7 +24,7 @@ def annotate(text, grounder=None, sent_split_fun=sent_tokenize):
 
     Returns
     -------
-    list[tuple[str, str, int, int]]
+    list[tuple[str, ScoredMatch, int, int]]
         A list of tuples of start and end character offsets of the text
         corresponding to the entity, the entity text, and the ScoredMatch
         object corresponding to the entity.
@@ -65,11 +66,10 @@ def annotate(text, grounder=None, sent_split_fun=sent_tokenize):
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
 
-                    # Append raw_span, curie, start, end
+                    # Append raw_span, (best) match, start, end
                     match = matches[0]
-                    curie = match.term.db + ":" + match.term.id
                     entities.append(
-                        (raw_span, curie, start_coord, end_coord)
+                        (raw_span, match, start_coord, end_coord)
                     )
 
                     skip_until = idx + span
@@ -82,7 +82,7 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
 
     Parameters
     ----------
-    entities : list[tuple[str, str, int, int]]
+    entities : list[tuple[str, str | ScoredMatch, int, int]]
         A list of tuples of entity text, grounded curie, start and end
         character offsets in the text corresponding to an entity.
     entity_type : str, optional
@@ -104,6 +104,8 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     brat = []
     ix_offset = max(1, ix_offset)
     for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
+        if isinstance(curie, ScoredMatch):
+            curie = curie.term.get_curie()
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
         row = f'T{idx}\t{entity_type} {start} {end}' + (
