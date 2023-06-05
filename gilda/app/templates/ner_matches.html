@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block gcontent %}
+    {% if form is defined %}
+        {{ render_ner_form(form) }}
+    {% endif %}
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">NER Results</h3>
+        </div>
+        <div class="panel-body">
+            <blockquote>
+                {{ text }}
+            </blockquote>
+        </div>
+        <table class="table table-striped table-hover">
+            <thead>
+            <tr>
+                <th>Span</th>
+                <th>Grounding</th>
+                <th>Name</th>
+                <th>Score</th>
+                <th>Additional Groundings</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for text, match, start, end in annotations %}
+                <tr>
+                    {% set match_curie = match.term.get_curie() %}
+                    <td>{{start}}-{{end}}</td>
+                    <td>
+                        <a class="label label-primary" href="{{ match['url'] }}">
+                            {{ match_curie }}
+                        </a>
+                    </td>
+                    <td>{{ match['term']['entry_name'] }}</td>
+                    <td class="text-right">{{ match['score'] | round(4) }}</td>
+                    <td>
+                        {% for xref_curie, xref_url in match.get_grounding_dict().items() %}
+                            {% if xref_curie != match_curie %}
+                                <a class="label label-info" href="{{ xref_url }}">
+                                    {{ xref_curie }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

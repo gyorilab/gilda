@@ -63,6 +63,20 @@ class GroundForm(FlaskForm):
                                organisms=self.organisms.data)
 
 
+class NERForm(FlaskForm):
+    text = TextAreaField(
+        'Text',
+        description=dedent("""\
+            Text from which to identify and ground named entities.
+        """)
+    )
+    submit = SubmitField('Submit')
+
+    def get_annotations(self):
+        from gilda.ner import annotate
+        return annotate(self.text.data, grounder)
+
+
 @ui_blueprint.route('/', methods=['GET', 'POST'])
 def home():
     text = request.args.get('text')
@@ -86,6 +100,22 @@ def home():
             form=GroundForm(formdata=None),
         )
     return render_template('home.html', form=form, version=version)
+
+
+@ui_blueprint.route('/ner', methods=['GET', 'POST'])
+def view_ner():
+    form = NERForm()
+    if form.validate_on_submit():
+        annotations = form.get_annotations()
+        return render_template(
+            'ner_matches.html',
+            annotations=annotations,
+            version=version,
+            text=form.text.data,
+            # Add a new form that doesn't auto-populate
+            form=NERForm(formdata=None),
+        )
+    return render_template('ner_home.html', form=form, version=version)
 
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
