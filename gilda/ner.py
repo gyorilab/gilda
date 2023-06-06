@@ -27,6 +27,12 @@ def annotate(
         nltk.tokenize.sent_tokenize. The function should take a string as
         input and return an iterable of strings corresponding to the sentences
         in the input text.
+    organisms : list[str], optional
+        A list of organism names to pass to the grounder. If not provided,
+        human is used.
+    namespaces : list[str], optional
+        A list of namespaces to pass to the grounder to restrict the matches
+        to. By default, no restriction is applied.
 
     Returns
     -------
