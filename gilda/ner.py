@@ -1,7 +1,7 @@
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
-from gilda import api, ScoredMatch
+from gilda import ScoredMatch, get_grounder
 from gilda.process import normalize
 
 stop_words = set(stopwords.words('english'))
@@ -42,7 +42,7 @@ def annotate(
         object corresponding to the entity.
     """
     if grounder is None:
-        grounder = api.grounder
+        grounder = get_grounder()
     # Get sentences
     sentences = sent_split_fun(text)
     text_coord = 0
