@@ -1,0 +1,40 @@
+import gilda
+from gilda.ner import annotate
+
+
+def test_annotate():
+    full_text = \
+        "The protein BRAF is a kinase.\nBRAF is a gene.\nBRAF is a protein."
+
+    annotations = annotate(full_text)
+    assert isinstance(annotations, list)
+
+    # Check that we get 7 annotations
+    assert len(annotations) == 7
+
+    # Check that the annotations are for the expected words
+    assert tuple(a[0] for a in annotations) == (
+        'protein', 'BRAF', 'kinase', 'BRAF', 'gene', 'BRAF', 'protein')
+
+    # Check that the spans are correct
+    assert annotations[0][2:4] == (4, 11)  # protein
+    assert annotations[1][2:4] == (12, 16)  # BRAF
+    assert annotations[2][2:4] == (22, 28)  # kinase
+    assert annotations[3][2:4] == (30, 34)  # BRAF
+    assert annotations[4][2:4] == (40, 44)  # gene
+    assert annotations[5][2:4] == (46, 50)  # BRAF
+    assert annotations[6][2:4] == (56, 63)  # protein
+
+    # Check that the curies are correct
+    assert isinstance(annotations[0][1], gilda.ScoredMatch)
+    assert annotations[0][1].term.get_curie() == "CHEBI:36080"
+    assert annotations[1][1].term.get_curie() == "hgnc:1097"
+    assert annotations[2][1].term.get_curie() == "mesh:D010770"
+    assert annotations[3][1].term.get_curie() == "hgnc:1097"
+    assert annotations[4][1].term.get_curie() == "mesh:D005796"
+    assert annotations[5][1].term.get_curie() == "hgnc:1097"
+    assert annotations[6][1].term.get_curie() == "CHEBI:36080"
+
+
+def test_get_brat():
+    pass
