@@ -62,6 +62,30 @@
     </script>
 {% endblock %}
 
+{% macro render_species_modal() %}
+<div class="modal fade" id="species-modal" tabindex="-1" role="dialog" aria-labelledby="speciesModalLabel"
+             aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Species Prioritization</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Species prioritization is applied in case matches are found to proteins from multiple
+                    species (human, mouse, yeast, etc). In case of matches to multiple species for a given
+                    input, this (optional) input list is used to prioritize matches. The priority list can be
+                    determined based on the user case or knowledge about the context in which the given entity
+                    text appeared. The species list is adopted from UniProt's
+                    <a href="https://www.uniprot.org/help/filter_options">popular organisms</a> list.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 {% macro render_form(form) %}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -102,26 +126,24 @@
             </div>
         </div>
 
-        <div class="modal fade" id="species-modal" tabindex="-1" role="dialog" aria-labelledby="speciesModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title">Species Prioritization</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>
-                            Species prioritization is applied in case matches are found to proteins from multiple
-                            species (human, mouse, yeast, etc). In case of matches to multiple species for a given
-                            input, this (optional) input list is used to prioritize matches. The priority list can be
-                            determined based on the user case or knowledge about the context in which the given entity
-                            text appeared. The species list is adopted from UniProt's
-                            <a href="https://www.uniprot.org/help/filter_options">popular organisms</a> list.
-                        </p>
-                    </div>
-                </div>
-            </div>
+        {{ render_species_modal() }}
+    </div>
+{% endmacro %}
+
+
+{% macro render_ner_form(form) %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Gilda NER Input</h3>
+        </div>
+        <div class="panel-body">
+            <form class="form" method="POST" role="form">
+                {{ wtf.form_field(form.text) }}
+                {{ wtf.form_field(form.organisms, class_="form-control") }}
+                {{ wtf.form_field(form.submit, class="btn btn-primary") }}
+            </form>
         </div>
     </div>
+
+    {{ render_species_modal() }}
 {% endmacro %}

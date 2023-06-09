@@ -57,6 +57,11 @@ class SqliteEntries:
         res = self.get_connection().execute("SELECT COUNT(norm_text) FROM terms")
         return res.fetchone()[0]
 
+    def __iter__(self):
+        res = self.get_connection().execute("SELECT norm_text FROM terms")
+        for norm_text, in res.fetchall():
+            yield norm_text
+
 
 def build(grounding_entries, path=None):
     """Build a SQLite database file from a set of grounding entries.

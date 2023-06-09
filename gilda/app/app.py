@@ -23,6 +23,18 @@ ui_blueprint = Blueprint("ui", __name__, url_prefix="/")
 # a fake "current_app" object.
 grounder = LocalProxy(lambda: current_app.config["grounder"])
 
+ORGANISMS_FIELD = SelectMultipleField(
+    'Species priority (optional)',
+    choices=[(org, organism_labels[org]) for org in popular_organisms],
+    id='organism-select',
+    description=dedent("""\
+        Optionally select one or more taxonomy
+        species IDs to define a species priority list.  Click
+        <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
+        here <i class="far fa-question-circle">
+        </i></a> for more details.
+    """),
+)
 
 class GroundForm(FlaskForm):
     text = StringField(
@@ -44,23 +56,30 @@ class GroundForm(FlaskForm):
             </i></a> for more details.
         """)
     )
-    organisms = SelectMultipleField(
-        'Species priority (optional)',
-        choices=[(org, organism_labels[org]) for org in popular_organisms],
-        id='organism-select',
-        description=dedent("""\
-            Optionally select one or more taxonomy
-            species IDs to define a species priority list.  Click
-            <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
-            here <i class="far fa-question-circle">
-            </i></a> for more details.
-        """),
-    )
+    organisms = ORGANISMS_FIELD
     submit = SubmitField('Submit')
 
     def get_matches(self):
         return grounder.ground(self.text.data, context=self.context.data,
                                organisms=self.organisms.data)
+
+
+class NERForm(FlaskForm):
+    text = TextAreaField(
+        'Text',
+        validators=[DataRequired()],
+        description=dedent("""\
+            Text from which to identify and ground named entities.
+        """)
+    )
+    organisms = ORGANISMS_FIELD
+    submit = SubmitField('Submit')
+
+    def get_annotations(self):
+        from gilda.ner import annotate
+
+        return annotate(self.text.data, grounder=grounder,
+                        organisms=self.organisms.data)
 
 
 @ui_blueprint.route('/', methods=['GET', 'POST'])
@@ -86,6 +105,22 @@ def home():
             form=GroundForm(formdata=None),
         )
     return render_template('home.html', form=form, version=version)
+
+
+@ui_blueprint.route('/ner', methods=['GET', 'POST'])
+def view_ner():
+    form = NERForm()
+    if form.validate_on_submit():
+        annotations = form.get_annotations()
+        return render_template(
+            'ner_matches.html',
+            annotations=annotations,
+            version=version,
+            text=form.text.data,
+            # Add a new form that doesn't auto-populate
+            form=NERForm(formdata=None),
+        )
+    return render_template('ner_home.html', form=form, version=version)
 
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
