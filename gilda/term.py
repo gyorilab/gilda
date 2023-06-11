@@ -47,7 +47,7 @@ class Term(object):
 
     def __init__(self, norm_text, text, db, id, entry_name, status, source,
                  organism=None, source_db=None, source_id=None):
-        if not text:
+        if not text or not isinstance(text, str):
             raise ValueError('Text for Term cannot be empty')
         self.norm_text = norm_text
         self.text = text

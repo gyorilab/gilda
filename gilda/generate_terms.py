@@ -172,7 +172,7 @@ def generate_chebi_terms():
                         row['COMPOUND_ID'])
             continue
         db = 'CHEBI'
-        name = str(row['NAME'])
+        name = str(row['NAME']).strip()
         chebi_name = \
             chebi_client.get_chebi_name_from_id(chebi_id, offline=True)
         if chebi_name is None:
@@ -593,6 +593,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         if doid_name:
             db, db_id, name = 'DOID', doid, doid_name
 
+    name = name.strip()
+
     # Add a term for the name first
     name_term = Term(
         norm_text=normalize(name),
@@ -624,6 +626,8 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         if match:
             synonym = match.groups()[0]
 
+        synonym = synonym.strip()
+
         synonym_term = Term(
             norm_text=normalize(synonym),
             text=synonym,
@@ -650,6 +654,31 @@ def _generate_obo_terms(prefix, ignore_mappings=False, map_to_ns=None):
                                            ignore_mappings=ignore_mappings,
                                            map_to_ns=map_to_ns)
     logger.info('Loaded %d terms from %s', len(terms), prefix)
+    return terms
+
+
+def generate_entrez_terms():
+    import pandas as pd
+    df = pd.read_csv('https://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/'
+                     'Homo_sapiens.gene_info.gz', sep='\t',
+                     keep_default_na=False, na_values=['_'])
+    terms = []
+    for _, row in df.iterrows():
+        entrez_id = str(row['GeneID'])
+        hgnc_id = hgnc_client.get_hgnc_from_entrez(entrez_id)
+        if not hgnc_id:
+            continue
+        hgnc_symbol = hgnc_client.get_hgnc_name(hgnc_id)
+        synonyms = row['Synonyms'].split('|') if row['Synonyms'] != '-' else []
+        other_designations = row['Other_designations'].split('|') \
+            if row['Other_designations'] != '-' else []
+        for syn in synonyms + other_designations:
+            if syn.startswith('(') and syn.endswith(')'):
+                continue
+            terms.append(
+                Term(normalize(syn), syn, 'HGNC', hgnc_id, hgnc_symbol,
+                     'synonym', 'entrez', '9606', 'EGID', entrez_id)
+            )
     return terms
 
 
@@ -689,6 +718,7 @@ def get_all_terms():
         generate_uniprot_terms(),
         generate_famplex_terms(),
         generate_hgnc_terms(),
+        generate_entrez_terms(),
         generate_chebi_terms(),
         generate_go_terms(),
         generate_mesh_terms(),
