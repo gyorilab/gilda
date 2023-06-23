@@ -15,7 +15,7 @@ from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
-from .scorer import Match, generate_match, score, score_namespace
+from .scorer import Match, generate_match, score
 from .resources import get_gilda_models, get_grounding_terms
 
 __all__ = [
@@ -157,7 +157,7 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def score_namespace(self, term) -> int:
+    def _score_namespace(self, term) -> int:
         """Apply a priority to the term based on its namespace.
 
         .. note::
@@ -238,7 +238,7 @@ class Grounder(object):
             unique_scores = self.disambiguate(raw_str, unique_scores, context)
 
         # Then sort by decreasing score
-        rank_fun = lambda x: (x.score, self.score_namespace(x.term))
+        rank_fun = lambda x: (x.score, self._score_namespace(x.term))
         unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
 
         # If we have a namespace constraint, we filter to the given
