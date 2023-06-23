@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 GrounderInput = Union[str, Path, List[Term], Mapping[str, List[Term]]]
 
+#: The default prefix priority order
+DEFAULT_ORDER = ['FPLX', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'DOID', 'HP', 'EFO']
+
 
 class Grounder(object):
     """Class to look up and ground query texts in a terms file.
@@ -53,11 +56,22 @@ class Grounder(object):
         - If :class:`dict`, it is assumed to be a grounding terms dict with
           normalized entity strings as keys and :class:`gilda.term.Term`
           instances as values.
+    order :
+        Specifies a term namespace priority order. For example, if multiple
+        terms are matched with the same score, will use this list to decide
+        which are given by which namespace appears further towards the front
+        of the list. By default, :data:`DEFAULT_ORDER` is used, which, for
+        example, prioritizes famplex entities over HGNC ones.
     """
 
     entries: Mapping[str, List[Term]]
 
-    def __init__(self, terms: Optional[GrounderInput] = None):
+    def __init__(
+        self,
+        terms: Optional[GrounderInput] = None,
+        *,
+        order: Optional[List[str]] = None,
+    ):
         if terms is None:
             terms = get_grounding_terms()
 
@@ -84,6 +98,8 @@ class Grounder(object):
 
         self.adeft_disambiguators = find_adeft_models()
         self.gilda_disambiguators = None
+
+        self.order = DEFAULT_ORDER if order is None else order
 
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
@@ -140,6 +156,19 @@ class Grounder(object):
         logger.debug('Looking up the following strings: %s' %
                      ', '.join(lookups))
         return lookups
+
+    def score_namespace(self, term) -> int:
+        """Apply a priority to the term based on its namespace.
+
+        .. note::
+
+            This is currently not included as an explicit score term.
+            It is just used to rank identically scored entries.
+        """
+        try:
+            return len(self.order) - self.order.index(term.db)
+        except ValueError:
+            return 0
 
     def ground(self, raw_str, context=None, organisms=None,
                namespaces=None):
@@ -209,7 +238,7 @@ class Grounder(object):
             unique_scores = self.disambiguate(raw_str, unique_scores, context)
 
         # Then sort by decreasing score
-        rank_fun = lambda x: (x.score, score_namespace(x.term))
+        rank_fun = lambda x: (x.score, self.score_namespace(x.term))
         unique_scores = sorted(unique_scores, key=rank_fun, reverse=True)
 
         # If we have a namespace constraint, we filter to the given

@@ -7,7 +7,6 @@ __all__ = [
     "generate_match",
     "score_string_match",
     "score_status",
-    "score_namespace",
     "score",
 ]
 
