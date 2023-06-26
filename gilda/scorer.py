@@ -7,7 +7,6 @@ __all__ = [
     "generate_match",
     "score_string_match",
     "score_status",
-    "score_namespace",
     "score",
 ]
 
@@ -245,16 +244,6 @@ def score_status(term):
         'former_name': 1,
     }
     return scores[term.status]
-
-
-def score_namespace(term):
-    """Note: this is currently not included as an explicit score term.
-    It is just used to rank identically scored entries."""
-    order = ['FPLX', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'DOID', 'HP', 'EFO']
-    try:
-        return len(order) - order.index(term.db)
-    except ValueError:
-        return 0
 
 
 def score(match, term):

@@ -79,6 +79,16 @@ def test_disambiguate_gilda():
 def test_rank_namespace():
     matches = gr.ground('interferon-gamma')
     assert matches[0].term.db == 'HGNC'
+    assert matches[1].term.db == 'EFO'
+
+
+def test_rank_namespace_custom_order():
+    """Test when applying a custom order.
+    See also the above test ``test_rank_namespace``."""
+    custom_grounder = Grounder(namespace_priority=["EFO", "HGNC"])
+    matches = custom_grounder.ground('interferon-gamma')
+    assert matches[0].term.db == 'EFO'
+    assert matches[1].term.db == 'HGNC'
 
 
 def test_aa_synonym():
