@@ -34,8 +34,10 @@ logger = logging.getLogger(__name__)
 
 GrounderInput = Union[str, Path, List[Term], Mapping[str, List[Term]]]
 
-#: The default prefix priority order
-DEFAULT_ORDER = ['FPLX', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'DOID', 'HP', 'EFO']
+#: The default namespace priority order
+DEFAULT_NAMESPACE_PRIORITY = [
+    'FPLX', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'DOID', 'HP', 'EFO'
+]
 
 
 class Grounder(object):
@@ -56,7 +58,7 @@ class Grounder(object):
         - If :class:`dict`, it is assumed to be a grounding terms dict with
           normalized entity strings as keys and :class:`gilda.term.Term`
           instances as values.
-    order :
+    namespace_priority :
         Specifies a term namespace priority order. For example, if multiple
         terms are matched with the same score, will use this list to decide
         which are given by which namespace appears further towards the front
@@ -70,7 +72,7 @@ class Grounder(object):
         self,
         terms: Optional[GrounderInput] = None,
         *,
-        order: Optional[List[str]] = None,
+        namespace_priority: Optional[List[str]] = None,
     ):
         if terms is None:
             terms = get_grounding_terms()
@@ -99,7 +101,11 @@ class Grounder(object):
         self.adeft_disambiguators = find_adeft_models()
         self.gilda_disambiguators = None
 
-        self.order = DEFAULT_ORDER if order is None else order
+        self.namespace_priority = (
+            DEFAULT_NAMESPACE_PRIORITY
+            if namespace_priority is None else
+            namespace_priority
+        )
 
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
@@ -166,7 +172,7 @@ class Grounder(object):
             It is just used to rank identically scored entries.
         """
         try:
-            return len(self.order) - self.order.index(term.db)
+            return len(self.namespace_priority) - self.namespace_priority.index(term.db)
         except ValueError:
             return 0
 
