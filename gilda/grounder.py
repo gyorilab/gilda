@@ -62,11 +62,12 @@ class Grounder(object):
         Specifies a term namespace priority order. For example, if multiple
         terms are matched with the same score, will use this list to decide
         which are given by which namespace appears further towards the front
-        of the list. By default, :data:`DEFAULT_ORDER` is used, which, for
-        example, prioritizes famplex entities over HGNC ones.
+        of the list. By default, :data:`DEFAULT_NAMESPACE_PRIORITY` is used,
+        which, for example, prioritizes famplex entities over HGNC ones.
     """
 
     entries: Mapping[str, List[Term]]
+    namespace_priority: List[str]
 
     def __init__(
         self,
