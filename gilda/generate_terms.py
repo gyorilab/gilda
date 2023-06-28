@@ -5,7 +5,6 @@ to be available locally."""
 import re
 import os
 import csv
-import gzip
 import json
 import logging
 import requests
@@ -13,7 +12,7 @@ import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
 from indra.statements.resources import amino_acids
-from .term import Term, filter_out_duplicates
+from .term import Term, dump_terms, filter_out_duplicates
 from .process import normalize
 from .resources import resource_dir, popular_organisms
 
@@ -702,17 +701,6 @@ def get_all_terms():
 
     terms = filter_out_duplicates(terms)
     return terms
-
-
-def dump_terms(terms, fname):
-    """Dump a list of terms to a tsv.gz file."""
-    logger.info('Dumping into %s' % fname)
-    header = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
-              'source', 'organism', 'source_db', 'source_id']
-    with gzip.open(fname, 'wt', encoding='utf-8') as fh:
-        writer = csv.writer(fh, delimiter='\t')
-        writer.writerow(header)
-        writer.writerows(t.to_list() for t in terms)
 
 
 def main():
