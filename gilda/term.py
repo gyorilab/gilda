@@ -1,12 +1,15 @@
+import csv
+import gzip
 import itertools
 import logging
-from typing import Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 __all__ = [
     "Term",
     "get_identifiers_curie",
     "get_identifiers_url",
     "filter_out_duplicates",
+    "dump_terms",
 ]
 
 logger = logging.getLogger(__name__)
@@ -179,3 +182,16 @@ def filter_out_duplicates(terms):
     new_terms = sorted(new_terms, key=lambda x: (x.text, x.db, x.id))
     logger.info('Got %d unique terms...' % len(new_terms))
     return new_terms
+
+
+TERMS_HEADER = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
+                'source', 'organism', 'source_db', 'source_id']
+
+
+def dump_terms(terms: List[Term], fname) -> None:
+    """Dump a list of terms to a tsv.gz file."""
+    logger.info('Dumping into %s', fname)
+    with gzip.open(fname, 'wt', encoding='utf-8') as fh:
+        writer = csv.writer(fh, delimiter='\t')
+        writer.writerow(TERMS_HEADER)
+        writer.writerows(t.to_list() for t in terms)
