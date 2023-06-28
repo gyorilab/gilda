@@ -2,7 +2,7 @@ import csv
 import gzip
 import itertools
 import logging
-from typing import List, Optional, Set, Tuple
+from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
     "Term",
@@ -188,7 +188,7 @@ TERMS_HEADER = ['norm_text', 'text', 'db', 'id', 'entry_name', 'status',
                 'source', 'organism', 'source_db', 'source_id']
 
 
-def dump_terms(terms: List[Term], fname) -> None:
+def dump_terms(terms: Iterable[Term], fname) -> None:
     """Dump a list of terms to a tsv.gz file."""
     logger.info('Dumping into %s', fname)
     with gzip.open(fname, 'wt', encoding='utf-8') as fh:
