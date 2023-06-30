@@ -36,6 +36,13 @@ Process
     :members:
     :show-inheritance:
 
+Named Entity Recognition
+------------------------
+.. automodule:: gilda.ner
+    :members:
+    :show-inheritance:
+
+
 Pandas Utilities
 ----------------
 .. automodule:: gilda.pandas_utils

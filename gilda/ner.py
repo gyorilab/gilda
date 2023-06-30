@@ -1,8 +1,58 @@
+"""
+Gilda implements a simple dictionary-based named entity
+recognition (NER) algorithm. It can be used as follows:
+
+>>> from gilda.ner import annotate
+>>> text = "MEK phosphorylates ERK"
+>>> results = annotate(text)
+
+The results are a list of 4-tuples containing:
+- the text string matched
+- a :class:`gilda.ScoredMatch` instance containing the _best_ match
+- the position in the text string where the entity starts
+- the position in the text string where the entity ends
+
+In this example, the two concepts are grounded to FamPlex entries.
+
+>>> results[0][0], results[0][1].term.get_curie(), results[0][2], results[0][3]
+('MEK', 'fplx:MEK', 0, 3)
+>>> results[1][0], results[1][1].term.get_curie(), results[1][2], results[1][3]
+('ERK', 'fplx:ERK', 19, 22)
+
+If you directly look in the second part of the 4-tuple, you get a full
+description of the match itself:
+
+>>> results[0][1]
+ScoredMatch(Term(mek,MEK,FPLX,MEK,MEK,curated,famplex,None,None,None),\
+0.9288806431663574,Match(query=mek,ref=MEK,exact=False,space_mismatch=\
+False,dash_mismatches=set(),cap_combos=[('all_lower', 'all_caps')]))
+
+BRAT
+----
+Gilda implements a way to output annotation in a format appropriate for the
+`BRAT Rapid Annotation Tool (BRAT) <https://brat.nlplab.org/index.html>`_
+
+>>> from gilda.ner import get_brat
+>>> from pathlib import Path
+>>> brat_string = get_brat(results)
+>>> Path("results.ann").write_text(brat_string)
+>>> Path("results.txt").write_text(text)
+
+For brat to work, you need to store the text in a file with
+the extension `.txt` and the annotations in a file with the
+same name but extension `.ann`.
+"""
+
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
 from gilda import ScoredMatch, get_grounder
 from gilda.process import normalize
+
+__all__ = [
+    "annotate",
+    "get_brat",
+]
 
 stop_words = set(stopwords.words('english'))
 
