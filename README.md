@@ -53,7 +53,7 @@ import gilda
 scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
 ```
 
-Gilda can implements a simple dictionary-based named entity recognition (NER)
+Gilda also implements a simple dictionary-based named entity recognition (NER)
 algorithm that can be used as follows:
 
 ```python
