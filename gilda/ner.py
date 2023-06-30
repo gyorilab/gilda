@@ -7,8 +7,9 @@ recognition (NER) algorithm. It can be used as follows:
 >>> results = annotate(text)
 
 The results are a list of 4-tuples containing:
+
 - the text string matched
-- a :class:`gilda.ScoredMatch` instance containing the _best_ match
+- a :class:`gilda.grounder.ScoredMatch` instance containing the _best_ match
 - the position in the text string where the entity starts
 - the position in the text string where the entity ends
 
@@ -30,7 +31,7 @@ False,dash_mismatches=set(),cap_combos=[('all_lower', 'all_caps')]))
 BRAT
 ----
 Gilda implements a way to output annotation in a format appropriate for the
-`BRAT Rapid Annotation Tool (BRAT) <https://brat.nlplab.org/index.html>`_
+`BRAT Rapid Annotation Tool (BRAT) <https://brat.nlplab.org/index.html>`_.
 
 >>> from gilda.ner import get_brat
 >>> from pathlib import Path
@@ -39,8 +40,8 @@ Gilda implements a way to output annotation in a format appropriate for the
 >>> Path("results.txt").write_text(text)
 
 For brat to work, you need to store the text in a file with
-the extension `.txt` and the annotations in a file with the
-same name but extension `.ann`.
+the extension ``.txt`` and the annotations in a file with the
+same name but extension ``.ann``.
 """
 
 from nltk.corpus import stopwords
