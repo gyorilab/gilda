@@ -44,6 +44,8 @@ the extension ``.txt`` and the annotations in a file with the
 same name but extension ``.ann``.
 """
 
+from typing import List, Tuple
+
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
@@ -53,18 +55,21 @@ from gilda.process import normalize
 __all__ = [
     "annotate",
     "get_brat",
+    "Annotation",
 ]
 
 stop_words = set(stopwords.words('english'))
+
+Annotation = Tuple[str, ScoredMatch, int, int]
 
 
 def annotate(
     text, *,
     grounder=None,
-    sent_split_fun=sent_tokenize,
+    sent_split_fun=None,
     organisms=None,
     namespaces=None,
-):
+) -> List[Annotation]:
     """Annotate a given text with Gilda.
 
     Parameters
@@ -75,8 +80,8 @@ def annotate(
         The Gilda grounder to use for grounding.
     sent_split_fun : Callable, optional
         A function that splits the text into sentences. The default is
-        nltk.tokenize.sent_tokenize. The function should take a string as
-        input and return an iterable of strings corresponding to the sentences
+        :func:`nltk.tokenize.sent_tokenize`. The function should take a string
+        as input and return an iterable of strings corresponding to the sentences
         in the input text.
     organisms : list[str], optional
         A list of organism names to pass to the grounder. If not provided,
@@ -94,6 +99,8 @@ def annotate(
     """
     if grounder is None:
         grounder = get_grounder()
+    if sent_split_fun is None:
+        sent_split_fun = sent_tokenize
     # Get sentences
     sentences = sent_split_fun(text)
     text_coord = 0

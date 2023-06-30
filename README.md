@@ -52,6 +52,14 @@ import gilda
 scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
 ```
 
+Gilda can implements a simple dictionary-based named entity recognition (NER)
+algorithm that can be used as follows:
+
+```python
+import gilda
+results = gilda.annotate('Calcium is released from the ER.')
+```
+
 ### Use as a web service
 The REST service accepts POST requests with a JSON header on the /ground
 endpoint. There is a public REST service running at http://grounding.indra.bio

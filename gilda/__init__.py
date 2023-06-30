@@ -2,13 +2,14 @@ __version__ = '0.11.1'
 
 import logging
 
-from .api import get_grounder, get_models, get_names, ground, make_grounder
+from .api import get_grounder, get_models, get_names, ground, make_grounder, annotate
 from .grounder import Grounder, ScoredMatch
 from .pandas_utils import ground_df, ground_df_map
 from .term import Term
 
 __all__ = [
     'ground',
+    'annotate',
     'get_models',
     'get_names',
     'get_grounder',
