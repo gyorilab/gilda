@@ -30,10 +30,10 @@ also be regenerated locally by running `python -m gilda.generate_terms`.
 ## Documentation and notebooks
 Documentation for Gilda is available [here](https://gilda.readthedocs.io).
 We also provide several interactive Jupyter notebooks to help use and customize Gilda:
-- [This notebook](https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb) provides an interactive tutorial for using Gilda.
-- [This notebook](https://github.com/indralab/gilda/blob/master/notebooks/custom_grounders.ipynb) shows several examples of how Gilda can be instantiated with custom
+- [Gilda Introduction](https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb) provides an interactive tutorial for using Gilda.
+- [Custom Grounders](https://github.com/indralab/gilda/blob/master/notebooks/custom_grounders.ipynb) shows several examples of how Gilda can be instantiated with custom
 grounding resources.
-- [This notebook](https://github.com/indralab/gilda/blob/master/models/model_training.ipynb) provides interactive sample code for training
+- [Model Training](https://github.com/indralab/gilda/blob/master/models/model_training.ipynb) provides interactive sample code for training
 new disambiguation models.
 
 ## Usage
@@ -45,11 +45,20 @@ https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 ### Use as a Python package
 For using Gilda as a Python package, the documentation at
 http://gilda.readthedocs.org provides detailed descriptions of each module of
-Gilda and their usage. A basic usage example is as follows
+Gilda and their usage. A basic usage example for named entity normalization (NEN),
+or _grounding_ is as follows:
 
 ```python
 import gilda
 scored_matches = gilda.ground('ER', context='Calcium is released from the ER.')
+```
+
+Gilda also implements a simple dictionary-based named entity recognition (NER)
+algorithm that can be used as follows:
+
+```python
+import gilda
+results = gilda.annotate('Calcium is released from the ER.')
 ```
 
 ### Use as a web service

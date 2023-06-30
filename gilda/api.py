@@ -1,4 +1,11 @@
-__all__ = ['ground', 'get_models', 'get_names', 'get_grounder', 'make_grounder']
+__all__ = [
+    'ground',
+    'get_models',
+    'get_names',
+    'get_grounder',
+    'make_grounder',
+    'annotate',
+]
 
 from typing import List, Mapping, Union, Optional
 
@@ -28,6 +35,10 @@ class GrounderInstance(object):
         return self.get_grounder().get_names(db, id,
                                              status=status,
                                              source=source)
+
+    @property
+    def prefix_index(self):
+        return self.get_grounder().prefix_index
 
 
 grounder = GrounderInstance()
@@ -94,6 +105,48 @@ def ground(text, context=None, organisms=None, namespaces=None):
     >>> scored_matches = gilda.ground('ESR', namespaces=["hgnc"])
     """
     return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces)
+
+
+def annotate(
+    text: str,
+    sent_split_fun=None,
+    organisms=None,
+    namespaces=None,
+):
+    """Annotate a given text with Gilda (i.e., do named entity recognition).
+
+    Parameters
+    ----------
+    text : str
+        The text to be annotated.
+    sent_split_fun : Callable, optional
+        A function that splits the text into sentences. The default is
+        :func:`nltk.tokenize.sent_tokenize`. The function should take a string
+        as input and return an iterable of strings corresponding to the sentences
+        in the input text.
+    organisms : list[str], optional
+        A list of organism names to pass to the grounder. If not provided,
+        human is used.
+    namespaces : list[str], optional
+        A list of namespaces to pass to the grounder to restrict the matches
+        to. By default, no restriction is applied.
+
+    Returns
+    -------
+    list[tuple[str, ScoredMatch, int, int]]
+        A list of tuples of start and end character offsets of the text
+        corresponding to the entity, the entity text, and the ScoredMatch
+        object corresponding to the entity.
+    """
+    from .ner import annotate as _annotate
+
+    return _annotate(
+        text,
+        grounder=grounder,
+        sent_split_fun=sent_split_fun,
+        organisms=organisms,
+        namespaces=namespaces
+    )
 
 
 def get_models():
