@@ -8,7 +8,7 @@ def test_annotate():
     full_text = \
         "The protein BRAF is a kinase.\nBRAF is a gene.\nBRAF is a protein."
 
-    annotations = annotate(full_text)
+    annotations = gilda.annotate(full_text)
     assert isinstance(annotations, list)
 
     # Check that we get 7 annotations
@@ -42,7 +42,7 @@ def test_get_brat():
     full_text = \
         "The protein BRAF is a kinase.\nBRAF is a gene.\nBRAF is a protein."
 
-    brat_str = get_brat(annotate(full_text))
+    brat_str = get_brat(gilda.annotate(full_text))
 
     assert isinstance(brat_str, str)
     match_str = dedent("""

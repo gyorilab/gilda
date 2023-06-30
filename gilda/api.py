@@ -36,6 +36,10 @@ class GrounderInstance(object):
                                              status=status,
                                              source=source)
 
+    @property
+    def prefix_index(self):
+        return self.get_grounder().prefix_index
+
 
 grounder = GrounderInstance()
 
