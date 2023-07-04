@@ -43,7 +43,7 @@ setup(name='gilda',
                       'benchmarks': ['pandas>=1.0', 'requests',
                                      'tabulate', 'tqdm', 'click'],
                       'web': [
-                        'werkzeug<2.2'
+                        'werkzeug<2.2',
                         'flask',
                         'flask-wtf',
                         'flask-bootstrap',
