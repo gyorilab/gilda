@@ -62,7 +62,10 @@ results = gilda.annotate('Calcium is released from the ER.')
 ```
 
 ### Use as a web service
-The REST service accepts POST requests with a JSON header on the /ground
+
+To use Gilda's REST service, you will need to install with the `[web]` extra
+as in `pip install gilda[web]` or locally `pip install -e .[web]`.
+The REST service accepts POST requests with a JSON header on the `/ground`
 endpoint. There is a public REST service running at http://grounding.indra.bio
 but the service can also be run locally as
 
@@ -106,7 +109,7 @@ is an issue, the following options are recommended.
 other processes send requests to.
 
 2. Create a custom Grounder instance that only loads a subset of terms
-approrpiate for a narrow use case.
+appropriate for a narrow use case.
 
 3. Gilda also offers an optional sqlite back-end which significantly decreases
 memory usage and results in minor drop in the number of strings grounder per
