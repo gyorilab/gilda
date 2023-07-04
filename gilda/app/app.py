@@ -1,127 +1,11 @@
-from textwrap import dedent
 from typing import Optional
 
-from flask import Blueprint, Flask, abort, jsonify, \
-    render_template, request, current_app
-from flask_bootstrap import Bootstrap
+from flask import Flask, abort, jsonify, request
 from flask_restx import Api, Resource, fields
-from flask_wtf import FlaskForm
-from werkzeug.local import LocalProxy
-from wtforms import StringField, SubmitField, TextAreaField, \
-    SelectMultipleField
-from wtforms.validators import DataRequired
 
 from gilda import __version__ as version
-from gilda.resources import popular_organisms, organism_labels
 from gilda.grounder import GrounderInput, Grounder
-
-ui_blueprint = Blueprint("ui", __name__, url_prefix="/")
-
-# The way that local proxies work is that when the app gets
-# instantiated, you can stick objects into the `app.config`
-# dictionary, then the local proxy lets you access them through
-# a fake "current_app" object.
-grounder = LocalProxy(lambda: current_app.config["grounder"])
-
-ORGANISMS_FIELD = SelectMultipleField(
-    'Species priority (optional)',
-    choices=[(org, organism_labels[org]) for org in popular_organisms],
-    id='organism-select',
-    description=dedent("""\
-        Optionally select one or more taxonomy
-        species IDs to define a species priority list.  Click
-        <a type="button" href="#" data-toggle="modal" data-target="#species-modal">
-        here <i class="far fa-question-circle">
-        </i></a> for more details.
-    """),
-)
-
-class GroundForm(FlaskForm):
-    text = StringField(
-        'Text',
-        validators=[DataRequired()],
-        description=dedent("""\
-            Input the entity text (e.g., <code>k-ras</code>) to ground."""
-            #Click <a type="button" href="#" data-toggle="modal" data-target="#text-modal">
-            #here <i class="far fa-question-circle">
-            #</i></a> for more information
-        ),
-    )
-    context = TextAreaField(
-        'Context (optional)',
-        description=dedent("""\
-            Optionally provide additional text context to help disambiguation. Click
-            <a type="button" href="#" data-toggle="modal" data-target="#context-modal">
-            here <i class="far fa-question-circle">
-            </i></a> for more details.
-        """)
-    )
-    organisms = ORGANISMS_FIELD
-    submit = SubmitField('Submit')
-
-    def get_matches(self):
-        return grounder.ground(self.text.data, context=self.context.data,
-                               organisms=self.organisms.data)
-
-
-class NERForm(FlaskForm):
-    text = TextAreaField(
-        'Text',
-        validators=[DataRequired()],
-        description=dedent("""\
-            Text from which to identify and ground named entities.
-        """)
-    )
-    organisms = ORGANISMS_FIELD
-    submit = SubmitField('Submit')
-
-    def get_annotations(self):
-        from gilda.ner import annotate
-
-        return annotate(self.text.data, grounder=grounder,
-                        organisms=self.organisms.data)
-
-
-@ui_blueprint.route('/', methods=['GET', 'POST'])
-def home():
-    text = request.args.get('text')
-    if text is not None:
-        context = request.args.get('context')
-        organisms = request.args.getlist('organisms')
-        matches = grounder.ground(text, context=context, organisms=organisms)
-        return render_template('matches.html', matches=matches, version=version,
-                               text=text, context=context)
-
-    form = GroundForm()
-    if form.validate_on_submit():
-        matches = form.get_matches()
-        return render_template(
-            'matches.html',
-            matches=matches,
-            version=version,
-            text=form.text.data,
-            context=form.context.data,
-            # Add a new form that doesn't auto-populate
-            form=GroundForm(formdata=None),
-        )
-    return render_template('home.html', form=form, version=version)
-
-
-@ui_blueprint.route('/ner', methods=['GET', 'POST'])
-def view_ner():
-    form = NERForm()
-    if form.validate_on_submit():
-        annotations = form.get_annotations()
-        return render_template(
-            'ner_matches.html',
-            annotations=annotations,
-            version=version,
-            text=form.text.data,
-            # Add a new form that doesn't auto-populate
-            form=NERForm(formdata=None),
-        )
-    return render_template('ner_home.html', form=form, version=version)
-
+from gilda.app.proxies import grounder
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
@@ -363,14 +247,23 @@ class GetModels(Resource):
         return jsonify(grounder.get_models())
 
 
-def get_app(terms: Optional[GrounderInput] = None) -> Flask:
+def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
     app = Flask(__name__)
     app.config['RESTX_MASK_SWAGGER'] = False
     app.config['WTF_CSRF_ENABLED'] = False
     app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
     app.config["grounder"] = Grounder(terms=terms)
-    Bootstrap(app)
-    app.register_blueprint(ui_blueprint, url_prefix="/")
+
+    if ui:
+        try:
+            from flask_bootstrap import Bootstrap
+            from gilda.app.ui import ui_blueprint
+        except ImportError:
+            pass
+        else:
+            Bootstrap(app)
+            app.register_blueprint(ui_blueprint, url_prefix="/")
+
     # has to be put after defining the UI blueprint otherwise it reserves "/"
     api.init_app(app)
     return app
