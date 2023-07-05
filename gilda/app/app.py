@@ -254,15 +254,14 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
     app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
     app.config["grounder"] = Grounder(terms=terms)
 
-    if ui:
+    if not ui:
+        _mount_home_redirect(app)
+    else:
         try:
             from flask_bootstrap import Bootstrap
             from gilda.app.ui import ui_blueprint
         except ImportError:
-            @app.route("/")
-            def home_redirect():
-                """Redirect the home url to the API documentation."""
-                return redirect("/apidocs")
+            _mount_home_redirect(app)
         else:
             Bootstrap(app)
             app.register_blueprint(ui_blueprint, url_prefix="/")
@@ -270,3 +269,10 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
     # has to be put after defining the UI blueprint otherwise it reserves "/"
     api.init_app(app)
     return app
+
+
+def _mount_home_redirect(app):
+    @app.route("/")
+    def home_redirect():
+        """Redirect the home url to the API documentation."""
+        return redirect("/apidocs")
