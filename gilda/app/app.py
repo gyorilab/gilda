@@ -1,6 +1,6 @@
 from typing import Optional
 
-from flask import Flask, abort, jsonify, request
+from flask import Flask, abort, jsonify, redirect, request
 from flask_restx import Api, Resource, fields
 
 from gilda import __version__ as version
@@ -259,7 +259,10 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
             from flask_bootstrap import Bootstrap
             from gilda.app.ui import ui_blueprint
         except ImportError:
-            pass
+            @app.route("/")
+            def home_redirect():
+                """Redirect the home url to the API documentation."""
+                return redirect("/apidocs")
         else:
             Bootstrap(app)
             app.register_blueprint(ui_blueprint, url_prefix="/")
