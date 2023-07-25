@@ -69,7 +69,7 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
-    return_first: bool = True
+    return_first: bool = True,
 ) -> List[Annotation]:
     """Annotate a given text with Gilda.
 
