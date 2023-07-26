@@ -112,6 +112,7 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
+    return_first: bool = True,
 ):
     """Annotate a given text with Gilda (i.e., do named entity recognition).
 
@@ -130,6 +131,8 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
+    return_first:
+        If true, only returns the first result. Otherwise, returns all results.
 
     Returns
     -------
@@ -145,7 +148,8 @@ def annotate(
         grounder=grounder,
         sent_split_fun=sent_split_fun,
         organisms=organisms,
-        namespaces=namespaces
+        namespaces=namespaces,
+        return_first=return_first,
     )
 
 

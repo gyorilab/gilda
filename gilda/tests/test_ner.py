@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 import gilda
-from gilda.ner import annotate, get_brat
+from gilda.ner import get_brat
 
 
 def test_annotate():
@@ -62,3 +62,16 @@ def test_get_brat():
         #7\tAnnotatorNotes T7\tCHEBI:36080
         """).lstrip()
     assert brat_str == match_str
+
+
+def test_get_all():
+    full_text = "This is about ER."
+    results = gilda.annotate(full_text, return_first=False)
+    assert len(results) > 1
+    curies = {
+        scored_match.term.get_curie()
+        for _, scored_match, _, _ in results
+    }
+    assert "hgnc:3467" in curies  # ESR1
+    assert "fplx:ESR" in curies
+    assert "GO:0005783" in curies  # endoplasmic reticulum

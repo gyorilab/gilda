@@ -69,6 +69,7 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
+    return_first: bool = True,
 ) -> List[Annotation]:
     """Annotate a given text with Gilda.
 
@@ -89,6 +90,8 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
+    return_first:
+        If true, only returns the first result. Otherwise, returns all results.
 
     Returns
     -------
@@ -139,11 +142,12 @@ def annotate(
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
 
-                    # Append raw_span, (best) match, start, end
-                    match = matches[0]
-                    entities.append(
-                        (raw_span, match, start_coord, end_coord)
-                    )
+                    if return_first:
+                        matches = [matches[0]]
+                    for match in matches:
+                        entities.append(
+                            (raw_span, match, start_coord, end_coord)
+                        )
 
                     skip_until = idx + span
                     break
