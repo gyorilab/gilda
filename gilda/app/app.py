@@ -258,7 +258,24 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
         _mount_home_redirect(app)
     else:
         try:
+            import importlib.metadata
             from flask_bootstrap import Bootstrap
+
+            bootstrap_version = importlib.metadata.version("flask_bootstrap")
+            if "3.3.7.1" != bootstrap_version:
+                raise ImportError(
+                    dedent(
+                        """\
+                    The wrong flask-bootstrap is installed, therefore the UI
+                    can not be enabled. Please run the following commands in
+                    the shell:
+
+                      pip uninstall flask-bootstrap bootstrap-flask
+                      pip install flask-bootstrap
+                    """
+                    )
+                )
+
             from gilda.app.ui import ui_blueprint
         except ImportError:
             _mount_home_redirect(app)
