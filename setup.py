@@ -38,11 +38,8 @@ setup(name='gilda',
       packages=find_packages(),
       install_requires=['regex', 'adeft>=0.11.0', 'boto3', 'flask',
                         'flask-restx', 'pystow>=0.1.10', 'unidecode',
-                        # Werkzeug pin is required to make redirects
-                        # work as expected on python 3.7 (it can be
-                        # unpinned on newer versions of python)
-                        'werkzeug<2.2',
-                        ],
+                        'importlib_metadata; python < "3.8"',
+                        'werkzeug'],
       extras_require={'test': ['pytest', 'pytest-cov', 'pandas'],
                       'terms': ['indra', 'obonet'],
                       'benchmarks': ['pandas>=1.0', 'requests',

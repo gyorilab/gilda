@@ -261,10 +261,14 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
         _mount_home_redirect(app)
     else:
         try:
-            import importlib.metadata
+            import importlib.metadata as importlib_metadata
+        except ImportError:
+            import importlib_metadata
+
+        try:
             from flask_bootstrap import Bootstrap
 
-            bootstrap_version = importlib.metadata.version("flask_bootstrap")
+            bootstrap_version = importlib_metadata.version("flask_bootstrap")
             if "3.3.7.1" != bootstrap_version:
                 raise ImportError(
                     dedent(
