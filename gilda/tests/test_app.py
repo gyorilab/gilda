@@ -22,7 +22,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(self.app.config[GILDA_USING_UI])
         with self.app.test_client() as client:
             res = client.get("/?text=Raf1")
-            self.assertNotEquals(
+            self.assertNotEqual(
                 302,
                 res.status_code,
                 msg="Should not receive a redirect, this probably means the UI isn't mounted properly",
@@ -34,7 +34,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(self.app.config[GILDA_USING_UI])
         with self.app.test_client() as client:
             res = client.post("/", json={"text": "Raf1"})
-            self.assertNotEquals(
+            self.assertNotEqual(
                 302,
                 res.status_code,
                 msg="Should not receive a redirect, this probably means the UI isn't mounted properly",
