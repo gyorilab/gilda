@@ -1,12 +1,17 @@
 """Test the API in the Gilda app."""
 
 import unittest
+from typing import ClassVar
 
-from gilda.app.app import get_app
+import flask
+
+from gilda.app.app import get_app, GILDA_USING_UI
 
 
 class TestApp(unittest.TestCase):
     """A test case for the Gilda Flask application."""
+
+    app: ClassVar[flask.Flask]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -14,14 +19,26 @@ class TestApp(unittest.TestCase):
 
     def test_get_home(self):
         """Test the GET response on the home page."""
+        self.assertTrue(self.app.config[GILDA_USING_UI])
         with self.app.test_client() as client:
             res = client.get("/?text=Raf1")
+            self.assertNotEquals(
+                302,
+                res.status_code,
+                msg="Should not receive a redirect, this probably means the UI isn't mounted properly",
+            )
             self.assert_raf1_ui(res)
 
     def test_post_home(self):
         """Test the POST response on the home page."""
+        self.assertTrue(self.app.config[GILDA_USING_UI])
         with self.app.test_client() as client:
             res = client.post("/", json={"text": "Raf1"})
+            self.assertNotEquals(
+                302,
+                res.status_code,
+                msg="Should not receive a redirect, this probably means the UI isn't mounted properly",
+            )
             self.assert_raf1_ui(res)
 
     def assert_raf1_ui(self, res) -> None:
