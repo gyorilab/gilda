@@ -133,3 +133,4 @@ doc/_build/
 benchmarks/data/**
 benchmarks/results/**
 .DS_Store
+test.db
