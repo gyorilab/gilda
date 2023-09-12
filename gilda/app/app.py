@@ -8,8 +8,6 @@ from gilda import __version__ as version
 from gilda.grounder import GrounderInput, Grounder
 from gilda.app.proxies import grounder
 
-GILDA_USING_UI = "GILDA_USING_UI"
-
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
 
@@ -289,7 +287,6 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
         else:
             Bootstrap(app)
             app.register_blueprint(ui_blueprint, url_prefix="/")
-            app.config[GILDA_USING_UI] = True
 
     # has to be put after defining the UI blueprint otherwise it reserves "/"
     api.init_app(app)
@@ -297,8 +294,6 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
 
 
 def _mount_home_redirect(app):
-    app.config[GILDA_USING_UI] = False
-
     @app.route("/")
     def home_redirect():
         """Redirect the home url to the API documentation."""
