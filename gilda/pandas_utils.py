@@ -43,6 +43,19 @@ def ground_df(
     kwargs :
         Keyword arguments passed to :meth:`Grounder.ground`, could
         include context, organisms, or namespaces.
+
+    Examples
+    --------
+    The following example shows how to use this function.
+
+    .. code-block:: python
+
+        import pandas as pd
+        import gilda
+
+        url = "https://raw.githubusercontent.com/OBOAcademy/obook/master/docs/tutorial/linking_data/data.csv"
+        df = pd.read_csv(url)
+        gilda.ground_df(df, source_column="disease", target_column="disease_curie")
     """
     if target_column is None:
         target_column = f"{source_column}_grounded"
