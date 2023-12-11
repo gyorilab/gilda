@@ -91,7 +91,7 @@ def ground(text, context=None, organisms=None, namespaces=None):
     >>> scored_matches[0].score
     0.7623
 
-    The rational for each match is contained in the ``match`` attribute
+    The rationale for each match is contained in the ``match`` attribute
     whose fields are described in :class:`gilda.scorer.Match`:
 
     >>> match_object = scored_matches[0].match
