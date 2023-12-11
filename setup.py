@@ -29,7 +29,6 @@ setup(name='gilda',
       author_email='benjamin_gyori@hms.harvard.edu',
       classifiers=[
           'Development Status :: 4 - Beta',
-          'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
