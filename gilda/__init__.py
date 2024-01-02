@@ -5,7 +5,7 @@ import logging
 from .api import get_grounder, get_models, get_names, ground, make_grounder, annotate
 from .grounder import Grounder, ScoredMatch
 from .pandas_utils import ground_df, ground_df_map
-from .term import Term
+from .term import Term, dump_terms
 
 __all__ = [
     'ground',
@@ -14,6 +14,7 @@ __all__ = [
     'get_names',
     'get_grounder',
     'make_grounder',
+    "dump_terms",
     # Classes
     'Term',
     'Grounder',
