@@ -111,7 +111,11 @@ class Grounder(object):
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
         for norm_term in self.entries:
+            if not norm_term:
+                continue
             parts = norm_term.split()
+            if not parts:
+                continue
             prefix_index[parts[0]].add(len(parts))
         self.prefix_index = dict(prefix_index)
 
