@@ -6,6 +6,7 @@ import logging
 import itertools
 from pathlib import Path
 from collections import defaultdict, Counter
+from functools import cached_property
 from textwrap import dedent
 from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union
 from adeft.disambiguate import load_disambiguator
@@ -100,13 +101,17 @@ class Grounder(object):
         self._build_prefix_index()
 
         self.adeft_disambiguators = find_adeft_models()
-        self.gilda_disambiguators = None
 
         self.namespace_priority = (
             DEFAULT_NAMESPACE_PRIORITY
             if namespace_priority is None else
             namespace_priority
         )
+
+    @cached_property
+    def gilda_disambiguators(self):
+        """Load Gilda disambiguators."""
+        return load_gilda_models()
 
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
@@ -259,10 +264,6 @@ class Grounder(object):
         return unique_scores
 
     def disambiguate(self, raw_str, scored_matches, context):
-        # This is only called if context was passed in so we do lazy
-        # loading here
-        if self.gilda_disambiguators is None:
-            self.gilda_disambiguators = load_gilda_models()
         # If we don't have a disambiguator for this string, we return with
         # the original scores intact. Otherwise, we attempt to disambiguate.
         if raw_str in self.adeft_disambiguators:
@@ -363,8 +364,6 @@ class Grounder(object):
             The list of entity texts for which a disambiguation model is
             available.
         """
-        if self.gilda_disambiguators is None:
-            self.gilda_disambiguators = load_gilda_models()
         return sorted(list(self.gilda_disambiguators.keys()))
 
     def get_names(self, db, id, status=None, source=None):
