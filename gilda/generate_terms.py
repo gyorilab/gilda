@@ -336,13 +336,13 @@ def generate_uniprot_terms(download=False, organisms=None):
         organisms = popular_organisms
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
     if not os.path.exists(path) or download:
+        # Columns according to the new API, comments for old API
         columns = [
-            'accession',        # id
-            'gene_primary',     # genes(PREFERRED)
-            #'gene_names',       # genes(PREFERRED)
-            'gene_synonym',      # genes(ALTERNATIVE)'
-            'protein_name',     # protein names
-            'organism_id',       # organism-id
+            'accession',     # id
+            'gene_primary',  # genes(PREFERRED)
+            'gene_synonym',  # genes(ALTERNATIVE)'
+            'protein_name',  # protein names
+            'organism_id',   # organism-id
         ]
         org_filter_str = '+OR+'.join(f'(taxonomy_id:{org})' for org in organisms)
         query = f'reviewed:true+AND+({org_filter_str})'
@@ -352,7 +352,6 @@ def generate_uniprot_terms(download=False, organisms=None):
                f'compressed=false&'
                f'fields={",".join(columns)}')
         logger.info('Downloading UniProt resource file')
-        print(url)
         res = requests.get(url)
         with open(path, 'w') as fh:
             fh.write(res.text)
