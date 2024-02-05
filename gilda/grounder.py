@@ -181,6 +181,23 @@ class Grounder(object):
         except ValueError:
             return 0
 
+    def ground_best(
+        self,
+        raw_str: str,
+        context: Optional[str] = None,
+        organisms: Optional[List[str]] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> Optional["ScoredMatch"]:
+        """Return the best scored grounding for a given raw string."""
+        scored_matches = self.ground(
+            raw_str=raw_str,
+            context=context,
+            organisms=organisms,
+            namespaces=namespaces,
+        )
+        if scored_matches:
+            return scored_matches[0]
+
     def ground(self, raw_str, context=None, organisms=None,
                namespaces=None):
         """Return scored groundings for a given raw string.
