@@ -28,6 +28,25 @@ def test_grounder():
     assert appreq(scores[0].score, 0.9936), scores
 
 
+def test_ground_best():
+    score = gr.ground_best('kras')
+    assert score is not None
+    assert appreq(score.score, 0.9845), score
+    score = gr.ground_best('k-ras')
+    assert score is not None
+    assert appreq(score.score, 0.9936), score
+    score = gr.ground_best('KRAS')
+    assert score is not None
+    assert appreq(score.score, 1.0), score
+    score = gr.ground_best('bRaf')
+    assert score is not None
+    assert appreq(score.score, 0.9936), score
+
+    # Check that when no grounding
+    # is possible, none is returned
+    assert gr.ground_best("nope nope nope") is None
+
+
 def test_grounder_bug():
     # Smoke test to make sure the 'NA' entry in grounding terms doesn't get
     # turned into a None
