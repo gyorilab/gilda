@@ -4,10 +4,11 @@ import json
 import gzip
 import logging
 import itertools
+import collections.abc
 from pathlib import Path
 from collections import defaultdict, Counter
 from textwrap import dedent
-from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union
+from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union, Iterable
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -32,7 +33,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-GrounderInput = Union[str, Path, List[Term], Mapping[str, List[Term]]]
+GrounderInput = Union[str, Path, Iterable[Term], Mapping[str, List[Term]]]
 
 #: The default namespace priority order
 DEFAULT_NAMESPACE_PRIORITY = [
@@ -53,11 +54,12 @@ class Grounder(object):
         - If :class:`str` or :class:`pathlib.Path`, it is interpreted
           as a path to a grounding terms gzipped TSV file which is then
           loaded.
-        - If :class:`list`, it is assumed to be a flat list of
-          :class:`gilda.term.Term` instances.
         - If :class:`dict`, it is assumed to be a grounding terms dict with
           normalized entity strings as keys and :class:`gilda.term.Term`
           instances as values.
+        - If :class:`list`, :class:`set`, :class:`tuple`, or any other iterable,
+          it is assumed to be a flat list of
+          :class:`gilda.term.Term` instances.
     namespace_priority :
         Specifies a term namespace priority order. For example, if multiple
         terms are matched with the same score, will use this list to decide
@@ -85,13 +87,13 @@ class Grounder(object):
                 self.entries = SqliteEntries(terms)
             else:
                 self.entries = load_terms_file(terms)
-        elif isinstance(terms, list):
+        elif isinstance(terms, dict):
+            self.entries = terms
+        elif isinstance(terms, collections.abc.Iterable):
             self.entries = defaultdict(list)
             for term in terms:
                 self.entries[term.norm_text].append(term)
             self.entries = dict(self.entries)
-        elif isinstance(terms, dict):
-            self.entries = terms
         else:
             raise TypeError('terms is neither a path nor a list of terms,'
                             'nor a normalized entry name to term dictionary')

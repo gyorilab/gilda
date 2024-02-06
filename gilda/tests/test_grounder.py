@@ -1,5 +1,6 @@
 from gilda.term import Term
 from gilda.grounder import Grounder, filter_for_organism
+import pytest
 from . import appreq
 
 
@@ -256,3 +257,42 @@ def test_sqlite():
 def test_strip_whitespace():
     matches = gr.ground(' inflammatory response ')
     assert matches
+
+
+def test_instantiate():
+    """Test instantiating the grounder with different data structures."""
+    term = Term(
+        "mitochondria",
+        "Mitochondria",
+        "GO",
+        "GO:0005739",
+        "mitochondrion",
+        "synonym",
+        "mesh",
+        None,
+        "MESH",
+        "D008928",
+    )
+
+    # test instantiating with list
+    gr = Grounder([term])
+    assert len(gr.ground("mitochondria")) == 1
+
+    # test instantiating with set
+    gr = Grounder({term})
+    assert len(gr.ground("mitochondria")) == 1
+
+    # test instantiating with tuple
+    gr = Grounder((term,))
+    assert len(gr.ground("mitochondria")) == 1
+
+    # test instantiating with iterable
+    gr = Grounder(iter([term]))
+    assert len(gr.ground("mitochondria")) == 1
+
+    # test instantiating with dict
+    gr = Grounder({term.norm_text: [term]})
+    assert len(gr.ground("mitochondria")) == 1
+
+    with pytest.raises(TypeError):
+        Grounder(5)
