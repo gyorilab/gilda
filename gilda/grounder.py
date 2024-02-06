@@ -181,6 +181,55 @@ class Grounder(object):
         except ValueError:
             return 0
 
+    def ground_best(
+        self,
+        raw_str: str,
+        context: Optional[str] = None,
+        organisms: Optional[List[str]] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> Optional["ScoredMatch"]:
+        """Return the best scored grounding for a given raw string.
+
+        Parameters
+        ----------
+        raw_str : str
+            A string to be grounded with respect to the set of Terms that the
+            Grounder contains.
+        context : Optional[str]
+            Any additional text that serves as context for disambiguating the
+            given entity text, used if a model exists for disambiguating the
+            given text.
+        organisms : Optional[List[str]]
+            An optional list of organism identifiers defining a priority
+            ranking among organisms, if genes/proteins from multiple
+            organisms match the input. If not provided, the default
+            ['9606'] i.e., human is used.
+        namespaces : Optional[List[str]]
+            A list of namespaces to restrict matches to. This will apply to
+            both the primary namespace of a matched term, to any subsumed
+            matches, and to the source namespaces of terms if they were
+            created using cross-reference mappings. By default, no
+            restriction is applied.
+
+        Returns
+        -------
+        Optional[gilda.grounder.ScoredMatch]
+            The best ScoredMatch returned by :meth:`ground` if any are returned,
+            otherwise None.
+        """
+        scored_matches = self.ground(
+            raw_str=raw_str,
+            context=context,
+            organisms=organisms,
+            namespaces=namespaces,
+        )
+        if scored_matches:
+            # Because of the way the ground() function is implemented,
+            # the first element is guaranteed to have the best score
+            # (after filtering by namespace)
+            return scored_matches[0]
+        return None
+
     def ground(self, raw_str, context=None, organisms=None,
                namespaces=None):
         """Return scored groundings for a given raw string.
