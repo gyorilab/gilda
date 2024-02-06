@@ -335,11 +335,22 @@ def generate_uniprot_terms(download=False, organisms=None):
     if not organisms:
         organisms = popular_organisms
     path = os.path.join(resource_dir, 'up_synonyms.tsv')
-    org_filter_str = ' OR '.join(organisms)
     if not os.path.exists(path) or download:
-        url = (f'https://legacy.uniprot.org/uniprot/?format=tab&columns=id,'
-               f'genes(PREFERRED),genes(ALTERNATIVE),protein%20names,organism-id&sort=score&'
-               f'query=reviewed:yes&fil=organism:{org_filter_str}')
+        # Columns according to the new API, comments for old API
+        columns = [
+            'accession',     # id
+            'gene_primary',  # genes(PREFERRED)
+            'gene_synonym',  # genes(ALTERNATIVE)'
+            'protein_name',  # protein names
+            'organism_id',   # organism-id
+        ]
+        org_filter_str = '+OR+'.join(f'(taxonomy_id:{org})' for org in organisms)
+        query = f'reviewed:true+AND+({org_filter_str})'
+        url = (f'https://rest.uniprot.org/uniprotkb/stream?'
+               f'format=tsv&'
+               f'query={query}&'
+               f'compressed=false&'
+               f'fields={",".join(columns)}')
         logger.info('Downloading UniProt resource file')
         res = requests.get(url)
         with open(path, 'w') as fh:
@@ -355,7 +366,7 @@ def generate_uniprot_terms(download=False, organisms=None):
 def get_terms_from_uniprot_row(row):
     terms = []
     up_id = row['Entry']
-    organism = row['Organism ID']
+    organism = row['Organism (ID)']
 
     # As of 3/2/2022 there is an error in UniProt data that we need to manually
     # patch here
@@ -371,8 +382,8 @@ def get_terms_from_uniprot_row(row):
     # P34539»·; »·; »·
     # where there are two genes but neither of them have names or
     # synonyms listed.
-    primary_gene_names = row['Gene names  (primary )'].split('; ')
-    gene_synonyms = row['Gene names  (synonym )'].split('; ')
+    primary_gene_names = row['Gene Names (primary)'].split('; ')
+    gene_synonyms = row['Gene Names (synonym)'].split('; ')
 
     multi_gene = len(primary_gene_names) > 1
 

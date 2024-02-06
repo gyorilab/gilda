@@ -47,7 +47,8 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'GR': {'HGNC': '7978'},
                       'integrin alpha': {'FPLX': 'ITGA'},
                       'DC': {'MESH': 'D003713'},
-                      'BMD': {'MESH': 'D015519'}}
+                      'BMD': {'MESH': 'D015519'},
+                      'angina': {'EFO': '0003913'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
