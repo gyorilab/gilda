@@ -5,10 +5,13 @@ import gzip
 import logging
 import itertools
 import collections.abc
+import tempfile
 from pathlib import Path
 from collections import defaultdict, Counter
 from textwrap import dedent
 from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union, Iterable
+from urllib.request import urlretrieve
+
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
@@ -53,7 +56,7 @@ class Grounder(object):
           versioned resource folder.
         - If :class:`str` or :class:`pathlib.Path`, it is interpreted
           as a path to a grounding terms gzipped TSV file which is then
-          loaded.
+          loaded. If it's a str and looks like a URL, will be downloaded from the internet
         - If :class:`dict`, it is assumed to be a grounding terms dict with
           normalized entity strings as keys and :class:`gilda.term.Term`
           instances as values.
@@ -80,7 +83,12 @@ class Grounder(object):
         if terms is None:
             terms = get_grounding_terms()
 
-        if isinstance(terms, (str, Path)):
+        if isinstance(terms, str) and terms.startswith("http"):
+            with tempfile.TemporaryDirectory() as directory:
+                path = Path(directory).joinpath("terms.tsv.gz")
+                urlretrieve(terms, path)  # noqa:S310
+                self.entries = load_terms_file(path)
+        elif isinstance(terms, (str, Path)):
             extension = os.path.splitext(terms)[1]
             if extension == '.db':
                 from .resources.sqlite_adapter import SqliteEntries
