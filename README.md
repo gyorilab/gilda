@@ -156,9 +156,9 @@ needed. These resources include:
 - [CHeBI](https://bioregistry.io/chebi) (small molecules, metabolites, etc.)
 - [GO](https://bioregistry.io/go) (biological processes, molecular functions, complexes)
 - [DOID](https://bioregistry.io/doid) (diseases)
-- [EFO](https://bioregistry.io/efo) (experimental factors)
+- [EFO](https://bioregistry.io/efo) (experimental factors: cell lines, cell types, anatomical entities, etc.)
 - [HP](https://bioregistry.io/hp) (human phenotypes)
-- [MeSH](https://bioregistry.io/mesh) (general)
+- [MeSH](https://bioregistry.io/mesh) (general: diseases, proteins, small molecules, cell types, etc.)
 - [Adeft](https://github.com/gyorilab/adeft) (misc. terms corresponding to ambiguous acronyms)
 
 ## Citation
