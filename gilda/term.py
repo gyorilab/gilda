@@ -52,8 +52,8 @@ class Term(object):
                  organism=None, source_db=None, source_id=None):
         if not text:
             raise ValueError('Text for Term cannot be empty')
-        if not norm_text.strip():
-            raise ValueError('Normalized text for Term cannot be empty')
+        if not norm_text or not norm_text.strip():
+            raise ValueError('Normalized text for Term cannot be None nor empty')
         self.norm_text = norm_text
         self.text = text
         self.db = db
