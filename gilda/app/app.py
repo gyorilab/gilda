@@ -298,10 +298,3 @@ def _mount_home_redirect(app):
     def home_redirect():
         """Redirect the home url to the API documentation."""
         return redirect("/apidocs")
-
-
-if __name__ == '__main__':
-    app = get_app()
-    app.run()
-else:
-    gunicorn_app = get_app()
