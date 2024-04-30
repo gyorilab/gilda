@@ -6,6 +6,9 @@ Run as module:
 
 Run with gunicorn:
     `gunicorn -w <worker count> -b <host>:<port> -t <timeout> gilda.app:gunicorn_app`
+
+For this use case, set the `GILDA_TERMS` environment variable to the path to the
+terms file.
 """
 
 import argparse
@@ -27,4 +30,7 @@ if __name__ == '__main__':
     app = get_app(_args.terms)
     app.run(_args.host, _args.port, threaded=False)
 else:
-    gunicorn_app = get_app()
+    # Assume the terms file is set in the environment
+    import os
+    terms = os.environ.get('GILDA_TERMS')
+    gunicorn_app = get_app(terms=terms)
