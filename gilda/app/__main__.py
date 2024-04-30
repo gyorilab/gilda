@@ -1,3 +1,9 @@
+"""
+Runs the Gilda grounding app as a module. Usage:
+
+    `python -m gilda.app --host <host> --port <port> --terms <terms>`
+"""
+
 from .app import get_app
 from . import parse_args
 

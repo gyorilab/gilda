@@ -1,3 +1,13 @@
+"""
+Run the grounding app.
+
+Run as module:
+    `python -m gilda.app --host <host> --port <port> --terms <terms>`
+
+Run with gunicorn:
+    `gunicorn -w <worker count> -b <host>:<port> -t <timeout> gilda.app:gunicorn_app`
+"""
+
 import argparse
 from .app import get_app
 
