@@ -5,32 +5,15 @@ Run as module:
     `python -m gilda.app --host <host> --port <port> --terms <terms>`
 
 Run with gunicorn:
-    `gunicorn -w <worker count> -b <host>:<port> -t <timeout> gilda.app:gunicorn_app`
+    `gunicorn -w <worker count> -b <host>:<port> -t <timeout> gilda.app:gilda_app`
 
-For this use case, set the `GILDA_TERMS` environment variable to the path to the
-terms file.
+In case a non-standard set of terms is to be used, set the `GILDA_TERMS`
+environment variable to the path to the terms file.
 """
 
-import argparse
+import os
 from .app import get_app
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Run the grounding app.')
-    parser.add_argument('--host', default='0.0.0.0')
-    parser.add_argument('--port', default=8001, type=int)
-    parser.add_argument('--terms')
-    args = parser.parse_args()
-    return args
-
-
-if __name__ == '__main__':
-    _args = parse_args()
-    app = get_app(_args.terms)
-    app.run(_args.host, _args.port, threaded=False)
-else:
-    # Assume the terms file is set in the environment
-    import os
-    terms = os.environ.get('GILDA_TERMS')
-    gunicorn_app = get_app(terms=terms)
+terms = os.environ.get('GILDA_TERMS')
+gilda_app = get_app(terms=terms)
