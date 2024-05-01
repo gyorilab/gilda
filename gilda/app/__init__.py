@@ -1,13 +1,19 @@
-import argparse
+"""
+Run the grounding app.
+
+Run as module:
+    `python -m gilda.app --host <host> --port <port> --terms <terms>`
+
+Run with gunicorn:
+    `gunicorn -w <worker count> -b <host>:<port> -t <timeout> gilda.app:gilda_app`
+
+In case a non-standard set of terms is to be used, set the `GILDA_TERMS`
+environment variable to the path to the terms file.
+"""
+
+import os
 from .app import get_app
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='Run the grounding app.')
-    parser.add_argument('--host', default='0.0.0.0')
-    parser.add_argument('--port', default=8001, type=int)
-    parser.add_argument('--terms')
-    args = parser.parse_args()
-    app = get_app(terms=args.terms)
-    app.run(host=args.host, port=args.port, threaded=False)
+terms = os.environ.get('GILDA_TERMS')
+gilda_app = get_app(terms=terms)
