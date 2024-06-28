@@ -67,7 +67,12 @@ def get_nonambiguous(maps):
         # We see if there are any name-level matches
         name_matches = [(me, te) for me, te in maps
                         if (me.entry_name.lower() if me.entry_name else '')
-                            == (te.entry_name.lower() if te.entry_name else '')]
+                            == (te.entry_name.lower() if te.entry_name else '')
+                        # Corner case where we have multiple MeSH-based terms
+                        # due to an orignal term from e.g., DOID having been
+                        # mapped to MeSH
+                        and me.db != te.db]
+
         # If we still have ambiguity, we print to the user
         if not name_matches or len(name_matches) > 1:
             return None, maps
@@ -110,7 +115,11 @@ def resolve_duplicates(mappings):
 def dump_mappings(mappings, fname):
     with open(fname, 'w') as fh:
         for mesh_term, other_term in sorted(mappings, key=lambda x: x[0].id):
-            fh.write(render_row(mesh_term, other_term) + '\n')
+            # Corner case where we have multiple MeSH-based terms
+            # due to an orignal term from e.g., DOID having been
+            # mapped to MeSH
+            if other_term.db != 'MESH':
+                fh.write(render_row(mesh_term, other_term) + '\n')
 
 
 def get_ambigs_by_db(ambigs):
@@ -124,9 +133,9 @@ def get_mesh_mappings(ambigs):
     mappings_by_mesh_id = defaultdict(dict)
     for text, ambig_terms in ambigs.items():
         ambigs_by_db = get_ambigs_by_db(ambig_terms)
-        print('Considering %s' % text)
-        for term in ambig_terms:
-            print('%s:%s %s' % (term.db, term.id, term.entry_name))
+        #print('Considering %s' % text)
+        #for term in ambig_terms:
+        #    print('%s:%s %s' % (term.db, term.id, term.entry_name))
         order = [('FPLX', is_protein),
                  ('HGNC', is_protein),
                  ('CHEBI', is_chemical),
@@ -140,9 +149,9 @@ def get_mesh_mappings(ambigs):
                 mappings_by_mesh_id[me.id][(ambigs_by_db[ns][0].db,
                                             ambigs_by_db[ns][0].id)] = \
                         [me, ambigs_by_db[ns][0]]
-                print('Adding mapping for %s' % ns)
+                #print('Adding mapping for %s' % ns)
                 break
-        print('--------------')
+        #print('--------------')
     return dict(mappings_by_mesh_id)
 
 
@@ -261,8 +270,12 @@ if __name__ == '__main__':
                         mesh_term = terms_by_id_tuple[('MESH', mesh_id)]
                         other_term = terms_by_id_tuple[other_id]
                         new_mappings[other_id] = [mesh_term, other_term]
+                    # This is a corner case where something is in Biomappings
+                    # but not in the set of Gilda terms. This can happen
+                    # if a term has been deprecated/replaced in an ontology.
+                    # We ignore these mappings and just keep what we have.
                     else:
-                        raise ValueError('%s missing' % other_id)
+                        print('%s missing from set of terms' % str(other_id))
                         new_mappings = mappings[mesh_id]
             mappings[mesh_id] = new_mappings
         # If we have a negative curation for this MeSH ID, we make sure

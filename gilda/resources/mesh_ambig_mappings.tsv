@@ -937,8 +937,6 @@ MESH	D000070816	Nogo Receptor 1	HGNC	18601	RTN4R
 MESH	D000071164	Trefoil Factor-2	HGNC	11756	TFF2
 MESH	D000071165	Trefoil Factor-3	HGNC	11757	TFF3
 MESH	D000071480	APOBEC-3G Deaminase	HGNC	17357	APOBEC3G
-MESH	D000071698	Latent Autoimmune Diabetes in Adults	MESH	D000071698	Latent Autoimmune Diabetes in Adults
-MESH	D000071698	Latent Autoimmune Diabetes in Adults	EFO	0009706	latent autoimmune diabetes in adults
 MESH	D000071837	Fibrillins	GO	GO:0001527	microfibril
 MESH	D000072503	Cytochrome P450 Family 46	HGNC	2641	CYP46A1
 MESH	D000072556	Cholesterol 24-Hydroxylase	HGNC	2641	CYP46A1
@@ -954,8 +952,6 @@ MESH	D000077214	Becaplermin	HGNC	8800	PDGFB
 MESH	D000077214	Becaplermin	FPLX	PDGF_BB	PDGF_BB
 MESH	D000077385	Silybin	CHEBI	CHEBI:9144	silibinin
 MESH	D000077740	Procalcitonin	HGNC	1437	CALCA
-MESH	D000077765	Cone Dystrophy	MESH	D000077765	Cone Dystrophy
-MESH	D000077765	Cone Dystrophy	HP	HP:0008020	Cone dystrophy
 MESH	D000078224	Lenograstim	HGNC	2438	CSF3
 MESH	D000078787	Neuroglobin	HGNC	14077	NGB
 MESH	D000079302	Necroptosis	GO	GO:0070266	necroptotic process
@@ -1015,9 +1011,6 @@ MESH	D000754	Anemia, Refractory, with Excess of Blasts	DOID	DOID:0050908	myelody
 MESH	D000799	Angioedema	DOID	DOID:0060002	C1 inhibitor deficiency
 MESH	D000804	Angiotensin II	CHEBI	CHEBI:2719	Ile(5)-angiotensin II
 MESH	D000809	Angiotensins	CHEBI	CHEBI:2719	Ile(5)-angiotensin II
-MESH	D000848	Anodontia	HP	HP:0000677	Oligodontia
-MESH	D000848	Anodontia	HP	HP:0001592	Selective tooth agenesis
-MESH	D000848	Anodontia	HP	HP:0009804	Tooth agenesis
 MESH	D000970	Antineoplastic Agents	CHEBI	CHEBI:35610	antineoplastic agent
 MESH	D000979	alpha-2-Antiplasmin	HGNC	9075	SERPINF2
 MESH	D001081	Apyrase	HGNC	3363	ENTPD1
