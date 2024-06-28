@@ -1,4 +1,5 @@
 import os
+import pandas
 from collections import defaultdict
 from gilda.generate_terms import *
 from indra.databases import mesh_client
@@ -21,12 +22,52 @@ def render_row(me, te):
                       te.db, te.id, te.entry_name])
 
 
+def load_biomappings():
+    """Load curated positive and negative mappings from Biomappings."""
+    url_base = ('https://raw.githubusercontent.com/biopragmatics/biomappings/'
+                'master/src/biomappings/resources/')
+    positive_df = pandas.read_csv(url_base + 'mappings.tsv', sep='\t')
+    negative_df = pandas.read_csv(url_base + 'incorrect.tsv', sep='\t')
+    positive_mappings = defaultdict(list)
+    negative_mappings = defaultdict(list)
+    # These are the only relevant prefixes, there are mappings to
+    # various other namespaces we don't need
+    prefixes = {'fplx', 'chebi', 'go', 'hp', 'doid', 'efo', 'hgnc'}
+    for mapping_df, mappings in ((positive_df, positive_mappings),
+                                 (negative_df, negative_mappings)):
+        for _, row in mapping_df.iterrows():
+            # We only need exact matches.
+            # TODO: should we consider non-exact matches to be effectively
+            # negative?
+            if row['relation'] != 'skos:exactMatch':
+                continue
+            # Look at both directions in which mesh mappings
+            # can appear
+            if row['source prefix'] == 'mesh':
+                mesh_id = row['source identifier']
+                other_ns = row['target prefix']
+                other_id = row['target identifier']
+            elif row['target prefix'] == 'mesh':
+                mesh_id = row['target identifier']
+                other_ns = row['source prefix']
+                other_id = row['source identifier']
+            else:
+                continue
+            if other_ns not in prefixes:
+                continue
+            # We make the namespace upper to be consistent
+            # with Gilda
+            mappings[mesh_id].append((other_ns.upper(), other_id))
+    return positive_mappings, negative_mappings
+
+
 def get_nonambiguous(maps):
-    # If there are more than one mappings from MESH
+    # If there is more than one mapping from MESH
     if len(maps) > 1:
         # We see if there are any name-level matches
         name_matches = [(me, te) for me, te in maps
-                        if me.entry_name.lower() == te.entry_name.lower()]
+                        if (me.entry_name.lower() if me.entry_name else '')
+                            == (te.entry_name.lower() if te.entry_name else '')]
         # If we still have ambiguity, we print to the user
         if not name_matches or len(name_matches) > 1:
             return None, maps
@@ -42,7 +83,7 @@ def resolve_duplicates(mappings):
     keep_mappings = []
     all_ambigs = []
     # First we deal with mappings from MESH
-    for maps in mappings.values():
+    for key, maps in mappings.items():
         maps_list = maps.values()
         keep, ambigs = get_nonambiguous(maps_list)
         if keep:
@@ -98,11 +139,11 @@ def get_mesh_mappings(ambigs):
             if len(ambigs_by_db.get(ns, [])) == 1 and mesh_constraint(me.id):
                 mappings_by_mesh_id[me.id][(ambigs_by_db[ns][0].db,
                                             ambigs_by_db[ns][0].id)] = \
-                        (me, ambigs_by_db[ns][0])
+                        [me, ambigs_by_db[ns][0]]
                 print('Adding mapping for %s' % ns)
                 break
         print('--------------')
-    return mappings_by_mesh_id
+    return dict(mappings_by_mesh_id)
 
 
 def find_ambiguities(terms, match_attr='text'):
@@ -112,13 +153,24 @@ def find_ambiguities(terms, match_attr='text'):
         # We consider it an ambiguity if the same text entry appears
         # multiple times
         ambig_entries[match_fun(term)].append(term)
+    # There is a corner case where the match_fun matches two different
+    # synonyms / variants of the same entry from the same database which
+    # are not really considered ambiguity but need to be reduced to a single
+    # entry to avoid being inadvertently filtered out later
+    ambig_entries = {
+        # Here, we make sure we only keep a single term with a given db and id
+        norm_term: list({(term.db, term.id): term for term in matching_terms}.values())
+        for norm_term, matching_terms in ambig_entries.items()
+    }
     # It's only an ambiguity if there are two entries at least
-    ambig_entries = {k: v for k, v in ambig_entries.items() if len(v) >= 2}
+    ambig_entries = {norm_term: matching_terms
+                     for norm_term, matching_terms
+                     in ambig_entries.items() if len(matching_terms) >= 2}
     # We filter out any ambiguities that contain not exactly one MeSH term
     ambig_entries = {k: v for k, v in ambig_entries.items()
                      if len([e for e in v if e.db == 'MESH']) == 1}
     print('Found a total of %d relevant ambiguities' % len(ambig_entries))
-    return ambig_entries
+    return dict(ambig_entries)
 
 
 def get_terms():
@@ -135,10 +187,7 @@ def get_terms():
     return terms
 
 
-def manual_go_mappings(terms):
-    td = defaultdict(list)
-    for term in terms:
-        td[(term.db, term.id)].append(term)
+def manual_go_mappings(terms_by_id_tuple):
     # Migrated from FamPlex and INDRA
     map = [
         ('D002465', 'GO:0048870'),
@@ -153,14 +202,27 @@ def manual_go_mappings(terms):
     ]
     mappings_by_mesh_id = defaultdict(dict)
     for mid, gid in map:
-        mt = td[('MESH', mid)][0]
-        gt = td[('GO', gid)][0]
+        mt = terms_by_id_tuple[('MESH', mid)]
+        gt = terms_by_id_tuple[('GO', gid)]
         mappings_by_mesh_id[mid][('GO', gid)] = (mt, gt)
-    return mappings_by_mesh_id
+    return dict(mappings_by_mesh_id)
 
 
 if __name__ == '__main__':
     terms = get_terms()
+    # We create a lookup of term objects by their db/id tuple
+    # for quick lookups. We also add source db/ids here
+    # because they can be relevant when finding terms for
+    # Biomappings curations. Note that when loading e.g.,
+    # DOID terms, the native xrefs from DOID to MESH
+    # are applied, even if terms are loaded with the ignore_mappings
+    # option which just turns of loading the mappings that are
+    # generated in this script.
+    terms_by_id_tuple = {}
+    for term in terms:
+        terms_by_id_tuple[(term.db, term.id)] = term
+        if term.source_id:
+            terms_by_id_tuple[(term.source_db, term.source_id)] = term
     # General ambiguities
     ambigs = find_ambiguities(terms, match_attr='text')
     mappings = get_mesh_mappings(ambigs)
@@ -171,11 +233,52 @@ if __name__ == '__main__':
     for k, v in mappings2.items():
         if k not in mappings:
             mappings[k] = v
-    mappings3 = manual_go_mappings(terms)
+    # Mappings from GO terms
+    mappings3 = manual_go_mappings(terms_by_id_tuple)
     for k, v in mappings3.items():
         if k not in mappings:
             mappings[k] = v
-    mappings, mapping_ambigs = resolve_duplicates(mappings)
-    dump_mappings(mappings, os.path.join(resources, 'mesh_mappings.tsv'))
-    dump_mappings(mapping_ambigs,
+
+    # We now have to account for Biomappings curations
+    positive_biomappings, negative_biomappings = load_biomappings()
+    keys_to_remove = set()
+    # Iterate over all the automatically proposed mappings
+    for mesh_id, local_mappings in mappings.items():
+        # If we already have a positive curation for the given MeSH ID
+        # we want to replace the content automatically generated here
+        # with the terms corresponding to the positive curation
+        if mesh_id in positive_biomappings:
+            other_ids = positive_biomappings[mesh_id]
+            new_mappings = {}
+            for other_id in other_ids:
+                # If the other ID already exists, we just copy it over
+                if other_id in mappings[mesh_id]:
+                    new_mappings[other_id] = mappings[mesh_id][other_id]
+                # If it doesn't exist yet, we look up a Term for it
+                # and add it to the mappings
+                else:
+                    if other_id in terms_by_id_tuple:
+                        mesh_term = terms_by_id_tuple[('MESH', mesh_id)]
+                        other_term = terms_by_id_tuple[other_id]
+                        new_mappings[other_id] = [mesh_term, other_term]
+                    else:
+                        raise ValueError('%s missing' % other_id)
+                        new_mappings = mappings[mesh_id]
+            mappings[mesh_id] = new_mappings
+        # If we have a negative curation for this MeSH ID, we make sure
+        # that we remove any known incorrect mappings
+        if mesh_id in negative_biomappings:
+            other_ids = negative_biomappings[mesh_id]
+            if mesh_id in mappings:
+                for other_id in other_ids:
+                    if other_id in mappings[mesh_id]:
+                        mappings[mesh_id].pop(other_id, None)
+                # If nothing left, we remove the whole MeSH ID key
+                if not mappings[mesh_id]:
+                    keys_to_remove.add(mesh_id)
+    for key in keys_to_remove:
+        mappings.pop(key)
+    nonambig_mappings, ambig_mappings = resolve_duplicates(mappings)
+    dump_mappings(nonambig_mappings, os.path.join(resources, 'mesh_mappings.tsv'))
+    dump_mappings(ambig_mappings,
                   os.path.join(resources, 'mesh_ambig_mappings.tsv'))
