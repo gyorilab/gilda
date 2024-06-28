@@ -154,8 +154,14 @@ def get_identifiers_url(db, id):
         return f'https://identifiers.org/{curie}'
 
 
-def _term_key(term: Term) -> Tuple[str, str, str]:
-    return term.db, term.id, term.text
+def _term_key(term: Term) -> Tuple[str, str, str, str, str]:
+    # We include source_id and source_db to avoid losing
+    # potentially important links back to mapped source IDs
+    # but we have to make sure these are strings since otherwise
+    # they could be None which can't be sorted against strings
+    source_db = term.source_db or ''
+    source_id = term.source_id or ''
+    return term.db, term.id, source_db, source_id, term.text
 
 
 statuses = {'curated': 1, 'name': 2, 'synonym': 3, 'former_name': 4}
