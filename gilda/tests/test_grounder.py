@@ -56,7 +56,7 @@ def test_grounder_bug():
 
 def test_grounder_num_entries():
     entries = gr.lookup('NPM1')
-    assert len(entries) == 4, entries
+    assert len(entries) == 5, entries
     entries = gr.lookup('H4')
     assert len(entries) == 7, entries
 
@@ -202,7 +202,7 @@ def test_unidecode():
     for txt in txts:
         matches = gr.ground(txt)
         assert len(matches) == 2
-        assert {m.term.db for m in matches} == {'EFO', 'DOID'}
+        assert {m.term.db for m in matches} == {'EFO', 'MESH'}
 
     txts = ['Bi₇O₉I₃', 'Bi7O9I3']
     for txt in txts:
