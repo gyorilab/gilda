@@ -804,6 +804,7 @@ MESH	C535549	Pelvic lipomatosis	HP	HP:0034009	Pelvic lipomatosis
 MESH	C535580	Najjar syndrome	DOID	DOID:0111584	dilated cardiomyopathy-hypergonadotropic hypogonadism syndrome
 MESH	C535653	Acrokeratoelastoidosis of Costa	DOID	DOID:0060362	punctate palmoplantar keratoderma type III
 MESH	C535653	Acrokeratoelastoidosis of Costa	EFO	1000758	punctate palmoplantar keratoderma type III
+MESH	C535694	Malignant hyperthermia susceptibility type 1	EFO	0009071	malignant hyperthermia, susceptibility to, 1
 MESH	C535703	Malouf syndrome	DOID	DOID:0111584	dilated cardiomyopathy-hypergonadotropic hypogonadism syndrome
 MESH	C535734	Muscular dystrophy, tardive Emery-Dreifuss type, with contractures	DOID	DOID:0070246	X-linked Emery-Dreifuss muscular dystrophy 1
 MESH	C535739	Congenital disorder of glycosylation type 1A	HGNC	9115	PMM2
@@ -881,12 +882,15 @@ MESH	C561601	cytidine-5'-monophosphosialic acid	CHEBI	CHEBI:16556	CMP-N-acetyl-b
 MESH	C561658	1-(2,6-dichloro-alpha,alpha,alpha-trifluoro-p-tolyl)-5-(2-methylamino)-4-(trifluoromethylsulfinyl)pyrazole-3-carbonitrile	CHEBI	CHEBI:146240	flufiprole
 MESH	C562429	Polydactyly, Postaxial	HP	HP:0100259	Postaxial polydactyly
 MESH	C562694	Epilepsy, Idiopathic Generalized	EFO	0005917	generalised epilepsy
+MESH	C562803	Beta-Hydroxyisobutyryl CoA Deacylase Deficiency	HP	HP:6000215	Reduced circulating 3-hydroxyisobutyryl-CoA hydrolase activity
+MESH	C562803	Beta-Hydroxyisobutyryl CoA Deacylase Deficiency	DOID	DOID:0060949	3-hydroxyisobutryl-CoA hydrolase deficiency
 MESH	C562842	Carcinoid Tumors, Intestinal	EFO	1000852	carcinoid syndrome
 MESH	C563037	Arthritis, Sacroiliac	HP	HP:0012317	Sacroiliac arthritis
 MESH	C563139	Mental Retardation, X-Linked 16	DOID	DOID:0060827	X-linked intellectual disability-psychosis-macroorchidism syndrome
 MESH	C563146	Mental Retardation, X-Linked 30	DOID	DOID:0112051	non-syndromic X-linked intellectual disability 30
 MESH	C563151	Mental Retardation, X-Linked 47	DOID	DOID:0112051	non-syndromic X-linked intellectual disability 30
 MESH	C563395	Deafness, Childhood-Onset Neurosensory, Autosomal Recessive 8	DOID	DOID:0110527	autosomal recessive nonsyndromic deafness 8
+MESH	C563422	Palmoplantar Keratoderma, Nonepidermolytic	DOID	DOID:0050428	nonepidermolytic palmoplantar keratoderma
 MESH	C563775	Myotilinopathy	DOID	DOID:0080094	myofibrillar myopathy 3
 MESH	C563948	Spinal Muscular Atrophy, Type IV	DOID	DOID:0050529	adult spinal muscular atrophy
 MESH	C564050	Thrombocytopenia, Platelet Dysfunction, Hemolysis, and Imbalanced Globin Synthesis	DOID	DOID:0111767	X-linked thrombocytopenia with beta-thalassemia
@@ -903,7 +907,6 @@ MESH	C565078	Lewy Body Variant of Alzheimer Disease	DOID	DOID:12217	Lewy body de
 MESH	C565097	Digitotalar Dysmorphism	DOID	DOID:0111596	distal arthrogryposis type 1
 MESH	C565341	Deafness, Autosomal Recessive 10	DOID	DOID:0110527	autosomal recessive nonsyndromic deafness 8
 MESH	C565706	3-Methylglutaconic Aciduria, Type V	DOID	DOID:0110000	3-methylglutaconic aciduria type 5
-MESH	C566096	Syndactyly, Type I	DOID	DOID:0111816	syndactyly type 1
 MESH	C566774	Polyps, Multiple And Recurrent Inflammatory Fibroid, Gastrointestinal	EFO	0010279	GIST-plus syndrome
 MESH	C566870	Tumoral Calcinosis, Hyperphosphatemic, Familial	DOID	DOID:0111063	hyperphosphatemic familial tumoral calcinosis
 MESH	C567546	Corneal Dystrophy, Posterior Amorphous	DOID	DOID:0060452	posterior amorphous corneal dystrophy
@@ -928,9 +931,7 @@ MESH	C586921	1-methylpyrrolidin-2-one	CHEBI	CHEBI:7307	N-methylpyrrolidin-2-one
 MESH	C586966	4-pyridinecarbohydrazide	CHEBI	CHEBI:6030	isoniazide
 MESH	D000012	Abetalipoproteinemia	HP	HP:0001927	Acanthocytosis
 MESH	D000050	Acanthocytes	HP	HP:0001927	Acanthocytosis
-MESH	D000067877	Autism Spectrum Disorder	DOID	DOID:0060042	atypical autism
 MESH	D000068116	Gender Dysphoria	DOID	DOID:1234	gender incongruence
-MESH	D000068356	Self-Control	HP	HP:0000734	Disinhibition
 MESH	D000069585	Filgrastim	HGNC	2438	CSF3
 MESH	D000070156	Nogo Receptors	HGNC	18601	RTN4R
 MESH	D000070816	Nogo Receptor 1	HGNC	18601	RTN4R
@@ -966,6 +967,8 @@ MESH	D000088123	Cytoplasmic Ribonucleoprotein Granules	GO	GO:0036464	cytoplasmic
 MESH	D000088123	Cytoplasmic Ribonucleoprotein Granules	GO	GO:0035770	ribonucleoprotein granule
 MESH	D000090722	Dihydroorotate Dehydrogenase	HGNC	2867	DHODH
 MESH	D000092004	Tyrosine Kinase Inhibitors	CHEBI	CHEBI:38637	tyrosine kinase inhibitor
+MESH	D000093642	Uterine Didelphys	HP	HP:0003762	Uterus didelphys
+MESH	D000093662	Uterine Duplication Anomalies	HP	HP:0003762	Uterus didelphys
 MESH	D000094122	Polyhydroxybutyrates	CHEBI	CHEBI:53388	poly(hydroxybutyrate)
 MESH	D000096743	Interferon gamma Receptor	HGNC	5439	IFNGR1
 MESH	D000096743	Interferon gamma Receptor	FPLX	Interferon_gamma_receptor	Interferon_gamma_receptor
@@ -997,6 +1000,7 @@ MESH	D000243	Adenosine Deaminase	FPLX	Adenosine_deaminase_family	Adenosine_deami
 MESH	D000263	Adenylate Kinase	HGNC	361	AK1
 MESH	D000305	Adrenal Cortex Hormones	CHEBI	CHEBI:36699	corticosteroid hormone
 MESH	D000305	Adrenal Cortex Hormones	CHEBI	CHEBI:50858	corticosteroid
+MESH	D000306	Adrenal Cortex Neoplasms	DOID	DOID:660	adrenal cortex cancer
 MESH	D000312	Adrenal Hyperplasia, Congenital	DOID	DOID:0050811	congenital adrenal hyperplasia
 MESH	D000324	Adrenocorticotropic Hormone	HGNC	9201	POMC
 MESH	D000324	Adrenocorticotropic Hormone	CHEBI	CHEBI:3892	corticotropin
@@ -1031,6 +1035,8 @@ MESH	D001620	beta-Thromboglobulin	HGNC	9240	PPBP
 MESH	D001859	Bone Neoplasms	DOID	DOID:184	bone cancer
 MESH	D001894	Borohydrides	CHEBI	CHEBI:30157	borohydride
 MESH	D001894	Borohydrides	CHEBI	CHEBI:50986	tetrahydroborate salt
+MESH	D001948	Brenner Tumor	EFO	1000112	Benign Ovarian Brenner Tumor
+MESH	D001948	Brenner Tumor	EFO	1000357	Malignant Ovarian Brenner Tumor
 MESH	D001959	Bromates	CHEBI	CHEBI:29223	bromate
 MESH	D001959	Bromates	CHEBI	CHEBI:22923	bromate salt
 MESH	D002086	Butylscopolammonium Bromide	CHEBI	CHEBI:145701	butylscopolamine
@@ -1042,19 +1048,22 @@ MESH	D002270	Carbuncle	HP	HP:0020084	Carbuncle
 MESH	D002292	Carcinoma, Renal Cell	EFO	0005708	renal cell adenocarcinoma
 MESH	D002292	Carcinoma, Renal Cell	DOID	DOID:4471	chromophobe renal cell carcinoma
 MESH	D002292	Carcinoma, Renal Cell	DOID	DOID:4467	clear cell renal cell carcinoma
-MESH	D002292	Carcinoma, Renal Cell	DOID	DOID:4465	papillary renal cell carcinoma
 MESH	D002292	Carcinoma, Renal Cell	DOID	DOID:4464	collecting duct carcinoma
+MESH	D002292	Carcinoma, Renal Cell	DOID	DOID:4465	papillary renal cell carcinoma
 MESH	D002316	Cardiotonic Agents	CHEBI	CHEBI:77307	cardioprotective agent
 MESH	D002316	Cardiotonic Agents	CHEBI	CHEBI:38147	cardiotonic drug
 MESH	D002392	Catechin	CHEBI	CHEBI:15600	(+)-catechin
 MESH	D002400	Cathartics	CHEBI	CHEBI:75325	cathartic
 MESH	D002400	Cathartics	CHEBI	CHEBI:50503	laxative
 MESH	D002401	Cathepsin B	HGNC	2527	CTSB
+MESH	D002430	Cecal Neoplasms	DOID	DOID:1517	cecal benign neoplasm
+MESH	D002430	Cecal Neoplasms	DOID	DOID:1519	cecum carcinoma
 MESH	D002546	Ischemic Attack, Transient	EFO	1000758	punctate palmoplantar keratoderma type III
 MESH	D002547	Cerebral Palsy	DOID	DOID:11656	cicatricial pemphigoid
 MESH	D002578	Uterine Cervical Dysplasia	HP	HP:0032131	Cervical dysplasia
 MESH	D002578	Uterine Cervical Dysplasia	HP	HP:0032242	Cervical intraepithelial neoplasia
-MESH	D002659	Child Development Disorders, Pervasive	DOID	DOID:0060042	atypical autism
+MESH	D002583	Uterine Cervical Neoplasms	HP	HP:0032241	Cervical neoplasm
+MESH	D002583	Uterine Cervical Neoplasms	DOID	DOID:0060325	cervical polyp
 MESH	D002703	Chloranil	CHEBI	CHEBI:36703	tetrachloro-1,4-benzoquinone
 MESH	D002766	Cholecystokinin	HGNC	1569	CCK
 MESH	D002787	Sterol Esterase	HGNC	1848	CEL
@@ -1071,6 +1080,8 @@ MESH	D002925	Ciliary Motility Disorders	DOID	DOID:0060340	ciliopathy
 MESH	D002955	Leucovorin	CHEBI	CHEBI:15640	5-formyltetrahydrofolic acid
 MESH	D003027	Cluster Headache	DOID	DOID:13375	temporal arteritis
 MESH	D003093	Colitis, Ulcerative	EFO	1001223	ulcerative proctosigmoiditis
+MESH	D003110	Colonic Neoplasms	DOID	DOID:234	colon adenocarcinoma
+MESH	D003110	Colonic Neoplasms	DOID	DOID:1520	colon carcinoma
 MESH	D003115	Colony-Stimulating Factors	HGNC	2434	CSF2
 MESH	D003117	Color Vision Defects	HP	HP:0007641	Dyschromatopsia
 MESH	D003117	Color Vision Defects	DOID	DOID:13909	red-green color blindness
@@ -1078,17 +1089,13 @@ MESH	D003117	Color Vision Defects	DOID	DOID:13910	red color blindness
 MESH	D003349	Cortisone Reductase	HGNC	1548	CBR1
 MESH	D003373	Coumaric Acids	CHEBI	CHEBI:23401	coumaric acid
 MESH	D003373	Coumaric Acids	CHEBI	CHEBI:24689	hydroxycinnamic acid
-MESH	D003389	Cranial Nerve Diseases	HP	HP:0001291	Abnormal cranial nerve morphology
-MESH	D003389	Cranial Nerve Diseases	DOID	DOID:3817	cranial nerve palsy
 MESH	D003398	Craniosynostoses	EFO	0008511	metopic craniosynostosis
 MESH	D003398	Craniosynostoses	EFO	0700077	isolated plagiocephaly
-MESH	D003424	Crohn Disease	DOID	DOID:0060190	ileocolitis
-MESH	D003424	Crohn Disease	DOID	DOID:0110892	inflammatory bowel disease 1
 MESH	D003440	Croup	HP	HP:0033000	Subglottic laryngitis
 MESH	D003516	Cycloparaffins	CHEBI	CHEBI:33642	cyclic olefin
 MESH	D003516	Cycloparaffins	CHEBI	CHEBI:23453	cycloalkane
+MESH	D003528	Carcinoma, Adenoid Cystic	DOID	DOID:660	adrenal cortex cancer
 MESH	D003528	Carcinoma, Adenoid Cystic	HP	HP:0031024	Cylindroma
-MESH	D003528	Carcinoma, Adenoid Cystic	EFO	1000210	Cribriform Carcinoma
 MESH	D003542	Cystathionine gamma-Lyase	HGNC	2501	CTH
 MESH	D003569	Cytidine Monophosphate N-Acetylneuraminic Acid	CHEBI	CHEBI:16556	CMP-N-acetyl-beta-neuraminic acid
 MESH	D003575	Cytochromes c1	HGNC	2579	CYC1
@@ -1125,11 +1132,15 @@ MESH	D004671	Encephalitis, Arbovirus	DOID	DOID:646	viral encephalitis
 MESH	D004675	Encephalitis, Tick-Borne	DOID	DOID:646	viral encephalitis
 MESH	D004743	Enkephalin, Leucine	CHEBI	CHEBI:89656	Leu-enkephalin
 MESH	D004743	Enkephalin, Leucine	HGNC	8820	PDYN
+MESH	D004761	Enterocolitis, Pseudomembranous	HP	HP:0032168	Clostridium difficile colitis
+MESH	D004761	Enterocolitis, Pseudomembranous	EFO	1001314	pseudomembranous enterocolitis
 MESH	D004829	Epilepsy, Generalized	EFO	0005917	generalised epilepsy
 MESH	D004831	Epilepsies, Myoclonic	EFO	1001900	myoclonic epilepsy
 MESH	D004831	Epilepsies, Myoclonic	HP	HP:0032794	Myoclonic seizure
 MESH	D004915	Leukemia, Erythroblastic, Acute	EFO	1001257	acute erythroblastic leukemia
 MESH	D004915	Leukemia, Erythroblastic, Acute	DOID	DOID:0080780	acute erythroid leukemia
+MESH	D005099	Exotropia	HP	HP:0031717	Alternating exotropia
+MESH	D005099	Exotropia	HP	HP:0020049	Exodeviation
 MESH	D005117	Cardiac Complexes, Premature	EFO	0009276	ventricular ectopy
 MESH	D005117	Cardiac Complexes, Premature	EFO	0009275	premature cardiac contractions
 MESH	D005353	Fibronectins	HGNC	3778	FN1
@@ -1158,13 +1169,13 @@ MESH	D006242	Haptoglobins	HGNC	5141	HP
 MESH	D006255	Rhinitis, Allergic, Seasonal	DOID	DOID:4481	allergic rhinitis
 MESH	D006313	Hearing Loss, Central	DOID	DOID:10003	sensorineural hearing loss
 MESH	D006319	Hearing Loss, Sensorineural	DOID	DOID:10003	sensorineural hearing loss
+MESH	D006391	Hemangioma	HP	HP:0032060	Epithelioid hemangioma
+MESH	D006391	Hemangioma	DOID	DOID:277	chorioangioma
 MESH	D006408	Hematoma, Subdural	EFO	1001801	intracranial subdural hematoma
 MESH	D006416	Hematoxylin	CHEBI	CHEBI:51686	haematoxylin
 MESH	D006416	Hematoxylin	CHEBI	CHEBI:5601	(+)-haematoxylin
 MESH	D006418	Heme	CHEBI	CHEBI:17627	ferroheme b
 MESH	D006418	Heme	CHEBI	CHEBI:26355	heme b
-MESH	D006524	Hepatitis, Viral, Animal	DOID	DOID:1884	viral hepatitis
-MESH	D006525	Hepatitis, Viral, Human	DOID	DOID:1884	viral hepatitis
 MESH	D006536	Heptanes	CHEBI	CHEBI:43098	heptane
 MESH	D006586	Hexanes	CHEBI	CHEBI:29021	hexane
 MESH	D006607	Adenoma, Sweat Gland	DOID	DOID:5445	syringocystadenoma papilliferum
@@ -1175,10 +1186,13 @@ MESH	D006859	Hydrogen	CHEBI	CHEBI:18276	dihydrogen
 MESH	D006859	Hydrogen	CHEBI	CHEBI:50270	pantoprazole sodium
 MESH	D006923	Hymecromone	CHEBI	CHEBI:17224	4-methylumbelliferone
 MESH	D006923	Hymecromone	CHEBI	CHEBI:5679	herniarin
+MESH	D006970	Disorders of Excessive Somnolence	EFO	0005246	hypersomnia
+MESH	D006970	Disorders of Excessive Somnolence	HP	HP:0007200	Episodic hypersomnia
 MESH	D007064	L-Iditol 2-Dehydrogenase	HGNC	11184	SORD
 MESH	D007174	Disruptive, Impulse Control, and Conduct Disorders	HP	HP:0000734	Disinhibition
+MESH	D007174	Disruptive, Impulse Control, and Conduct Disorders	HP	HP:5200337	Compulsive stealing
 MESH	D007335	Insulin-Like Growth Factor II	HGNC	5466	IGF2
-MESH	D007439	Introversion, Psychological	HP	HP:5200320	Decreased seeking of relationships
+MESH	D007439	Introversion, Psychological	HP	HP:5200320	Diminishment of relationship seeking
 MESH	D007453	Iodide Peroxidase	FPLX	Deiodinase	Deiodinase
 MESH	D007453	Iodide Peroxidase	HGNC	21071	IYD
 MESH	D007453	Iodide Peroxidase	HGNC	12015	TPO
@@ -1196,8 +1210,6 @@ MESH	D007655	Ketoglutarate Dehydrogenase Complex	GO	GO:0045240	dihydrolipoyl deh
 MESH	D007655	Ketoglutarate Dehydrogenase Complex	HGNC	8124	OGDH
 MESH	D007676	Kidney Failure, Chronic	HP	HP:0003774	Stage 5 chronic kidney disease
 MESH	D007676	Kidney Failure, Chronic	DOID	DOID:783	end stage renal disease
-MESH	D007822	Laryngeal Neoplasms	HP	HP:0012118	Laryngeal carcinoma
-MESH	D007822	Laryngeal Neoplasms	DOID	DOID:2596	larynx cancer
 MESH	D007827	Laryngitis	HP	HP:0033000	Subglottic laryngitis
 MESH	D007931	Leucyl Aminopeptidase	HGNC	18449	LAP3
 MESH	D007948	Leukemia, Monocytic, Acute	DOID	DOID:0080149	adult acute monocytic leukemia
@@ -1215,10 +1227,14 @@ MESH	D008077	Lipoproteins, LDL	EFO	0004195	LDL cholesterol
 MESH	D008077	Lipoproteins, LDL	CHEBI	CHEBI:39026	low-density lipoprotein
 MESH	D008078	Cholesterol, LDL	EFO	0004195	LDL cholesterol
 MESH	D008078	Cholesterol, LDL	CHEBI	CHEBI:47774	low-density lipoprotein cholesterol
+MESH	D008080	Liposarcoma	DOID	DOID:5690	well-differentiated liposarcoma
+MESH	D008080	Liposarcoma	DOID	DOID:5702	pleomorphic liposarcoma
+MESH	D008080	Liposarcoma	EFO	0000736	well-differentiated liposarcoma
 MESH	D008124	Locomotion	EFO	0003940	physical activity
 MESH	D008263	Macrophage Migration-Inhibitory Factors	HGNC	7097	MIF
 MESH	D008291	Malate Dehydrogenase	HGNC	8923	PHGDH
 MESH	D008303	Malignant Carcinoid Syndrome	EFO	1000852	carcinoid syndrome
+MESH	D008305	Malignant Hyperthermia	EFO	0009071	malignant hyperthermia, susceptibility to, 1
 MESH	D008555	Melitten	CHEBI	CHEBI:6736	melittin
 MESH	D008570	Memory, Short-Term	EFO	0004335	short-term memory
 MESH	D008570	Memory, Short-Term	GO	GO:0007614	short-term memory
@@ -1244,6 +1260,7 @@ MESH	D009320	Atrial Natriuretic Factor	HGNC	4877	HESX1
 MESH	D009320	Atrial Natriuretic Factor	HGNC	7939	NPPA
 MESH	D009414	Nerve Growth Factors	HGNC	1033	BDNF
 MESH	D009496	Neurotensin	HGNC	8038	NTS
+MESH	D009507	Nevus of Ota	EFO	1000395	Nevus of Ito
 MESH	D009556	Niobium	CHEBI	CHEBI:33344	niobium atom
 MESH	D009556	Niobium	CHEBI	CHEBI:52460	niobium-93 atom
 MESH	D009572	Nitrite Reductases	HGNC	14077	NGB
@@ -1277,6 +1294,9 @@ MESH	D010744	Phosphoric Monoester Hydrolases	FPLX	Phosphatase	Phosphatase
 MESH	D010749	Phosphoprotein Phosphatases	FPLX	Phosphatase	Phosphatase
 MESH	D010751	Phosphopyruvate Hydratase	FPLX	ENO	ENO
 MESH	D010751	Phosphopyruvate Hydratase	HGNC	3350	ENO1
+MESH	D010859	Pigmentation Disorders	EFO	1000395	Nevus of Ito
+MESH	D010871	Pinealoma	DOID	DOID:0081248	pineocytoma
+MESH	D010871	Pinealoma	DOID	DOID:1664	pineoblastoma
 MESH	D010937	Plant Growth Regulators	CHEBI	CHEBI:37848	plant hormone
 MESH	D010937	Plant Growth Regulators	CHEBI	CHEBI:26155	plant growth regulator
 MESH	D010959	Tissue Plasminogen Activator	HGNC	9051	PLAT
@@ -1320,8 +1340,6 @@ MESH	D012266	Ribose	CHEBI	CHEBI:47013	D-ribofuranose
 MESH	D012266	Ribose	CHEBI	CHEBI:27476	beta-D-ribopyranose
 MESH	D012394	Rosaniline Dyes	CHEBI	CHEBI:87665	rosanilin
 MESH	D012514	Sarcoma, Kaposi	EFO	0002612	human herpesvirus 8 infection
-MESH	D012594	Scleroderma, Localized	DOID	DOID:419	scleroderma
-MESH	D012595	Scleroderma, Systemic	DOID	DOID:419	scleroderma
 MESH	D012633	Secretin	HGNC	10607	SCT
 MESH	D012695	L-Serine Dehydratase	HGNC	14398	SRR
 MESH	D012695	L-Serine Dehydratase	HGNC	10691	SDS
@@ -1329,7 +1347,7 @@ MESH	D012717	Sesquiterpenes	CHEBI	CHEBI:35189	sesquiterpene
 MESH	D012717	Sesquiterpenes	CHEBI	CHEBI:26658	sesquiterpenoid
 MESH	D012794	Sialic Acids	CHEBI	CHEBI:26667	sialic acid
 MESH	D012838	Silymarin	CHEBI	CHEBI:9144	silibinin
-MESH	D012934	Social Isolation	HP	HP:5200320	Decreased seeking of relationships
+MESH	D012934	Social Isolation	HP	HP:5200320	Diminishment of relationship seeking
 MESH	D013007	Growth Hormone-Releasing Hormone	HGNC	4265	GHRH
 MESH	D013130	Spinal Stenosis	HP	HP:0004610	Lumbar spinal canal stenosis
 MESH	D013130	Spinal Stenosis	HP	HP:0003416	Spinal canal stenosis
@@ -1347,7 +1365,6 @@ MESH	D013451	Sulfonic Acids	CHEBI	CHEBI:29214	sulfonic acid
 MESH	D013451	Sulfonic Acids	CHEBI	CHEBI:33551	organosulfonic acid
 MESH	D013463	Sulfuric Acid Esters	CHEBI	CHEBI:25704	organic sulfate
 MESH	D013463	Sulfuric Acid Esters	CHEBI	CHEBI:26819	sulfuric ester
-MESH	D013576	Syndactyly	DOID	DOID:0111816	syndactyly type 1
 MESH	D013611	Tachycardia, Atrioventricular Nodal Reentry	EFO	1001843	sinoatrial nodal reentry tachycardia
 MESH	D013611	Tachycardia, Atrioventricular Nodal Reentry	HP	HP:0011717	Atrioventricular reentrant tachycardia
 MESH	D013649	Taste	GO	GO:0050909	sensory perception of taste
@@ -1368,6 +1385,8 @@ MESH	D014438	Typhus, Epidemic Louse-Borne	DOID	DOID:11256	typhus
 MESH	D014438	Typhus, Epidemic Louse-Borne	DOID	DOID:0050481	endemic typhus
 MESH	D014450	Electron Transport Complex III	FPLX	ETC_complex_III	ETC_complex_III
 MESH	D014450	Electron Transport Complex III	GO	GO:0045275	respiratory chain complex III
+MESH	D014516	Ureteral Neoplasms	DOID	DOID:11819	ureter cancer
+MESH	D014516	Ureteral Neoplasms	DOID	DOID:4939	ureter carcinoma
 MESH	D014534	UDPglucose 4-Epimerase	HGNC	4116	GALE
 MESH	D014631	Valerates	CHEBI	CHEBI:17418	valeric acid
 MESH	D014642	Vanilmandelic Acid	CHEBI	CHEBI:20106	vanillylmandelic acid
@@ -1384,13 +1403,22 @@ MESH	D015060	1,2-Dipalmitoylphosphatidylcholine	CHEBI	CHEBI:72999	1,2-dihexadeca
 MESH	D015078	2-Hydroxyphenethylamine	CHEBI	CHEBI:16343	phenylethanolamine
 MESH	D015084	2,4-Dichlorophenoxyacetic Acid	CHEBI	CHEBI:28854	2,4-D
 MESH	D015123	7,8-Dihydro-7,8-dihydroxybenzo(a)pyrene 9,10-oxide	CHEBI	CHEBI:30614	benzo[a]pyrene diol epoxide I
+MESH	D015154	Esophageal Motility Disorders	EFO	1001785	diffuse esophageal spasm
+MESH	D015155	Esophageal Spasm, Diffuse	EFO	1001785	diffuse esophageal spasm
 MESH	D015237	Dinoprost	CHEBI	CHEBI:15553	prostaglandin F2alpha
+MESH	D015356	Retinal Artery Occlusion	HP	HP:0020161	Branch retinal artery occlusion
+MESH	D015356	Retinal Artery Occlusion	HP	HP:0025342	Central retinal artery occlusion
+MESH	D015356	Retinal Artery Occlusion	HP	HP:0025326	Retinal arterial occlusion
 MESH	D015444	Exercise	EFO	0003940	physical activity
 MESH	D015458	Leukemia, T-Cell	DOID	DOID:5602	T-cell adult acute lymphocytic leukemia
 MESH	D015458	Leukemia, T-Cell	DOID	DOID:5603	T-cell acute lymphoblastic leukemia
+MESH	D015470	Leukemia, Myeloid, Acute	DOID	DOID:0070323	childhood acute myeloid leukemia
+MESH	D015470	Leukemia, Myeloid, Acute	DOID	DOID:0081087	acute myeloid leukemia with maturation
+MESH	D015470	Leukemia, Myeloid, Acute	DOID	DOID:0081086	acute myeloid leukemia without maturation
 MESH	D015572	Spiramycin	CHEBI	CHEBI:85260	spiramycin I
 MESH	D015618	Histiocytosis, Sinus	DOID	DOID:0111278	histiocytosis-lymphadenopathy plus syndrome
 MESH	D015763	2-Amino-5-phosphonovalerate	CHEBI	CHEBI:138644	2-amino-5-phosphonopentanoic acid
+MESH	D015776	Keratoderma, Palmoplantar, Diffuse	DOID	DOID:0050428	nonepidermolytic palmoplantar keratoderma
 MESH	D015786	Cytochromes b5	HGNC	2570	CYB5A
 MESH	D015786	Cytochromes b5	CHEBI	CHEBI:18097	ferricytochrome b5
 MESH	D015842	Serine Proteinase Inhibitors	CHEBI	CHEBI:5924	EC 3.4.21.* (serine endopeptidase) inhibitor
@@ -1445,10 +1473,12 @@ MESH	D018246	Adrenocortical Adenoma	DOID	DOID:0050891	adrenal cortical adenoma
 MESH	D018248	Adenoma, Liver Cell	EFO	0005397	high content analysis of cells
 MESH	D018248	Adenoma, Liver Cell	DOID	DOID:0050868	hepatocellular adenoma
 MESH	D018268	Adrenocortical Carcinoma	DOID	DOID:660	adrenal cortex cancer
-MESH	D018268	Adrenocortical Carcinoma	DOID	DOID:3950	adrenal carcinoma
 MESH	D018281	Cholangiocarcinoma	EFO	0008453	calf circumference measurement
 MESH	D018281	Cholangiocarcinoma	DOID	DOID:0111595	congenital contractural arachnodactyly
 MESH	D018281	Cholangiocarcinoma	DOID	DOID:4928	intrahepatic cholangiocarcinoma
+MESH	D018317	Nerve Sheath Neoplasms	DOID	DOID:962	neurofibroma
+MESH	D018317	Nerve Sheath Neoplasms	DOID	DOID:5940	malignant peripheral nerve sheath tumor
+MESH	D018329	Nevus, Blue	HP	HP:0100814	Blue nevus
 MESH	D018350	alpha-Amino-3-hydroxy-5-methyl-4-isoxazolepropionic Acid	CHEBI	CHEBI:28812	(aminomethyl)phosphonic acid
 MESH	D018442	Lymphoma, B-Cell, Marginal Zone	DOID	DOID:0050748	marginal zone lymphoma
 MESH	D018442	Lymphoma, B-Cell, Marginal Zone	DOID	DOID:0050909	extranodal marginal zone lymphoma of mucosa-associated lymphoid tissue
@@ -1509,6 +1539,8 @@ MESH	D020784	Matrix Metalloproteinase 8	HGNC	7175	MMP8
 MESH	D020789	Cathepsin C	HGNC	2528	CTSC
 MESH	D020794	Receptor Protein-Tyrosine Kinases	HGNC	8031	NTRK1
 MESH	D020801	Receptor, Ciliary Neurotrophic Factor	HGNC	2170	CNTFR
+MESH	D020821	Dystonic Disorders	DOID	DOID:0050836	focal dystonia
+MESH	D020821	Dystonic Disorders	HP	HP:0007325	Generalized dystonia
 MESH	D020840	Tissue Kallikreins	FPLX	KLK	KLK
 MESH	D020842	Plasma Kallikrein	HGNC	6371	KLKB1
 MESH	D020894	Microfibrils	GO	GO:0001527	microfibril
@@ -1522,6 +1554,7 @@ MESH	D025803	Tumor Suppressor Protein p14ARF	HGNC	1787	CDKN2A
 MESH	D026122	Factor XIIIa	HGNC	11780	TGM4
 MESH	D028227	Amyloid Neuropathies, Familial	EFO	0004129	familial amyloid neuropathy
 MESH	D028227	Amyloid Neuropathies, Familial	DOID	DOID:0050638	transthyretin amyloidosis
+MESH	D028227	Amyloid Neuropathies, Familial	DOID	DOID:8943	lattice corneal dystrophy
 MESH	D029242	Optic Atrophy, Hereditary, Leber	DOID	DOID:0111755	Leber hereditary optic neuropathy and dystonia
 MESH	D033963	Adaptor Protein Complex 3	GO	GO:0030123	AP-3 adaptor complex
 MESH	D033963	Adaptor Protein Complex 3	FPLX	Adaptor_protein_III	Adaptor_protein_III
@@ -1593,6 +1626,7 @@ MESH	D048031	JNK Mitogen-Activated Protein Kinases	HGNC	6881	MAPK8
 MESH	D048031	JNK Mitogen-Activated Protein Kinases	FPLX	JNK	JNK
 MESH	D048068	PPAR-beta	HGNC	9235	PPARD
 MESH	D049071	Endopeptidase Clp	HGNC	2084	CLPP
+MESH	D049328	Mongolian Spot	HP	HP:0100814	Blue nevus
 MESH	D049488	Phosphatidylethanolamine Binding Protein	HGNC	8630	PEBP1
 MESH	D049992	Sodium Chloride Symporters	HGNC	10912	SLC12A3
 MESH	D050031	Hashimoto Disease	EFO	0002200	HT
@@ -1650,6 +1684,10 @@ MESH	D054659	Diketopiperazines	CHEBI	CHEBI:16535	piperazine-2,5-dione
 MESH	D054697	Cytostatic Agents	CHEBI	CHEBI:35610	antineoplastic agent
 MESH	D054804	Cathelicidins	CHEBI	CHEBI:81578	cathelicidin
 MESH	D054804	Cathelicidins	HGNC	1472	CAMP
+MESH	D054990	Idiopathic Pulmonary Fibrosis	DOID	DOID:0060941	interstitial lung disease 1
+MESH	D054990	Idiopathic Pulmonary Fibrosis	HP	HP:0031950	Usual interstitial pneumonia
+MESH	D055009	Spondylosis	EFO	0009610	cervical spondylosis
+MESH	D055009	Spondylosis	EFO	0009477	vertebral joint disease
 MESH	D055252	Cell-Derived Microparticles	GO	GO:0072562	blood microparticle
 MESH	D055252	Cell-Derived Microparticles	GO	GO:1990742	microvesicle
 MESH	D055572	Ceramidases	HGNC	735	ASAH1

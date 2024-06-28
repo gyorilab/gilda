@@ -192,6 +192,7 @@ def get_terms():
         generate_efo_terms(ignore_mappings=True) + \
         generate_hp_terms(ignore_mappings=True) + \
         generate_doid_terms(ignore_mappings=True)
+    breakpoint()
     terms = filter_out_duplicates(terms)
     return terms
 
@@ -253,6 +254,8 @@ if __name__ == '__main__':
     keys_to_remove = set()
     # Iterate over all the automatically proposed mappings
     for mesh_id, local_mappings in mappings.items():
+        if mesh_id == 'C557820':
+            breakpoint()
         # If we already have a positive curation for the given MeSH ID
         # we want to replace the content automatically generated here
         # with the terms corresponding to the positive curation
