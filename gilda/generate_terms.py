@@ -565,13 +565,14 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         map_to_ns = {'MESH', 'DOID'}
     terms = []
     db, db_id, name = prefix.upper(), entry['id'], entry['name']
+    entry_name = name
     # We first need to decide if we prioritize another name space
     xref_dict = {xr['namespace']: xr['id'] for xr in entry.get('xrefs', [])}
     # Handle MeSH mappings first
     auto_mesh_mapping = mesh_mappings_reverse.get((db, db_id))
     if auto_mesh_mapping and not ignore_mappings:
-        db, db_id, name = ('MESH', auto_mesh_mapping[0],
-                           auto_mesh_mapping[1])
+        db, db_id, entry_name = ('MESH', auto_mesh_mapping[0],
+                                 auto_mesh_mapping[1])
     elif 'MESH' in map_to_ns and ('MESH' in xref_dict or 'MSH' in xref_dict):
         mesh_id = xref_dict.get('MESH') or xref_dict.get('MSH')
         # Since we currently only include regular MeSH terms (which start
@@ -583,7 +584,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
                 # Here we need to check if we further map the MeSH ID to
                 # another namespace
                 mesh_mapping = mesh_mappings.get(mesh_id)
-                db, db_id, name = mesh_mapping if \
+                db, db_id, entry_name = mesh_mapping if \
                     (mesh_mapping and (mesh_mapping[0]
                                        not in {'EFO', 'HP', 'DOID'})) \
                     else ('MESH', mesh_id, mesh_name)
@@ -601,7 +602,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         # If we don't get a name here, it's likely because an entry is
         # obsolete so we don't do the mapping
         if doid_name:
-            db, db_id, name = 'DOID', doid, doid_name
+            db, db_id, entry_name = 'DOID', doid, doid_name
 
     # Add a term for the name first
     name_term = Term(
@@ -609,7 +610,7 @@ def terms_from_obo_json_entry(entry, prefix, ignore_mappings=False,
         text=name,
         db=db,
         id=db_id,
-        entry_name=name,
+        entry_name=entry_name,
         status='name',
         source=prefix,
         source_db=prefix.upper() if db != prefix.upper() else None,
@@ -709,7 +710,6 @@ def get_all_terms():
     ]
     for generated_terms in generated_term_groups:
         terms += generated_terms
-
     terms = filter_out_duplicates(terms)
     return terms
 
