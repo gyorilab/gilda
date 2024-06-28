@@ -18,7 +18,7 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'Aminopeptidases': {'MESH': 'D000626'},
                       'NF-AT proteins': {'MESH': 'D050778'},
                       'LTbetaR': {'HGNC': '6718'},
-                      'RNAi': {'MESH': 'D034622', 'GO': 'GO:0016246'},
+                      'RNAi': {'MESH': 'D034622', 'GO': 'GO:0016441'},
                       'Chaetocin': {'CHEBI': 'CHEBI:68747'},
                       'BAY11-7082': {'CHEBI': 'CHEBI:85928'},
                       'Toll-like receptors': {'MESH': 'D051193'},
@@ -48,7 +48,7 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'integrin alpha': {'FPLX': 'ITGA'},
                       'DC': {'MESH': 'D003713'},
                       'BMD': {'MESH': 'D015519'},
-                      'angina': {'EFO': '0003913'}}
+                      'angina': {'MESH': 'D000787', 'EFO': '0003913'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
