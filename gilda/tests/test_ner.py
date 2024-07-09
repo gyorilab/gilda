@@ -75,3 +75,20 @@ def test_get_all():
     assert "hgnc:3467" in curies  # ESR1
     assert "fplx:ESR" in curies
     assert "GO:0005783" in curies  # endoplasmic reticulum
+
+
+def test_context_test():
+    text = "This is about ER."
+    context_text = "Estrogen receptor (ER) is a protein family."
+    results = gilda.annotate(text, context_text=context_text)
+    assert len(results) == 1
+    assert results[0][1].term.get_curie() == "fplx:ESR"
+    assert results[0][0] == "ER"
+    assert results[0][2:4] == (14, 16)
+
+    context_text = "Calcium is released from the ER."
+    results = gilda.annotate(text, context_text=context_text)
+    assert len(results) == 1
+    assert results[0][1].term.get_curie() == "GO:0005783"
+    assert results[0][0] == "ER"
+    assert results[0][2:4] == (14, 16)
