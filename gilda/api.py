@@ -113,6 +113,7 @@ def annotate(
     organisms=None,
     namespaces=None,
     return_first: bool = True,
+    context_text: str = None,
 ):
     """Annotate a given text with Gilda (i.e., do named entity recognition).
 
@@ -131,8 +132,11 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
-    return_first:
+    return_first :
         If true, only returns the first result. Otherwise, returns all results.
+    context_text :
+        A longer span of text that serves as additional context for the text
+        being annotated for disambiguation purposes.
 
     Returns
     -------
@@ -150,6 +154,7 @@ def annotate(
         organisms=organisms,
         namespaces=namespaces,
         return_first=return_first,
+        context_text=context_text,
     )
 
 

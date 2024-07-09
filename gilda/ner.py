@@ -70,6 +70,7 @@ def annotate(
     organisms=None,
     namespaces=None,
     return_first: bool = True,
+    context_text: str = None,
 ) -> List[Annotation]:
     """Annotate a given text with Gilda.
 
@@ -90,8 +91,11 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
-    return_first:
+    return_first :
         If true, only returns the first result. Otherwise, returns all results.
+    context_text :
+        A longer span of text that serves as additional context for the text
+        being annotated for disambiguation purposes.
 
     Returns
     -------
@@ -131,9 +135,9 @@ def annotate(
 
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
-                txt_span = ' '.join(words[idx:idx+span])
+                txt_span = ' '.join(raw_words[idx:idx+span])
                 matches = grounder.ground(
-                    txt_span, context=text,
+                    txt_span, context=text if context_text is None else context_text,
                     organisms=organisms, namespaces=namespaces,
                 )
                 if matches:
