@@ -14,6 +14,7 @@ The results are a list of Annotation objects each of which contains:
 - the `start` position in the text string where the entity starts
 - the `end` position in the text string where the entity ends
 
+
 In this example, the two concepts are grounded to FamPlex entries.
 
 >>> results[0].text, results[0].matches[0].term.get_curie(), results[0].start, results[0].end
