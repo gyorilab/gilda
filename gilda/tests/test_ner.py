@@ -28,14 +28,14 @@ def test_annotate():
     assert annotations[6][2:4] == (56, 63)  # protein
 
     # Check that the curies are correct
-    assert isinstance(annotations[0][1], gilda.ScoredMatch)
-    assert annotations[0][1].term.get_curie() == "CHEBI:36080"
-    assert annotations[1][1].term.get_curie() == "hgnc:1097"
-    assert annotations[2][1].term.get_curie() == "mesh:D010770"
-    assert annotations[3][1].term.get_curie() == "hgnc:1097"
-    assert annotations[4][1].term.get_curie() == "mesh:D005796"
-    assert annotations[5][1].term.get_curie() == "hgnc:1097"
-    assert annotations[6][1].term.get_curie() == "CHEBI:36080"
+    assert isinstance(annotations[0][1][0], gilda.ScoredMatch)
+    assert annotations[0][1][0].term.get_curie() == "CHEBI:36080"
+    assert annotations[1][1][0].term.get_curie() == "hgnc:1097"
+    assert annotations[2][1][0].term.get_curie() == "mesh:D010770"
+    assert annotations[3][1][0].term.get_curie() == "hgnc:1097"
+    assert annotations[4][1][0].term.get_curie() == "mesh:D005796"
+    assert annotations[5][1][0].term.get_curie() == "hgnc:1097"
+    assert annotations[6][1][0].term.get_curie() == "CHEBI:36080"
 
 
 def test_get_brat():
@@ -66,12 +66,12 @@ def test_get_brat():
 
 def test_get_all():
     full_text = "This is about ER."
-    results = gilda.annotate(full_text, return_first=False)
-    assert len(results) > 1
-    curies = {
-        scored_match.term.get_curie()
-        for _, scored_match, _, _ in results
-    }
+    results = gilda.annotate(full_text)
+    assert len(results) == 1
+    curies = set()
+    for _, scored_matches, _, _ in results:
+        for scored_match in scored_matches:
+            curies.add(scored_match.term.get_curie())
     assert "hgnc:3467" in curies  # ESR1
     assert "fplx:ESR" in curies
     assert "GO:0005783" in curies  # endoplasmic reticulum
@@ -82,13 +82,13 @@ def test_context_test():
     context_text = "Estrogen receptor (ER) is a protein family."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[0][1].term.get_curie() == "fplx:ESR"
+    assert results[0][1][0].term.get_curie() == "fplx:ESR"
     assert results[0][0] == "ER"
     assert results[0][2:4] == (14, 16)
 
     context_text = "Calcium is released from the ER."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[0][1].term.get_curie() == "GO:0005783"
+    assert results[0][1][0].term.get_curie() == "GO:0005783"
     assert results[0][0] == "ER"
     assert results[0][2:4] == (14, 16)

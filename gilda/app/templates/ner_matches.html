@@ -25,9 +25,9 @@
             </tr>
             </thead>
             <tbody>
-            {% for text, match, start, end in annotations %}
+            {% for text, matches, start, end in annotations %}
                 <tr>
-                    {% set match_curie = match.term.get_curie() %}
+                    {% set match_curie = matches[0].term.get_curie() %}
                     <td>{{start}}-{{end}}</td>
                     <td>
                         <a class="label label-primary" href="{{ match['url'] }}">

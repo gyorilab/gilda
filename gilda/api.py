@@ -112,7 +112,6 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
-    return_first: bool = True,
     context_text: str = None,
 ):
     """Annotate a given text with Gilda (i.e., do named entity recognition).
@@ -132,18 +131,16 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
-    return_first :
-        If true, only returns the first result. Otherwise, returns all results.
     context_text :
         A longer span of text that serves as additional context for the text
         being annotated for disambiguation purposes.
 
     Returns
     -------
-    list[tuple[str, ScoredMatch, int, int]]
-        A list of tuples of start and end character offsets of the text
-        corresponding to the entity, the entity text, and the ScoredMatch
-        object corresponding to the entity.
+    list[tuple[str, list[ScoredMatch], int, int]]
+        A list of matches where each match is a tuple consisting of
+        the matches text span, the list of ScoredMatches, and the
+        start and end character offsets of the text span.
     """
     from .ner import annotate as _annotate
 
@@ -153,7 +150,6 @@ def annotate(
         sent_split_fun=sent_split_fun,
         organisms=organisms,
         namespaces=namespaces,
-        return_first=return_first,
         context_text=context_text,
     )
 

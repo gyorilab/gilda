@@ -9,7 +9,8 @@ recognition (NER) algorithm. It can be used as follows:
 The results are a list of 4-tuples containing:
 
 - the text string matched
-- a :class:`gilda.grounder.ScoredMatch` instance containing the _best_ match
+- a list of :class:`gilda.grounder.ScoredMatch` instances containing a sorted list of matches
+  for the given text span (first one is the best match)
 - the position in the text string where the entity starts
 - the position in the text string where the entity ends
 
@@ -69,7 +70,6 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
-    return_first: bool = True,
     context_text: str = None,
 ) -> List[Annotation]:
     """Annotate a given text with Gilda.
@@ -91,18 +91,16 @@ def annotate(
     namespaces : list[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
-    return_first :
-        If true, only returns the first result. Otherwise, returns all results.
     context_text :
         A longer span of text that serves as additional context for the text
         being annotated for disambiguation purposes.
 
     Returns
     -------
-    list[tuple[str, ScoredMatch, int, int]]
-        A list of tuples of start and end character offsets of the text
-        corresponding to the entity, the entity text, and the ScoredMatch
-        object corresponding to the entity.
+    list[tuple[str, list[ScoredMatch], int, int]]
+        A list of matches where each match is a tuple consisting of
+        the matches text span, the list of ScoredMatches, and the
+        start and end character offsets of the text span.
     """
     if grounder is None:
         grounder = get_grounder()
@@ -136,22 +134,19 @@ def annotate(
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
                 txt_span = ' '.join(raw_words[idx:idx+span])
-                matches = grounder.ground(
-                    txt_span, context=text if context_text is None else context_text,
-                    organisms=organisms, namespaces=namespaces,
-                )
+                context = text if context_text is None else context_text
+                matches = grounder.ground(txt_span,
+                                          context=context,
+                                          organisms=organisms,
+                                          namespaces=namespaces)
                 if matches:
                     start_coord = word_coords[idx]
                     end_coord = word_coords[idx+span-1] + \
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
-
-                    if return_first:
-                        matches = [matches[0]]
-                    for match in matches:
-                        entities.append(
-                            (raw_span, match, start_coord, end_coord)
-                        )
+                    entities.append((
+                        raw_span, matches, start_coord, end_coord
+                    ))
 
                     skip_until = idx + span
                     break
@@ -163,7 +158,7 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
 
     Parameters
     ----------
-    entities : list[tuple[str, str | ScoredMatch, int, int]]
+    entities : list[tuple[str, str | list[str] | list[ScoredMatch], int, int]]
         A list of tuples of entity text, grounded curie, start and end
         character offsets in the text corresponding to an entity.
     entity_type : str, optional
@@ -184,9 +179,14 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     """
     brat = []
     ix_offset = max(1, ix_offset)
-    for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
-        if isinstance(curie, ScoredMatch):
-            curie = curie.term.get_curie()
+    for idx, (raw_span, curies, start, end) in enumerate(entities, ix_offset):
+        if isinstance(curies, str):
+            curie = curies
+        # Note that here we always that the best match and ignore the rest
+        else:
+            curie = curies[0]
+            if isinstance(curie, ScoredMatch):
+                curie = curie.term.get_curie()
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
         row = f'T{idx}\t{entity_type} {start} {end}' + (
