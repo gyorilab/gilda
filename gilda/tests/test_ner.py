@@ -15,27 +15,21 @@ def test_annotate():
     assert len(annotations) == 7
 
     # Check that the annotations are for the expected words
-    assert tuple(a[0] for a in annotations) == (
+    assert tuple(a.text for a in annotations) == (
         'protein', 'BRAF', 'kinase', 'BRAF', 'gene', 'BRAF', 'protein')
 
     # Check that the spans are correct
-    assert annotations[0][2:4] == (4, 11)  # protein
-    assert annotations[1][2:4] == (12, 16)  # BRAF
-    assert annotations[2][2:4] == (22, 28)  # kinase
-    assert annotations[3][2:4] == (30, 34)  # BRAF
-    assert annotations[4][2:4] == (40, 44)  # gene
-    assert annotations[5][2:4] == (46, 50)  # BRAF
-    assert annotations[6][2:4] == (56, 63)  # protein
+    expected_spans = ((4, 11), (12, 16), (22, 28), (30, 34), (40, 44),
+                      (46, 50), (56, 63))
+    actual_spans = tuple((a.start, a.end) for a in annotations)
+    assert actual_spans == expected_spans
 
     # Check that the curies are correct
-    assert isinstance(annotations[0][1][0], gilda.ScoredMatch)
-    assert annotations[0][1][0].term.get_curie() == "CHEBI:36080"
-    assert annotations[1][1][0].term.get_curie() == "hgnc:1097"
-    assert annotations[2][1][0].term.get_curie() == "mesh:D010770"
-    assert annotations[3][1][0].term.get_curie() == "hgnc:1097"
-    assert annotations[4][1][0].term.get_curie() == "mesh:D005796"
-    assert annotations[5][1][0].term.get_curie() == "hgnc:1097"
-    assert annotations[6][1][0].term.get_curie() == "CHEBI:36080"
+    expected_curies = ("CHEBI:36080", "hgnc:1097", "mesh:D010770",
+                       "hgnc:1097", "mesh:D005796", "hgnc:1097",
+                       "CHEBI:36080")
+    actual_curies = tuple(a.matches[0].term.get_curie() for a in annotations)
+    assert actual_curies == expected_curies
 
 
 def test_get_brat():
@@ -69,8 +63,8 @@ def test_get_all():
     results = gilda.annotate(full_text)
     assert len(results) == 1
     curies = set()
-    for _, scored_matches, _, _ in results:
-        for scored_match in scored_matches:
+    for annotation in results:
+        for scored_match in annotation.matches:
             curies.add(scored_match.term.get_curie())
     assert "hgnc:3467" in curies  # ESR1
     assert "fplx:ESR" in curies
@@ -82,13 +76,13 @@ def test_context_test():
     context_text = "Estrogen receptor (ER) is a protein family."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[0][1][0].term.get_curie() == "fplx:ESR"
-    assert results[0][0] == "ER"
-    assert results[0][2:4] == (14, 16)
+    assert results[0].matches[0].term.get_curie() == "fplx:ESR"
+    assert results[0].text == "ER"
+    assert (results[0].start, results[0].end) == (14, 16)
 
     context_text = "Calcium is released from the ER."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[0][1][0].term.get_curie() == "GO:0005783"
-    assert results[0][0] == "ER"
-    assert results[0][2:4] == (14, 16)
+    assert results[0].matches[0].term.get_curie() == "GO:0005783"
+    assert results[0].text == "ER"
+    assert (results[0].start, results[0].end) == (14, 16)
