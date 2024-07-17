@@ -6,24 +6,25 @@ recognition (NER) algorithm. It can be used as follows:
 >>> text = "MEK phosphorylates ERK"
 >>> results = annotate(text)
 
-The results are a list of 4-tuples containing:
+The results are a list of Annotation objects each of which contains:
 
-- the text string matched
-- a :class:`gilda.grounder.ScoredMatch` instance containing the _best_ match
-- the position in the text string where the entity starts
-- the position in the text string where the entity ends
+- the `text` string matched
+- a list of :class:`gilda.grounder.ScoredMatch` instances containing a sorted list of matches
+  for the given text span (first one is the best match)
+- the `start` position in the text string where the entity starts
+- the `end` position in the text string where the entity ends
 
 In this example, the two concepts are grounded to FamPlex entries.
 
->>> results[0][0], results[0][1].term.get_curie(), results[0][2], results[0][3]
+>>> results[0].text, results[0].matches[0].term.get_curie(), results[0].start, results[0].end
 ('MEK', 'fplx:MEK', 0, 3)
->>> results[1][0], results[1][1].term.get_curie(), results[1][2], results[1][3]
+>>> results[1].text, results[1].matches[0].term.get_curie(), results[1].start, results[1].end
 ('ERK', 'fplx:ERK', 19, 22)
 
 If you directly look in the second part of the 4-tuple, you get a full
 description of the match itself:
 
->>> results[0][1]
+>>> results[0].matches[0]
 ScoredMatch(Term(mek,MEK,FPLX,MEK,MEK,curated,famplex,None,None,None),\
 0.9288806431663574,Match(query=mek,ref=MEK,exact=False,space_mismatch=\
 False,dash_mismatches=set(),cap_combos=[('all_lower', 'all_caps')]))
@@ -44,23 +45,22 @@ the extension ``.txt`` and the annotations in a file with the
 same name but extension ``.ann``.
 """
 
-from typing import List, Tuple
+from typing import List
 
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
-from gilda import ScoredMatch, get_grounder
+from gilda import get_grounder
+from gilda.grounder import Annotation
 from gilda.process import normalize
 
 __all__ = [
     "annotate",
     "get_brat",
-    "Annotation",
+    "stop_words"
 ]
 
 stop_words = set(stopwords.words('english'))
-
-Annotation = Tuple[str, ScoredMatch, int, int]
 
 
 def annotate(
@@ -69,7 +69,6 @@ def annotate(
     sent_split_fun=None,
     organisms=None,
     namespaces=None,
-    return_first: bool = True,
     context_text: str = None,
 ) -> List[Annotation]:
     """Annotate a given text with Gilda.
@@ -85,24 +84,22 @@ def annotate(
         :func:`nltk.tokenize.sent_tokenize`. The function should take a string
         as input and return an iterable of strings corresponding to the sentences
         in the input text.
-    organisms : list[str], optional
+    organisms : List[str], optional
         A list of organism names to pass to the grounder. If not provided,
         human is used.
-    namespaces : list[str], optional
+    namespaces : List[str], optional
         A list of namespaces to pass to the grounder to restrict the matches
         to. By default, no restriction is applied.
-    return_first :
-        If true, only returns the first result. Otherwise, returns all results.
     context_text :
         A longer span of text that serves as additional context for the text
         being annotated for disambiguation purposes.
 
     Returns
     -------
-    list[tuple[str, ScoredMatch, int, int]]
-        A list of tuples of start and end character offsets of the text
-        corresponding to the entity, the entity text, and the ScoredMatch
-        object corresponding to the entity.
+    List[Annotation]
+        A list of Annotations where each contains as attributes
+        the text span that was matched, the list of ScoredMatches, and the
+        start and end character offsets of the text span.
     """
     if grounder is None:
         grounder = get_grounder()
@@ -111,7 +108,7 @@ def annotate(
     # Get sentences
     sentences = sent_split_fun(text)
     text_coord = 0
-    entities = []
+    annotations = []
     for sentence in sentences:
         raw_words = [w for w in sentence.rstrip('.').split()]
         word_coords = [text_coord]
@@ -136,36 +133,32 @@ def annotate(
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
                 txt_span = ' '.join(raw_words[idx:idx+span])
-                matches = grounder.ground(
-                    txt_span, context=text if context_text is None else context_text,
-                    organisms=organisms, namespaces=namespaces,
-                )
+                context = text if context_text is None else context_text
+                matches = grounder.ground(txt_span,
+                                          context=context,
+                                          organisms=organisms,
+                                          namespaces=namespaces)
                 if matches:
                     start_coord = word_coords[idx]
                     end_coord = word_coords[idx+span-1] + \
                         len(raw_words[idx+span-1])
                     raw_span = ' '.join(raw_words[idx:idx+span])
-
-                    if return_first:
-                        matches = [matches[0]]
-                    for match in matches:
-                        entities.append(
-                            (raw_span, match, start_coord, end_coord)
-                        )
+                    annotations.append(Annotation(
+                        raw_span, matches, start_coord, end_coord
+                    ))
 
                     skip_until = idx + span
                     break
-    return entities
+    return annotations
 
 
-def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
+def get_brat(annotations, entity_type="Entity", ix_offset=1, include_text=True):
     """Return brat-formatted annotation strings for the given entities.
 
     Parameters
     ----------
-    entities : list[tuple[str, str | ScoredMatch, int, int]]
-        A list of tuples of entity text, grounded curie, start and end
-        character offsets in the text corresponding to an entity.
+    annotations : list[Annotation]
+        A list of named entity annotations in the text.
     entity_type : str, optional
         The brat entity type to use for the annotations. The default is
         'Entity'. This is useful for differentiating between annotations in
@@ -184,13 +177,12 @@ def get_brat(entities, entity_type="Entity", ix_offset=1, include_text=True):
     """
     brat = []
     ix_offset = max(1, ix_offset)
-    for idx, (raw_span, curie, start, end) in enumerate(entities, ix_offset):
-        if isinstance(curie, ScoredMatch):
-            curie = curie.term.get_curie()
+    for idx, annotation in enumerate(annotations, ix_offset):
+        curie = annotation.matches[0].term.get_curie()
         if entity_type != "Entity":
             curie += f"; Reading system: {entity_type}"
-        row = f'T{idx}\t{entity_type} {start} {end}' + (
-            f'\t{raw_span}' if include_text else ''
+        row = f'T{idx}\t{entity_type} {annotation.start} {annotation.end}' + (
+            f'\t{annotation.text}' if include_text else ''
         )
         brat.append(row)
         row = f'#{idx}\tAnnotatorNotes T{idx}\t{curie}'
