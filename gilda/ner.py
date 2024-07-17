@@ -50,44 +50,17 @@ from typing import List
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
-from gilda import ScoredMatch, get_grounder
+from gilda import get_grounder
+from gilda.grounder import Annotation
 from gilda.process import normalize
 
 __all__ = [
     "annotate",
     "get_brat",
-    "Annotation",
     "stop_words"
 ]
 
 stop_words = set(stopwords.words('english'))
-
-
-class Annotation:
-    """A class to represent an annotation.
-
-    Attributes
-    ----------
-    text : str
-        The text span that was annotated.
-    matches : list[ScoredMatch]
-        The list of scored matches for the text span.
-    start : int
-        The start character offset of the text span.
-    end : int
-        The end character offset of the text span.
-    """
-    def __init__(self, text: str, matches: List[ScoredMatch], start: int, end: int):
-        self.text = text
-        self.matches = matches
-        self.start = start
-        self.end = end
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return f"Annotation({self.text}, {self.matches}, {self.start}, {self.end})"
 
 
 def annotate(

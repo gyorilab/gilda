@@ -26,6 +26,7 @@ __all__ = [
     "Grounder",
     "GrounderInput",
     "ScoredMatch",
+    "Annotation",
     "load_terms_file",
     "load_entries_from_terms_file",
     "filter_for_organism",
@@ -650,6 +651,37 @@ class ScoredMatch(object):
             get_identifiers_curie(db, db_id): get_identifiers_url(db, db_id)
             for db, db_id in self.get_groundings()
         }
+
+
+class Annotation:
+    """A class representing a named entity annotation in a given text.
+
+    Attributes
+    ----------
+    text : str
+        The text span that was annotated.
+    matches : list[ScoredMatch]
+        The list of scored matches for the text span.
+    start : int
+        The start character offset of the text span.
+    end : int
+        The end character offset of the text span.
+    """
+    def __init__(self, text: str, matches: List[ScoredMatch], start: int,
+                 end: int):
+        self.text = text
+        self.matches = matches
+        self.start = start
+        self.end = end
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return (f"Annotation({self.text}, {self.matches}, {self.start}, "
+                f"{self.end})")
+
+
 
 
 def load_entries_from_terms_file(terms_file: Union[str, Path]) -> Iterator[Term]:

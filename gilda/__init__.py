@@ -2,8 +2,9 @@ __version__ = '1.2.1'
 
 import logging
 
-from .api import get_grounder, get_models, get_names, ground, make_grounder, annotate
-from .grounder import Grounder, ScoredMatch
+from .api import get_grounder, get_models, get_names, ground, make_grounder, \
+    annotate
+from .grounder import Grounder, ScoredMatch, Annotation
 from .pandas_utils import ground_df, ground_df_map
 from .term import Term, dump_terms
 
@@ -19,6 +20,7 @@ __all__ = [
     'Term',
     'Grounder',
     'ScoredMatch',
+    'Annotation',
     # Meta
     '__version__',
     # Pandas utilities

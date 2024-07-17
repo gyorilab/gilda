@@ -9,7 +9,7 @@ __all__ = [
 
 from typing import List, Mapping, Union, Optional
 
-from gilda.grounder import Grounder
+from gilda.grounder import Grounder, Annotation
 from gilda.term import Term
 
 
@@ -113,7 +113,7 @@ def annotate(
     organisms=None,
     namespaces=None,
     context_text: str = None,
-):
+) -> List[Annotation]:
     """Annotate a given text with Gilda (i.e., do named entity recognition).
 
     Parameters
@@ -137,14 +137,15 @@ def annotate(
 
     Returns
     -------
-    list[tuple[str, list[ScoredMatch], int, int]]
-        A list of matches where each match is a tuple consisting of
-        the matches text span, the list of ScoredMatches, and the
-        start and end character offsets of the text span.
+    list[Annotation]
+        A list of matches where each match is an Annotation object
+        which contains as attributes the text span that was matches,
+        the list of ScoredMatches, and the start and end character offsets of
+        the text span.
     """
-    from .ner import annotate as _annotate
+    import gilda.ner
 
-    return _annotate(
+    return gilda.ner.annotate(
         text,
         grounder=grounder,
         sent_split_fun=sent_split_fun,
