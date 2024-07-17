@@ -18,17 +18,20 @@
             <thead>
             <tr>
                 <th>Span</th>
+                <th>Text</th>
                 <th>Grounding</th>
-                <th>Name</th>
+                <th>Standard name</th>
                 <th>Score</th>
-                <th>Additional Groundings</th>
+                <th>Additional groundings</th>
             </tr>
             </thead>
             <tbody>
-            {% for text, matches, start, end in annotations %}
+            {% for annotation in annotations %}
                 <tr>
-                    {% set match_curie = matches[0].term.get_curie() %}
-                    <td>{{start}}-{{end}}</td>
+                    {% set match = annotation['matches'][0] %}
+                    {% set match_curie = match.term.get_curie() %}
+                    <td>{{ annotation['start'] }}-{{ annotation['end'] }}</td>
+                    <td>{{ annotation['text'] }}</td>
                     <td>
                         <a class="label label-primary" href="{{ match['url'] }}">
                             {{ match_curie }}
