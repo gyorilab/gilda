@@ -8,6 +8,7 @@ from flask_restx import Api, Resource, fields
 from gilda import __version__ as version
 from gilda.grounder import GrounderInput, Grounder
 from gilda.app.proxies import grounder
+from gilda.ner import annotate
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
@@ -309,7 +310,6 @@ class Annotate(Resource):
                            namespaces=namespaces if namespaces else None,
                            context_text=context_text)
         return jsonify([annotation.to_json() for annotation in results])
-
 
 
 def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
