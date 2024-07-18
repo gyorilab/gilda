@@ -17,11 +17,6 @@ def is_chemical(mesh_id):
     return mesh_client.is_molecular(mesh_id)
 
 
-def render_row(me, te):
-    return '\t'.join([me.db, me.id, me.entry_name,
-                      te.db, te.id, te.entry_name])
-
-
 def load_biomappings():
     """Load curated positive and negative mappings from Biomappings."""
     url_base = ('https://raw.githubusercontent.com/biopragmatics/biomappings/'
@@ -113,6 +108,10 @@ def resolve_duplicates(mappings):
 
 
 def dump_mappings(mappings, fname):
+    def render_row(me, te):
+        return '\t'.join([me.db, me.id, me.entry_name,
+                          te.db, te.id, te.entry_name])
+
     with open(fname, 'w') as fh:
         for mesh_term, other_term in sorted(mappings, key=lambda x: x[0].id):
             # Corner case where we have multiple MeSH-based terms
@@ -192,7 +191,6 @@ def get_terms():
         generate_efo_terms(ignore_mappings=True) + \
         generate_hp_terms(ignore_mappings=True) + \
         generate_doid_terms(ignore_mappings=True)
-    breakpoint()
     terms = filter_out_duplicates(terms)
     return terms
 
@@ -228,11 +226,13 @@ if __name__ == '__main__':
     # are applied, even if terms are loaded with the ignore_mappings
     # option which just turns of loading the mappings that are
     # generated in this script.
+    known_mappings = set()
     terms_by_id_tuple = {}
     for term in terms:
         terms_by_id_tuple[(term.db, term.id)] = term
         if term.source_id:
             terms_by_id_tuple[(term.source_db, term.source_id)] = term
+            known_mappings.add((term.db, term.id, term.source_db, term.source_id))
     # General ambiguities
     ambigs = find_ambiguities(terms, match_attr='text')
     mappings = get_mesh_mappings(ambigs)
@@ -296,3 +296,8 @@ if __name__ == '__main__':
     dump_mappings(nonambig_mappings, os.path.join(resources, 'mesh_mappings.tsv'))
     dump_mappings(ambig_mappings,
                   os.path.join(resources, 'mesh_ambig_mappings.tsv'))
+
+    # Known mappings are useful for debugging
+    #with open(os.path.join(resources, 'known_mappings.tsv'), 'w') as fh:
+    #    for db, id, source_db, source_id in sorted(known_mappings):
+    #        fh.write('\t'.join([db, id, source_db, source_id]) + '\n')
