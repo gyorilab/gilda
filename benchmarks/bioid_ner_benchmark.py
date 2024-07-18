@@ -54,10 +54,12 @@ class BioIDNERBenchmarker:
         self.annotations_df = self._process_annotations_table()  # csv annotations
         # self.reference_map = self.create_reference_map()  # Create reference map for efficient lookup
         self.stoplist = self._load_stoplist()  # Load stoplist
-        self.gilda_annotations_map = defaultdict(
-            list)  # New field to store Gilda annotations
+        self.gilda_annotations_map = defaultdict(list)
+        self.annotations_count = 0
+        # New field to store Gilda annotations
         self.counts_table = None
         self.precision_recall = None
+        self.performance_metrics = None
 
     def process_xml_files(self):
         """Extract relevant information from XML files."""
@@ -105,6 +107,7 @@ class BioIDNERBenchmarker:
         # df = pd.DataFrame(data)
         # print(f"{len(df)} rows in processed XML data.")
         print(f"Total annotations in XML files: {total_annotations}")
+        self.annotations_count = total_annotations
         print("Finished extracting information from XML files.")
         return pd.DataFrame(data)
 
@@ -303,46 +306,48 @@ class BioIDNERBenchmarker:
             # Get the full text for the paper-level disambiguation
             full_text = self._get_plaintext(doc_id)
 
-            gilda_annotations = annotate(text, context_text=full_text,
-                                         return_first=True)
+            gilda_annotations = annotate(text, context_text=full_text)
             # for testing all matches for each entity, return_first = False.
 
-            for matched_text, grounding_result, start, end in gilda_annotations:
-
-                # Checking against stoplist
-                if matched_text in self.stoplist:
-                    continue
-
-                db, entity_id = grounding_result.term.db, grounding_result.term.id
-                curie = f"{db}:{entity_id}"
-                # normalized_id = self._normalize_id(curie)
-                synonyms = self.get_synonym_set([curie])
-                # entity_type = self._get_entity_type([curie])
-
-                self.gilda_annotations_map[(doc_id, figure)].append({
-                    'matched_text': matched_text,
-                    'db': db,
-                    'id': entity_id,
-                    'start': start,
-                    'end': end,
-                    # 'normalized_id': normalized_id,
-                    'synonyms': synonyms,
-                    # 'entity_type': entity_type
-                })
+            for matched_text, scored_matches, start, end in gilda_annotations:
                 total_gilda_annotations += 1
+                # all_synonyms = set() # new addition
+                for grounding_result in scored_matches:
+                    # Checking against stoplist
+                    if matched_text in self.stoplist:
+                        continue
+
+                    db, entity_id = grounding_result.term.db, grounding_result.term.id
+                    curie = f"{db}:{entity_id}" # unnecessary btw
+                    # normalized_id = self._normalize_id(curie)
+                    # synonyms = self.get_synonym_set([curie])
+                    # all_synonyms.update(synonyms) #new addition.
+                    # entity_type = self._get_entity_type([curie])
+
+                    self.gilda_annotations_map[(doc_id, figure)].append({
+                        'matched_text': matched_text,
+                        'db': db,
+                        'id': entity_id,
+                        'start': start,
+                        'end': end,
+                        # 'normalized_id': normalized_id,
+                        # 'synonyms': all_synonyms #new addition, otherwise change back to just synonyms
+                        # 'entity_type': entity_type
+                    })
+
                 # results.append(
                 #     (scored_match.term.db, scored_match.term.id, start, end))
-                if doc_id == '3868508' and figure == 'Figure_1-A':
-                    print(f"Scored NER Match: {grounding_result}")
-                    print(f"Annotated Text Segment: {text[start:end]} at "
-                          f"indices {start} to {end}")
-                    print(
-                        f"Gilda Matched Text: {matched_text}, DB: {db}, "
-                        f"ID: {entity_id}, Start: {start}, End: {end}")
-                    print(f"Grounding Results: {curie}")
-                    print(f"synonyms: {synonyms}")
-                    # print(f"entity type: {entity_type}")
-                    print("\n")
+                    if doc_id == '3868508' and figure == 'Figure_1-A':
+                        print(f"Scored NER Match: {grounding_result}")
+                        print(f"Annotated Text Segment: {text[start:end]} at "
+                              f"indices {start} to {end}")
+                        print(
+                            f"Gilda Matched Text: {matched_text}, DB: {db}, "
+                            f"ID: {entity_id}, Start: {start}, End: {end}")
+                        print(f"Grounding Results: {curie}")
+                        # print(f"synonyms: {synonyms}")
+                        # print(f"entity type: {entity_type}")
+                        print("\n")
 
         tqdm.write("Finished annotating corpus with Gilda...")
         print(f"Total Gilda annotations: {total_gilda_annotations}")
@@ -353,13 +358,14 @@ class BioIDNERBenchmarker:
 
         # df = self.processed_data
 
-        total_true_positives = 0
-        total_false_positives = 0
-        total_false_negatives = 0
+        # total_true_positives = 0
+        # total_false_positives = 0
+        # total_false_negatives = 0
         false_positives_counter = Counter()
 
         # Create a set of reference annotations for quick lookup
         ref_annotations = set()
+
         for _, row in self.annotations_df.iterrows():
             doc_id = str(row['don_article'])
             figure = row['figure']
@@ -369,42 +375,46 @@ class BioIDNERBenchmarker:
                                            row['first left'],
                                            row['last right']))
 
+
         print(f"Total reference annotations: {len(ref_annotations)}")
+        metrics = {
+            'all_matches': {'tp': 0, 'fp': 0, 'fn': 0},
+            'top_match': {'tp': 0, 'fp': 0, 'fn': 0}
+        }
+
         for (doc_id, figure), annotations in self.gilda_annotations_map.items():
             # print(f"Processing Document ID: {doc_id}, Figure: {figure}")
-            for annotation in annotations:
+            for i, annotation in enumerate(annotations):
                 start = annotation['start']
                 end = annotation['end']
                 # gilda_annotation = annotation['id']
-                gilda_synonyms = annotation['synonyms']
+                # gilda_synonyms = annotation['synonyms']
                 text = annotation['matched_text']
+                curie = f"{annotation['db']}:{annotation['id']}"
 
-                # Uncomment this if above doesnt work.
-                # ref_annotations = self.annotations_df[
-                #     (self.annotations_df['don_article'] == int(doc_id)) &
-                #     (self.annotations_df['figure'] == figure)
-                #     ]
+                match_found = (doc_id, figure, text, curie, start, end) in ref_annotations
 
-                # UNCOMMENT IF BELOW DOESN'T WORK
+                if match_found:
+                    metrics['all_matches']['tp'] += 1
+                    if i == 0:  # Top match
+                        metrics['top_match']['tp'] += 1
+                else:
+                    metrics['all_matches']['fp'] += 1
+                    false_positives_counter[text] += 1
+                    if i == 0:  # Top match
+                        metrics['top_match']['fp'] += 1
+
+
                 # match_found = any(
-                #     (text, syn, start, end) in ref_annotations[
-                #         ['text', 'obj_synonyms', 'first left',
-                #          'last right']].values
-                #     for syn in gilda_synonyms
-                # )
-
-                match_found = any(
-                    (doc_id, figure, text, syn, start, end)
-                    in ref_annotations for syn in gilda_synonyms)
+                #     (doc_id, figure, text, syn, start, end)
+                #     in ref_annotations for syn in gilda_synonyms)
 
                 # Debugging: Identify and print the exact match
                 matching_reference = None
                 if match_found:
-                    for syn in gilda_synonyms:
-                        if (doc_id, figure, text, syn, start,
-                            end) in ref_annotations:
+                        if (doc_id, figure, text, curie, start, end) in ref_annotations:
                             matching_reference = (
-                            doc_id, figure, text, syn, start, end)
+                            doc_id, figure, text, curie, start, end)
                             break
 
                 if (match_found == True and doc_id == '3868508'
@@ -412,33 +422,74 @@ class BioIDNERBenchmarker:
                     print(f"Gilda Annotation: {annotation}")
                     # print(f"Reference Annotations: {ref_annotations}")
                     print(f"Match Found: {match_found}")
-                    print(f"Synonyms: {gilda_synonyms}")
-                    print(f"Match Found: {match_found}")
                     if match_found:
                         print(f"Matching Reference: {matching_reference}")
 
-                if match_found:
-                    total_true_positives += 1
-                else:
-                    total_false_positives += 1
-                    false_positives_counter[text] += 1
+                # if match_found:
+                #     total_true_positives += 1
+                # else:
+                #     total_false_positives += 1
+                #     false_positives_counter[text] += 1
                     # total_false_negatives += 1
         print(f"20 Most Common False Positives: "
               f"{false_positives_counter.most_common(20)}")
 
-        for doc_id, figure, text, syn, start, end in ref_annotations:
+        # Calculate false negatives
+        # for doc_id, figure, text, syn, start, end in ref_annotations:
+        #     gilda_annotations = self.gilda_annotations_map.get((doc_id, figure),
+        #                                                        [])
+        #     match_found = any(
+        #         ann['matched_text'] == text and
+        #         f"{ann['db']}:{ann['id']}" == syn and
+        #         ann['start'] == start and
+        #         ann['end'] == end
+        #         for ann in gilda_annotations
+        #     )
+        #     if not match_found:
+        #         metrics['all_matches']['fn'] += 1
+        #         metrics['top_match']['fn'] += 1
+
+        # Separate False Negatives Calculation using the DataFrame
+        for _, row in self.annotations_df.iterrows():
+            doc_id = str(row['don_article'])
+            figure = row['figure']
+            text = row['text']
+            curie = row['obj']
+            start = row['first left']
+            end = row['last right']
+
             gilda_annotations = self.gilda_annotations_map.get((doc_id, figure),
                                                                [])
             match_found = any(
                 ann['matched_text'] == text and
-                syn in ann['synonyms'] and
+                f"{ann['db']}:{ann['id']}" == curie and
                 ann['start'] == start and
                 ann['end'] == end
                 for ann in gilda_annotations
             )
             if not match_found:
-                total_false_negatives += 1
+                metrics['all_matches']['fn'] += 1
+                metrics['top_match']['fn'] += 1
 
+        results = {}
+        for match_type, counts in metrics.items():
+            precision = counts['tp'] / (counts['tp'] + counts['fp']) if (counts[
+                                                                             'tp'] +
+                                                                         counts[
+                                                                             'fp']) > 0 else 0
+            recall = counts['tp'] / (counts['tp'] + counts['fn']) if (counts[
+                                                                          'tp'] +
+                                                                      counts[
+                                                                          'fn']) > 0 else 0
+            f1 = 2 * (precision * recall) / (precision + recall) if (
+                                                                                precision + recall) > 0 else 0
+            results[match_type] = {
+                'precision': precision,
+                'recall': recall,
+                'f1': f1
+            }
+
+        self.performance_metrics = results
 
 
 
@@ -464,28 +515,46 @@ class BioIDNERBenchmarker:
         #     if not ref_match_found:
         #         total_false_negatives += 1
 
-        precision = total_true_positives / (total_true_positives
-                                            + total_false_positives) \
-            if (total_true_positives + total_false_positives) > 0 else 0.0
+        # precision = total_true_positives / (total_true_positives
+        #                                     + total_false_positives) \
+        #     if (total_true_positives + total_false_positives) > 0 else 0.0
+        #
+        # recall = total_true_positives / (total_true_positives
+        #                                   + total_false_negatives) \
+        #     if (total_true_positives + total_false_negatives) > 0 else 0.0
+        #
+        # f1 = (2 * (precision * recall)) / (precision + recall) \
+        #     if ((precision + recall) > 0) else 0
 
-        recall = total_true_positives / (total_true_positives
-                                          + total_false_negatives) \
-            if (total_true_positives + total_false_negatives) > 0 else 0.0
+        counts_table = pd.DataFrame([
+            {
+                'Match Type': 'All Matches',
+                'True Positives': metrics['all_matches']['tp'],
+                'False Positives': metrics['all_matches']['fp'],
+                'False Negatives': metrics['all_matches']['fn']
+            },
+            {
+                'Match Type': 'Top Match',
+                'True Positives': metrics['top_match']['tp'],
+                'False Positives': metrics['top_match']['fp'],
+                'False Negatives': metrics['top_match']['fn']
+            }
+        ])
 
-        f1 = (2 * (precision * recall)) / (precision + recall) \
-            if ((precision + recall) > 0) else 0
-
-        counts_table = pd.DataFrame([{
-            'True Positives': total_true_positives,
-            'False Positives': total_false_positives,
-            'False Negatives': total_false_negatives
-        }])
-
-        precision_recall = pd.DataFrame([{
-            'Precision': precision,
-            'Recall': recall,
-            'F1 Score': f1
-        }])
+        precision_recall = pd.DataFrame([
+            {
+                'Match Type': 'All Matches',
+                'Precision': results['all_matches']['precision'],
+                'Recall': results['all_matches']['recall'],
+                'F1 Score': results['all_matches']['f1']
+            },
+            {
+                'Match Type': 'Top Match',
+                'Precision': results['top_match']['precision'],
+                'Recall': results['top_match']['recall'],
+                'F1 Score': results['top_match']['f1']
+            }
+        ])
 
         self.counts_table = counts_table
         self.precision_recall = precision_recall
