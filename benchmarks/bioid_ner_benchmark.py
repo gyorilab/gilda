@@ -15,7 +15,6 @@ import click
 import pystow
 import gilda
 from gilda import ground
-# from benchmarks.bioid_evaluation import fplx_members
 from gilda.ner import annotate
 from gilda.grounder import logger
 
@@ -52,14 +51,12 @@ class BioIDNERBenchmarker:
         self.paper_level_grounding = defaultdict(set)
         self.processed_data = self.process_xml_files()  # xml files processesed
         self.annotations_df = self._process_annotations_table()  # csv annotations
-        # self.reference_map = self.create_reference_map()  # Create reference map for efficient lookup
         self.stoplist = self._load_stoplist()  # Load stoplist
         self.gilda_annotations_map = defaultdict(list)
         self.annotations_count = 0
         # New field to store Gilda annotations
         self.counts_table = None
         self.precision_recall = None
-        self.performance_metrics = None
 
     def process_xml_files(self):
         """Extract relevant information from XML files."""
@@ -73,8 +70,8 @@ class BioIDNERBenchmarker:
                 root = tree.getroot()
                 for document in root.findall('.//document'):
                     doc_id_full = document.find('.//id').text.strip()
-                    don_article, figure = doc_id_full.split(' ',
-                                                            1)  # Split the full ID to get don_article and figure
+                    # Split the full ID to get don_article and figure
+                    don_article, figure = doc_id_full.split(' ',1)
                     don_article = don_article
                     for passage in document.findall('.//passage'):
                         offset = int(passage.find('.//offset').text)
@@ -104,8 +101,6 @@ class BioIDNERBenchmarker:
                             'text': text,
                             'annotations': annotations,
                         })
-        # df = pd.DataFrame(data)
-        # print(f"{len(df)} rows in processed XML data.")
         print(f"Total annotations in XML files: {total_annotations}")
         self.annotations_count = total_annotations
         print("Finished extracting information from XML files.")
@@ -130,7 +125,9 @@ class BioIDNERBenchmarker:
                 equivalences = json.load(f)
         except FileNotFoundError:
             print(
-                f"No Equivalences found at {os.path.join(HERE, 'data', 'equivalences.json')}. Proceeding without it.")
+                f"No Equivalences found at "
+                f"{os.path.join(HERE, 'data', 'equivalences.json')}. "
+                f"Proceeding without it.")
             equivalences = {}
         return equivalences
 
@@ -185,7 +182,8 @@ class BioIDNERBenchmarker:
             if (prefix, xref_prefix) not in BO_MISSING_XREFS:
                 BO_MISSING_XREFS.add((prefix, xref_prefix))
                 tqdm.write(
-                    f'Bioontology v{bio_ontology.version} is missing mappings from {prefix} to {xref_prefix}')
+                    f'Bioontology v{bio_ontology.version} is missing mappings'
+                    f' from {prefix} to {xref_prefix}')
             output.add(xref_curie)
 
         if prefix == 'NCBI gene':
@@ -291,17 +289,13 @@ class BioIDNERBenchmarker:
 
     def annotate_entities_with_gilda(self):
         """Performs NER on the XML files using gilda.annotate()"""
-        # df = self.processed_data
         tqdm.write("Annotating corpus with Gilda...")
 
-        # results = []
         total_gilda_annotations = 0
-        # for _, row in df.iterrows():
         for _, item in self.processed_data.iterrows():
             doc_id = item['doc_id']
             figure = item['figure']
             text = item['text']
-            # annotations = item['annotations']
 
             # Get the full text for the paper-level disambiguation
             full_text = self._get_plaintext(doc_id)
@@ -309,45 +303,28 @@ class BioIDNERBenchmarker:
             gilda_annotations = annotate(text, context_text=full_text)
             # for testing all matches for each entity, return_first = False.
 
-            for matched_text, scored_matches, start, end in gilda_annotations:
+            for annotation in gilda_annotations:
                 total_gilda_annotations += 1
-                # all_synonyms = set() # new addition
-                for grounding_result in scored_matches:
-                    # Checking against stoplist
-                    if matched_text in self.stoplist:
-                        continue
 
-                    db, entity_id = grounding_result.term.db, grounding_result.term.id
-                    curie = f"{db}:{entity_id}" # unnecessary btw
-                    # normalized_id = self._normalize_id(curie)
-                    # synonyms = self.get_synonym_set([curie])
-                    # all_synonyms.update(synonyms) #new addition.
-                    # entity_type = self._get_entity_type([curie])
+                if annotation.text in self.stoplist:
+                    continue
 
-                    self.gilda_annotations_map[(doc_id, figure)].append({
-                        'matched_text': matched_text,
-                        'db': db,
-                        'id': entity_id,
-                        'start': start,
-                        'end': end,
-                        # 'normalized_id': normalized_id,
-                        # 'synonyms': all_synonyms #new addition, otherwise change back to just synonyms
-                        # 'entity_type': entity_type
-                    })
+                self.gilda_annotations_map[(doc_id, figure)].append(annotation)
 
-                # results.append(
-                #     (scored_match.term.db, scored_match.term.id, start, end))
-                    if doc_id == '3868508' and figure == 'Figure_1-A':
-                        print(f"Scored NER Match: {grounding_result}")
-                        print(f"Annotated Text Segment: {text[start:end]} at "
-                              f"indices {start} to {end}")
+                if doc_id == '3868508' and figure == 'Figure_1-A':
+                    print(f"Scored NER Match: {annotation}")
+                    print(f"Annotated Text Segment: "
+                          f"{text[annotation.start:annotation.end]} at "
+                          f"indices {annotation.start} to {annotation.end}")
+                    for i, scored_match in enumerate(annotation.matches):
+                        print(f"Scored Match {i + 1}: {scored_match}")
                         print(
-                            f"Gilda Matched Text: {matched_text}, DB: {db}, "
-                            f"ID: {entity_id}, Start: {start}, End: {end}")
-                        print(f"Grounding Results: {curie}")
-                        # print(f"synonyms: {synonyms}")
-                        # print(f"entity type: {entity_type}")
-                        print("\n")
+                            f"DB: {scored_match.term.db}, "
+                            f"ID: {scored_match.term.id}")
+                        print(
+                            f"Score: {scored_match.score}, "
+                            f"Match: {scored_match.match}")
+                    print("\n")
 
         tqdm.write("Finished annotating corpus with Gilda...")
         print(f"Total Gilda annotations: {total_gilda_annotations}")
@@ -356,175 +333,97 @@ class BioIDNERBenchmarker:
         """Calculates precision, recall, and F1"""
         print("Evaluating performance...")
 
-        # df = self.processed_data
-
-        # total_true_positives = 0
-        # total_false_positives = 0
-        # total_false_negatives = 0
-        false_positives_counter = Counter()
-
-        # Create a set of reference annotations for quick lookup
-        ref_annotations = set()
-
-        for _, row in self.annotations_df.iterrows():
-            doc_id = str(row['don_article'])
-            figure = row['figure']
-            text = row['text']
-            for syn in row['obj_synonyms']:
-                ref_annotations.add((doc_id, figure, text, syn,
-                                           row['first left'],
-                                           row['last right']))
-
-
-        print(f"Total reference annotations: {len(ref_annotations)}")
         metrics = {
             'all_matches': {'tp': 0, 'fp': 0, 'fn': 0},
             'top_match': {'tp': 0, 'fp': 0, 'fn': 0}
         }
 
+        false_positives_counter = Counter()
+
+        ref_dict = defaultdict(list)
+        for _, row in self.annotations_df.iterrows():
+            key = (str(row['don_article']), row['figure'], row['text'],
+                   row['first left'], row['last right'])
+            ref_dict[key].append((set(row['obj']), row['obj_synonyms']))
+
+        print(f"Total reference annotations: {len(ref_dict)}")
+
         for (doc_id, figure), annotations in self.gilda_annotations_map.items():
-            # print(f"Processing Document ID: {doc_id}, Figure: {figure}")
-            for i, annotation in enumerate(annotations):
-                start = annotation['start']
-                end = annotation['end']
-                # gilda_annotation = annotation['id']
-                # gilda_synonyms = annotation['synonyms']
-                text = annotation['matched_text']
-                curie = f"{annotation['db']}:{annotation['id']}"
+            for annotation in annotations:
+                key = (doc_id, figure, annotation.text, annotation.start,
+                       annotation.end)
+                matching_refs = ref_dict.get(key, [])
 
-                match_found = (doc_id, figure, text, curie, start, end) in ref_annotations
+                match_found = False
+                for i, scored_match in enumerate(annotation.matches):
+                    curie = f"{scored_match.term.db}:{scored_match.term.id}"
 
-                if match_found:
-                    metrics['all_matches']['tp'] += 1
-                    if i == 0:  # Top match
-                        metrics['top_match']['tp'] += 1
-                else:
-                    metrics['all_matches']['fp'] += 1
-                    false_positives_counter[text] += 1
-                    if i == 0:  # Top match
-                        metrics['top_match']['fp'] += 1
-
-
-                # match_found = any(
-                #     (doc_id, figure, text, syn, start, end)
-                #     in ref_annotations for syn in gilda_synonyms)
-
-                # Debugging: Identify and print the exact match
-                matching_reference = None
-                if match_found:
-                        if (doc_id, figure, text, curie, start, end) in ref_annotations:
-                            matching_reference = (
-                            doc_id, figure, text, curie, start, end)
+                    for original_curies, synonyms in matching_refs:
+                        if curie in original_curies or curie in synonyms:
+                            metrics['all_matches']['tp'] += 1
+                            if i == 0:  # Top match
+                                metrics['top_match']['tp'] += 1
+                            match_found = True
                             break
 
-                if (match_found == True and doc_id == '3868508'
-                        and figure == "Figure_1-A"):
-                    print(f"Gilda Annotation: {annotation}")
-                    # print(f"Reference Annotations: {ref_annotations}")
-                    print(f"Match Found: {match_found}")
                     if match_found:
-                        print(f"Matching Reference: {matching_reference}")
+                        if doc_id == '3868508' and figure == "Figure_1-A":
+                            print(f"Gilda Annotation: {annotation}")
+                            # print(f"Reference Annotations: {ref_annotations}")
+                            print(f"Match Found: {match_found}")
+                            print(f"Matching Reference: {matching_refs}")
 
-                # if match_found:
-                #     total_true_positives += 1
-                # else:
-                #     total_false_positives += 1
-                #     false_positives_counter[text] += 1
-                    # total_false_negatives += 1
+                        break
+
+                    if match_found:
+                        break
+
+                if not match_found:
+                    metrics['all_matches']['fp'] += 1
+                    false_positives_counter[annotation.text] += 1
+                    if annotation.matches:  # Check if there are any matches
+                        metrics['top_match']['fp'] += 1
+
         print(f"20 Most Common False Positives: "
               f"{false_positives_counter.most_common(20)}")
 
-        # Calculate false negatives
-        # for doc_id, figure, text, syn, start, end in ref_annotations:
-        #     gilda_annotations = self.gilda_annotations_map.get((doc_id, figure),
-        #                                                        [])
-        #     match_found = any(
-        #         ann['matched_text'] == text and
-        #         f"{ann['db']}:{ann['id']}" == syn and
-        #         ann['start'] == start and
-        #         ann['end'] == end
-        #         for ann in gilda_annotations
-        #     )
-        #     if not match_found:
-        #         metrics['all_matches']['fn'] += 1
-        #         metrics['top_match']['fn'] += 1
-
-        # Separate False Negatives Calculation using the DataFrame
-        for _, row in self.annotations_df.iterrows():
-            doc_id = str(row['don_article'])
-            figure = row['figure']
-            text = row['text']
-            curie = row['obj']
-            start = row['first left']
-            end = row['last right']
-
+        # False negative calculation using ref dict
+        for key, refs in ref_dict.items():
+            doc_id, figure = key[0], key[1]
             gilda_annotations = self.gilda_annotations_map.get((doc_id, figure),
                                                                [])
-            match_found = any(
-                ann['matched_text'] == text and
-                f"{ann['db']}:{ann['id']}" == curie and
-                ann['start'] == start and
-                ann['end'] == end
-                for ann in gilda_annotations
-            )
-            if not match_found:
-                metrics['all_matches']['fn'] += 1
-                metrics['top_match']['fn'] += 1
+            for original_curies, synonyms in refs:
+                match_found = any(
+                    ann.text == key[2] and
+                    ann.start == key[3] and
+                    ann.end == key[4] and
+                    any(f"{match.term.db}:{match.term.id}" in original_curies or
+                        f"{match.term.db}:{match.term.id}" in synonyms
+                        for match in ann.matches)
+                    for ann in gilda_annotations
+                )
+
+                if not match_found:
+                    metrics['all_matches']['fn'] += 1
+                    metrics['top_match']['fn'] += 1
 
         results = {}
         for match_type, counts in metrics.items():
-            precision = counts['tp'] / (counts['tp'] + counts['fp']) if (counts[
-                                                                             'tp'] +
-                                                                         counts[
-                                                                             'fp']) > 0 else 0
-            recall = counts['tp'] / (counts['tp'] + counts['fn']) if (counts[
-                                                                          'tp'] +
-                                                                      counts[
-                                                                          'fn']) > 0 else 0
-            f1 = 2 * (precision * recall) / (precision + recall) if (
-                                                                                precision + recall) > 0 else 0
+            precision = counts['tp'] / (counts['tp'] + counts['fp']) \
+                if ((counts['tp'] + counts['fp']) > 0) else 0
+
+            recall = counts['tp'] / (counts['tp'] + counts['fn']) \
+                if (counts['tp'] + counts['fn']) > 0 else 0
+
+            f1 = 2 * (precision * recall) / (precision + recall) \
+                if (precision + recall) > 0 else 0
+
             results[match_type] = {
                 'precision': precision,
                 'recall': recall,
                 'f1': f1
             }
 
-        self.performance_metrics = results
-
-
-
-        # UNCOMMENT IF ABOVE DOESNT WORK
-        # for _, row in self.annotations_df.iterrows():
-        #     doc_id, figure = row['don_article'], row['figure']
-        #     new_ref_annotation = (
-        #         row['text'], set(row['obj_synonyms']), row['first left'],
-        #         row['last right'])
-        #
-        #     # Check if this reference annotation is in Gilda's annotations
-        #     new_gilda_annotations = self.gilda_annotations_map.get(
-        #         (str(doc_id), figure), [])
-        #     ref_match_found = False
-        #     for ann in new_gilda_annotations:
-        #         # (new_ref_annotation[1].intersection(ann['synonyms']) and
-        #         if new_ref_annotation[0] == ann['matched_text'] and \
-        #                 new_ref_annotation[2] == ann['start'] and \
-        #                 new_ref_annotation[3] == ann['end']:
-        #             ref_match_found = True
-        #             break
-        #
-        #     if not ref_match_found:
-        #         total_false_negatives += 1
-
-        # precision = total_true_positives / (total_true_positives
-        #                                     + total_false_positives) \
-        #     if (total_true_positives + total_false_positives) > 0 else 0.0
-        #
-        # recall = total_true_positives / (total_true_positives
-        #                                   + total_false_negatives) \
-        #     if (total_true_positives + total_false_negatives) > 0 else 0.0
-        #
-        # f1 = (2 * (precision * recall)) / (precision + recall) \
-        #     if ((precision + recall) > 0) else 0
 
         counts_table = pd.DataFrame([
             {
