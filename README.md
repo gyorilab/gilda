@@ -6,7 +6,7 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1093/bioadv/vbac034-green.svg)](https://doi.org/10.1093/bioadv/vbac034)
 
 Gilda is a Python package and REST service that grounds (i.e., finds
-appropriate identifiers in namespaces for) named entities in biomedical text.
+appropriate identifiers in various namespaces for) named entities in biomedical text.
 
 Gyori BM, Hoyt CT, Steppi A (2022). Gilda: biomedical entity text normalization with machine-learned disambiguation as a service. Bioinformatics Advances, 2022; vbac034 [https://doi.org/10.1093/bioadv/vbac034](https://doi.org/10.1093/bioadv/vbac034).
 
