@@ -47,7 +47,7 @@ grounding_input_model = api.model(
 
 term_model = api.model(
     "Term",
-    {'norm_text' : fields.String(
+    {'norm_text': fields.String(
         description='The normalized text corresponding to the text entry, '
                     'used for lookups.',
         example='egf receptor'),
@@ -93,6 +93,7 @@ term_model = api.model(
          description='In some cases the term\'s db/id was mapped from another '
                      'db/id pair given in the original source. If this is the '
                      'case, this field provides the original source ID.')
+
     }
 )
 
@@ -109,18 +110,17 @@ scored_match_model = api.model(
          example=0.9845
      ),
      'match': fields.Nested(api.model('Match', {}),
-         description='Additional metadata about the nature of the match.'
-     ),
+                            description='Additional metadata about the nature of the match.'
+                            ),
      'subsumed_terms': fields.List(fields.Nested(term_model),
-         description='In some cases multiple terms with the same db/id '
-                     'matched the input string, potentially with different '
-                     'scores, and only the first one is exposed in the '
-                     'scored match\'s term attribute (see above). This field '
-                     'provides additional terms with the same db/id that '
-                     'matched the input for additional traceability.')
+                                   description='In some cases multiple terms with the same db/id '
+                                               'matched the input string, potentially with different '
+                                               'scores, and only the first one is exposed in the '
+                                               'scored match\'s term attribute (see above). This field '
+                                               'provides additional terms with the same db/id that '
+                                               'matched the input for additional traceability.')
      }
 )
-
 
 get_names_input_model = api.model(
     "GetNamesInput",
@@ -129,26 +129,26 @@ get_names_input_model = api.model(
                     "e.g. HGNC.",
         required=True,
         example='HGNC'),
-     'id': fields.String(
-         description="Identifier within the given database",
-         required=True,
-         example='3236'
-     ),
-     'status': fields.String(
-         description="If provided, only entity texts of the given status are "
-                     "returned (e.g., curated, name, synonym, former_name).",
-         required=False,
-         enum=['curated', 'name', 'synonym', 'former_name'],
-         example='synonym'
-     ),
-     'source': fields.String(
-         description="If provided, only entity texts collected from the given "
-                     "source are returned.This is useful if terms grounded to "
-                     "IDs in a given database are collected from multiple "
-                     "different sources.",
-         required=False,
-         example='uniprot'
-     )
+        'id': fields.String(
+            description="Identifier within the given database",
+            required=True,
+            example='3236'
+        ),
+        'status': fields.String(
+            description="If provided, only entity texts of the given status are "
+                        "returned (e.g., curated, name, synonym, former_name).",
+            required=False,
+            enum=['curated', 'name', 'synonym', 'former_name'],
+            example='synonym'
+        ),
+        'source': fields.String(
+            description="If provided, only entity texts collected from the given "
+                        "source are returned.This is useful if terms grounded to "
+                        "IDs in a given database are collected from multiple "
+                        "different sources.",
+            required=False,
+            example='uniprot'
+        )
     }
 )
 
@@ -186,8 +186,8 @@ ner_input_model = api.model('NERInput', {
 })
 
 names_model = fields.List(
-        fields.String,
-        example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
+    fields.String,
+    example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
 
 models_model = fields.List(
     fields.String,
@@ -213,7 +213,8 @@ class Ground(Resource):
         text = request.json.get('text')
         context = request.json.get('context')
         organisms = request.json.get('organisms')
-        scored_matches = grounder.ground(text, context=context, organisms=organisms)
+        scored_matches = grounder.ground(text, context=context,
+                                         organisms=organisms)
         res = [sm.to_json() for sm in scored_matches]
         return jsonify(res)
 
@@ -239,7 +240,8 @@ class GroundMulti(Resource):
             text = input.get('text')
             context = input.get('context')
             organisms = input.get('organisms')
-            scored_matches = grounder.ground(text, context=context, organisms=organisms)
+            scored_matches = grounder.ground(text, context=context,
+                                             organisms=organisms)
             all_matches.append([sm.to_json() for sm in scored_matches])
         return jsonify(all_matches)
 
