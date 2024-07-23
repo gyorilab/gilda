@@ -24,7 +24,8 @@ api = Api(title="Gilda",
           doc='/apidocs',
           )
 
-base_ns = api.namespace('Gilda API', 'Gilda API', path='/')
+base_ns = api.namespace('Gilda API', 'Gilda API', path='/',
+                        ordered=True)
 
 grounding_input_model = api.model(
     "GroundingInput",
@@ -160,7 +161,9 @@ ner_result_model = api.model('NERResult', {
 
 ner_input_model = api.model('NERInput', {
     'text': fields.String(required=True, description='Text on which to perform'
-                                                     ' NER'),
+                                                     ' NER',
+                          example='The EGF receptor binds EGF which is an interaction'
+                                  'important in cancer.'),
     'organisms': fields.List(fields.String, example=['9606'],
                              description='An optional list of taxonomy '
                                          'species IDs defining a priority list'
@@ -173,10 +176,13 @@ ner_input_model = api.model('NERInput', {
                                           'the grounder to restrict the '
                                           'matches to. By default, '
                                           'no restriction is applied',
+                              example=['HGNC', 'MESH'],
                               required=False),
     'context_text': fields.String(required=False, description='Additional '
                                                               'context for '
-                                                              'disambiguation'),
+                                                              'disambiguation',
+                                  example='The EGF receptor binds EGF which is an interaction'
+                                          'important in cancer.'),
 })
 
 names_model = fields.List(
