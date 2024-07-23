@@ -48,7 +48,7 @@ term_model = api.model(
                     'used for lookups.',
         example='egf receptor'),
      'text' : fields.String(
-         description='The text entry that was matches.',
+         description='The text entry that was matched.',
          example='EGF receptor'
      ),
      'db' : fields.String(

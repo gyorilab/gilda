@@ -139,7 +139,7 @@ def annotate(
     -------
     list[Annotation]
         A list of matches where each match is an Annotation object
-        which contains as attributes the text span that was matches,
+        which contains as attributes the text span that was matched,
         the list of ScoredMatches, and the start and end character offsets of
         the text span.
     """
