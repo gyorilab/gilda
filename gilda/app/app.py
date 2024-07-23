@@ -24,8 +24,7 @@ api = Api(title="Gilda",
           doc='/apidocs',
           )
 
-base_ns = api.namespace('Gilda API', 'Gilda API', path='/',
-                        ordered=True)
+base_ns = api.namespace('Gilda API', 'Gilda API', path='/')
 
 grounding_input_model = api.model(
     "GroundingInput",
