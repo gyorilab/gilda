@@ -7,6 +7,7 @@ from flask_restx import Api, Resource, fields
 from gilda import __version__ as version
 from gilda.grounder import GrounderInput, Grounder
 from gilda.app.proxies import grounder
+from gilda.ner import annotate
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
@@ -148,6 +149,34 @@ get_names_input_model = api.model(
     }
 )
 
+ner_result_model = api.model('NERResult', {
+    'text': fields.String(description='Matched text'),
+    'start': fields.Integer(description='Start index of the match'),
+    'end': fields.Integer(description='End index of the match'),
+    'matches': fields.List(fields.Nested(scored_match_model))
+})
+
+ner_input_model = api.model('NERInput', {
+    'text': fields.String(required=True, description='Text on which to perform'
+                                                     ' NER'),
+    'organisms': fields.List(fields.String, example=['9606'],
+                             description='An optional list of taxonomy '
+                                         'species IDs defining a priority list'
+                                         ' in case an entity string can be '
+                                         'resolved to multiple'
+                                         'species-specific genes/proteins.',
+                             required=False),
+    'namespaces': fields.List(fields.String,
+                              description='A list of namespaces to pass to '
+                                          'the grounder to restrict the '
+                                          'matches to. By default, '
+                                          'no restriction is applied',
+                              required=False),
+    'context_text': fields.String(required=False, description='Additional '
+                                                              'context for '
+                                                              'disambiguation'),
+})
+
 names_model = fields.List(
         fields.String,
         example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
@@ -246,6 +275,31 @@ class GetModels(Resource):
         the list of entity texts for which such a model is available.
         """
         return jsonify(grounder.get_models())
+
+
+@base_ns.route('/annotate', methods=['POST'])
+class Annotate(Resource):
+    @base_ns.response(200, "NER results", [ner_result_model])
+    @base_ns.expect(ner_input_model)
+    def post(self):
+        """Perform Named Entity Recognition on the given text.
+
+        This endpoint can be used to perform named entity recognition (NER)
+        using Gilda's dictionary-based named entity recognition algorithm.
+        """
+        if request.json is None:
+            abort(415, 'Missing application/json header.')
+
+        text = request.json.get('text')
+        context_text = request.json.get('context_text')
+        organisms = request.json.get('organisms')
+        namespaces = request.json.get('namespaces')
+
+        results = annotate(text, organisms=organisms if organisms else None,
+                           namespaces=namespaces if namespaces else None,
+                           context_text=context_text)
+        return jsonify([annotation.to_json() for annotation in results])
+
 
 
 def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:

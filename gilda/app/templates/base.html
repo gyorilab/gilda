@@ -12,6 +12,9 @@
         div.choices {
             margin-bottom: 0;
         }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
     </style>
 {% endblock %}
 
@@ -32,6 +35,17 @@
       </p>
       </div>
     </div>
+    <ul class="nav nav-tabs">
+        {% set navigation_bar = [
+        ('/', 'home', 'Grounding'),
+        ('/ner', 'view_ner', 'NER')
+        ] %}
+        {% for href, id, caption in navigation_bar %}
+            <li class="{% if request.path == href %}active{% endif %}">
+                <a href="{{ url_for('ui.' + id) }}">{{ caption }}</a>
+            </li>
+        {% endfor %}
+    </ul>
     {% block gcontent %}{% endblock %}
     <div class="well">
       <p>
