@@ -1,3 +1,4 @@
+import logging
 from textwrap import dedent
 from typing import Optional
 
@@ -10,6 +11,8 @@ from gilda.app.proxies import grounder
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
+
+logger = logging.getLogger(__name__)
 
 api = Api(title="Gilda",
           description="A service for grounding entity strings",
@@ -148,6 +151,39 @@ get_names_input_model = api.model(
     }
 )
 
+ner_result_model = api.model('NERResult', {
+    'text': fields.String(description='Matched text'),
+    'start': fields.Integer(description='Start index of the match'),
+    'end': fields.Integer(description='End index of the match'),
+    'matches': fields.List(fields.Nested(scored_match_model))
+})
+
+ner_input_model = api.model('NERInput', {
+    'text': fields.String(required=True, description='Text on which to perform'
+                                                     ' NER',
+                          example='The EGF receptor binds EGF which is an interaction'
+                                  'important in cancer.'),
+    'organisms': fields.List(fields.String, example=['9606'],
+                             description='An optional list of taxonomy '
+                                         'species IDs defining a priority list'
+                                         ' in case an entity string can be '
+                                         'resolved to multiple'
+                                         'species-specific genes/proteins.',
+                             required=False),
+    'namespaces': fields.List(fields.String,
+                              description='A list of namespaces to pass to '
+                                          'the grounder to restrict the '
+                                          'matches to. By default, '
+                                          'no restriction is applied',
+                              example=['HGNC', 'MESH'],
+                              required=False),
+    'context_text': fields.String(required=False, description='Additional '
+                                                              'context for '
+                                                              'disambiguation',
+                                  example='The EGF receptor binds EGF which is an interaction'
+                                          'important in cancer.'),
+})
+
 names_model = fields.List(
         fields.String,
         example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
@@ -162,8 +198,9 @@ class Ground(Resource):
     @base_ns.response(200, "Grounding results", [scored_match_model])
     @base_ns.expect(grounding_input_model)
     def post(self):
-        """Return a list of scored grounding matches for a given entity text.
+        """Perform grounding on a given entity text.
 
+        Returns a list of scored grounding matches for the given entity text.
         The returned value is a list with each entry being a scored match.
         Each scored match contains a term which was matched, and each term
         contains a db and id constituting a grounding. An empty list
@@ -248,6 +285,33 @@ class GetModels(Resource):
         return jsonify(grounder.get_models())
 
 
+@base_ns.route('/annotate', methods=['POST'])
+class Annotate(Resource):
+    @base_ns.response(200, "NER results", [ner_result_model])
+    @base_ns.expect(ner_input_model)
+    def post(self):
+        """Perform named entity recognition on the given text.
+
+        This endpoint can be used to perform named entity recognition (NER)
+        using Gilda.
+        """
+        from gilda.ner import annotate
+
+        if request.json is None:
+            abort(415, 'Missing application/json header.')
+
+        text = request.json.get('text')
+        context_text = request.json.get('context_text')
+        organisms = request.json.get('organisms')
+        namespaces = request.json.get('namespaces')
+
+        results = annotate(text, organisms=organisms if organisms else None,
+                           namespaces=namespaces if namespaces else None,
+                           context_text=context_text)
+        return jsonify([annotation.to_json() for annotation in results])
+
+
+
 def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
     app = Flask(__name__)
     app.config['RESTX_MASK_SWAGGER'] = False
@@ -282,7 +346,8 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
                 )
 
             from gilda.app.ui import ui_blueprint
-        except ImportError:
+        except ImportError as e:
+            logger.error('Could not import UI blueprint: %s', e)
             _mount_home_redirect(app)
         else:
             Bootstrap(app)

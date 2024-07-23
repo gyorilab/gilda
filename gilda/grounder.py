@@ -681,7 +681,14 @@ class Annotation:
         return (f"Annotation({self.text}, {self.matches}, {self.start}, "
                 f"{self.end})")
 
-
+    def to_json(self):
+        """Convert the Annotation object to JSON."""
+        return {
+            'text': self.text,
+            'matches': [match.to_json() for match in self.matches],
+            'start': self.start,
+            'end': self.end
+        }
 
 
 def load_entries_from_terms_file(terms_file: Union[str, Path]) -> Iterator[Term]:

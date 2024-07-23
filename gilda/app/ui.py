@@ -31,7 +31,7 @@ ORGANISMS_FIELD = SelectMultipleField(
 
 class GroundForm(FlaskForm):
     text = StringField(
-        "Text",
+        "Entity text",
         validators=[DataRequired()],
         description="Input the entity text (e.g., <code>k-ras</code>) to ground.",
     )
