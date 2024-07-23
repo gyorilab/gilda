@@ -27,8 +27,16 @@
       </div>
       <div class="panel-body">
         <p>
-            The Gilda grounding service (v{{ version }}) can be used to
-            identify structured identifiers for entity names.</p><p>
+            The Gilda service (v{{ version }}) can be used to
+            identify identifiers for entity names.
+        </p>
+          <p> There are two usage modes: <b>Grounding</b> and <b>Annotation</b>. Grounding is also called
+              named entity normalization or linking and it assumes that the input is a span
+              of text corresponding to a named entity. Annotation is also called named
+              entity recognition and works with a longer span of text as input that may contain
+              any number of named entities in it.
+          </p>
+        <p>
         For programmatic access, see the <a href="apidocs">API documentation</a>
         and the <a href="https://github.com/indralab/gilda/blob/master/README.md">user guide</a>
         for more information.
@@ -38,7 +46,7 @@
     <ul class="nav nav-tabs">
         {% set navigation_bar = [
         ('/', 'home', 'Grounding'),
-        ('/ner', 'view_ner', 'NER')
+        ('/ner', 'view_ner', 'Annotation')
         ] %}
         {% for href, id, caption in navigation_bar %}
             <li class="{% if request.path == href %}active{% endif %}">
@@ -147,7 +155,7 @@
 {% macro render_ner_form(form) %}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Gilda NER Input</h3>
+            <h3 class="panel-title">Gilda Annotation Input</h3>
         </div>
         <div class="panel-body">
             <form class="form" method="POST" role="form">

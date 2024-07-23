@@ -1,3 +1,4 @@
+import logging
 from textwrap import dedent
 from typing import Optional
 
@@ -10,6 +11,8 @@ from gilda.app.proxies import grounder
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
+
+logger = logging.getLogger(__name__)
 
 api = Api(title="Gilda",
           description="A service for grounding entity strings",
@@ -190,8 +193,9 @@ class Ground(Resource):
     @base_ns.response(200, "Grounding results", [scored_match_model])
     @base_ns.expect(grounding_input_model)
     def post(self):
-        """Return a list of scored grounding matches for a given entity text.
+        """Perform grounding on a given entity text.
 
+        Returns a list of scored grounding matches for the given entity text.
         The returned value is a list with each entry being a scored match.
         Each scored match contains a term which was matched, and each term
         contains a db and id constituting a grounding. An empty list
@@ -281,10 +285,10 @@ class Annotate(Resource):
     @base_ns.response(200, "NER results", [ner_result_model])
     @base_ns.expect(ner_input_model)
     def post(self):
-        """Perform Named Entity Recognition on the given text.
+        """Perform named entity recognition on the given text.
 
         This endpoint can be used to perform named entity recognition (NER)
-        using Gilda's dictionary-based named entity recognition algorithm.
+        using Gilda.
         """
         from gilda.ner import annotate
 
@@ -337,7 +341,8 @@ def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:
                 )
 
             from gilda.app.ui import ui_blueprint
-        except ImportError:
+        except ImportError as e:
+            logger.error('Could not import UI blueprint: %s', e)
             _mount_home_redirect(app)
         else:
             Bootstrap(app)
