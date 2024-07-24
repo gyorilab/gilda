@@ -113,8 +113,8 @@ def annotate(
     word_tokenizer = TreebankWordTokenizer()
     # FIXME: a custom sentence split function can be inconsistent
     # with the coordinates being used here which come from NLTK
-    for sentence_coord in sentence_coords:
-        sentence = text[sentence_coord[0]:sentence_coord[1]]
+    for sent_start, sent_end in sentence_coords:
+        sentence = text[sent_start:sent_end]
         # FIXME: one rare corner case is named entities with single quotes
         # in them which get tokenized in a weird way
         raw_word_coords = \
@@ -154,9 +154,8 @@ def annotate(
                                           organisms=organisms,
                                           namespaces=namespaces)
                 if matches:
-                    start_coord = sentence_coord[0] + raw_word_coords[idx][0]
-                    end_coord = sentence_coord[0] + \
-                        raw_word_coords[idx+span-1][1]
+                    start_coord = sent_start + raw_word_coords[idx][0]
+                    end_coord = sent_end + raw_word_coords[idx+span-1][1]
                     annotations.append(Annotation(
                         raw_span, matches, start_coord, end_coord
                     ))
