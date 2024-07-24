@@ -47,10 +47,8 @@ same name but extension ``.ann``.
 
 from typing import List
 
-import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize
-from nltk.tokenize import TreebankWordTokenizer
+from nltk.tokenize import PunktSentenceTokenizer, TreebankWordTokenizer
 
 from gilda import get_grounder
 from gilda.grounder import Annotation
@@ -105,14 +103,20 @@ def annotate(
     """
     if grounder is None:
         grounder = get_grounder()
+    sent_tokenizer = PunktSentenceTokenizer()
     if sent_split_fun is None:
-        sent_split_fun = sent_tokenize
+        sent_split_fun = sent_tokenizer.tokenize
     # Get sentences
     sentences = sent_split_fun(text)
+    sentence_coords = list(sent_tokenizer.span_tokenize(text))
     text_coord = 0
     annotations = []
     word_tokenizer = TreebankWordTokenizer()
-    for sentence in sentences:
+    # FIXME: a custom sentence split function can be inconsistent
+    # with the coordinates being used here which come from NLTK
+    for sentence, sentence_coord in zip(sentences, sentence_coords):
+        # FIXME: one rare corner case is named entities with single quotes
+        # in them which get tokenized in a weird way
         raw_word_coords = \
             list(word_tokenizer.span_tokenize(sentence.rstrip('.')))
         raw_words = [sentence[start:end] for start, end in raw_word_coords]
@@ -143,7 +147,8 @@ def annotate(
                                     raw_word_coords[idx:idx+span]):
                     # Figure out if we need a space before this word, then
                     # append the word.
-                    spaces = ' ' * (c[0] - len(raw_span) - raw_word_coords[idx][0])
+                    spaces = ' ' * (c[0] - len(raw_span) -
+                                    raw_word_coords[idx][0])
                     txt_span += spaces + w
                     raw_span += spaces + rw
                 context = text if context_text is None else context_text
@@ -152,8 +157,9 @@ def annotate(
                                           organisms=organisms,
                                           namespaces=namespaces)
                 if matches:
-                    start_coord = raw_word_coords[idx][0]
-                    end_coord = raw_word_coords[idx+span-1][1]
+                    start_coord = sentence_coord[0] + raw_word_coords[idx][0]
+                    end_coord = sentence_coord[0] + \
+                        raw_word_coords[idx+span-1][1]
                     annotations.append(Annotation(
                         raw_span, matches, start_coord, end_coord
                     ))
