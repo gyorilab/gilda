@@ -143,7 +143,7 @@ def annotate(
                                     raw_word_coords[idx:idx+span]):
                     # Figure out if we need a space before this word, then
                     # append the word.
-                    spaces = ' ' * (c[0] - len(raw_span))
+                    spaces = ' ' * (c[0] - len(raw_span) - raw_word_coords[idx][0])
                     txt_span += spaces + w
                     raw_span += spaces + rw
                 context = text if context_text is None else context_text
