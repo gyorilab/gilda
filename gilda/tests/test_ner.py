@@ -83,9 +83,9 @@ def test_context_test():
     context_text = "Calcium is released from the ER."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[1].matches[0].term.get_curie() == "GO:0005783"
-    assert results[1].text == "ER"
-    assert (results[1].start, results[0].end) == (14, 16)
+    assert results[0].matches[0].term.get_curie() == "GO:0005783"
+    assert results[0].text == "ER"
+    assert (results[0].start, results[0].end) == (14, 16)
 
 
 def test_punctuation_comma_in_entity():

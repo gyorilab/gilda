@@ -140,19 +140,16 @@ def annotate(
             for span in sorted(applicable_spans, reverse=True):
                 # We have to reconstruct a text span while adding spaces
                 # where needed
-                txt_span = ''
                 raw_span = ''
-                for w, rw, c in zip(words[idx:idx+span],
-                                    raw_words[idx:idx+span],
+                for rw, c in zip(raw_words[idx:idx+span],
                                     raw_word_coords[idx:idx+span]):
                     # Figure out if we need a space before this word, then
                     # append the word.
                     spaces = ' ' * (c[0] - len(raw_span) -
                                     raw_word_coords[idx][0])
-                    txt_span += spaces + w
                     raw_span += spaces + rw
                 context = text if context_text is None else context_text
-                matches = grounder.ground(txt_span,
+                matches = grounder.ground(raw_span,
                                           context=context,
                                           organisms=organisms,
                                           namespaces=namespaces)
