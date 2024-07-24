@@ -86,3 +86,28 @@ def test_context_test():
     assert results[0].matches[0].term.get_curie() == "GO:0005783"
     assert results[0].text == "ER"
     assert (results[0].start, results[0].end) == (14, 16)
+
+
+def test_punctuation_comma_in_entity():
+    # A named entity with an actual comma in its name
+    res = gilda.annotate('access, internet')
+    assert len(res) == 1
+    # Make sure we capture the text span exactly despite
+    # tokenization
+    assert res[0].text == 'access, internet'
+    assert res[0].start == 0
+    assert res[0].end == 16
+    assert res[0].matches[0].term.db == 'MESH'
+    assert res[0].matches[0].term.id == 'D000077230'
+
+
+def test_punctuation_outside_entities():
+    res = gilda.annotate('EGF binds EGFR, which is a receptor.')
+    assert len(res) == 3
+
+    assert [ann.text for ann in res] == ['EGF', 'EGFR', 'receptor']
+
+    res = gilda.annotate('EGF binds EGFR: a receptor.')
+    assert len(res) == 3
+
+    assert [ann.text for ann in res] == ['EGF', 'EGFR', 'receptor']
