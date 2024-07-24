@@ -81,9 +81,10 @@ def annotate(
         The Gilda grounder to use for grounding.
     sent_split_fun : Callable[str, Iterable[Tuple[int, int]]], optional
         A function that splits the text into sentences. The default is
-        :func:`nltk.tokenize.sent_tokenize`. The function should take a string
-        as input and return an iterable of coordinate pairs corresponding to the
-        start and end coordinates for each sentence in the input text.
+        :func:`nltk.tokenize.PunktSentenceTokenizer.span_tokenize`. The function
+        should take a string as input and return an iterable of coordinate pairs
+        corresponding to the start and end coordinates for each sentence in the
+        input text.
     organisms : list[str], optional
         A list of organism names to pass to the grounder. If not provided,
         human is used.
