@@ -155,7 +155,7 @@ def annotate(
                                           namespaces=namespaces)
                 if matches:
                     start_coord = sent_start + raw_word_coords[idx][0]
-                    end_coord = sent_end + raw_word_coords[idx+span-1][1]
+                    end_coord = sent_start + raw_word_coords[idx+span-1][1]
                     annotations.append(Annotation(
                         raw_span, matches, start_coord, end_coord
                     ))
