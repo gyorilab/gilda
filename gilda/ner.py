@@ -47,8 +47,10 @@ same name but extension ``.ann``.
 
 from typing import List
 
+import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
+from nltk.tokenize import TreebankWordTokenizer
 
 from gilda import get_grounder
 from gilda.grounder import Annotation
@@ -109,11 +111,11 @@ def annotate(
     sentences = sent_split_fun(text)
     text_coord = 0
     annotations = []
+    word_tokenizer = TreebankWordTokenizer()
     for sentence in sentences:
-        raw_words = [w for w in sentence.rstrip('.').split()]
-        word_coords = [text_coord]
-        for word in raw_words:
-            word_coords.append(word_coords[-1] + len(word) + 1)
+        raw_word_coords = \
+            list(word_tokenizer.span_tokenize(sentence.rstrip('.')))
+        raw_words = [sentence[start:end] for start, end in raw_word_coords]
         text_coord += len(sentence) + 1
         words = [normalize(w) for w in raw_words]
         skip_until = 0
@@ -132,17 +134,26 @@ def annotate(
 
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
-                txt_span = ' '.join(raw_words[idx:idx+span])
+                # We have to reconstruct a text span while adding spaces
+                # where needed
+                txt_span = ''
+                raw_span = ''
+                for w, rw, c in zip(words[idx:idx+span],
+                                    raw_words[idx:idx+span],
+                                    raw_word_coords[idx:idx+span]):
+                    # Figure out if we need a space before this word, then
+                    # append the word.
+                    spaces = ' ' * (c[0] - len(raw_span))
+                    txt_span += spaces + w
+                    raw_span += spaces + rw
                 context = text if context_text is None else context_text
                 matches = grounder.ground(txt_span,
                                           context=context,
                                           organisms=organisms,
                                           namespaces=namespaces)
                 if matches:
-                    start_coord = word_coords[idx]
-                    end_coord = word_coords[idx+span-1] + \
-                        len(raw_words[idx+span-1])
-                    raw_span = ' '.join(raw_words[idx:idx+span])
+                    start_coord = raw_word_coords[idx][0]
+                    end_coord = raw_word_coords[idx+span-1][1]
                     annotations.append(Annotation(
                         raw_span, matches, start_coord, end_coord
                     ))
