@@ -12,9 +12,9 @@ import indra
 from indra.databases import hgnc_client, uniprot_client, chebi_client, \
     go_client, mesh_client, doid_client
 from indra.statements.resources import amino_acids
-from .term import Term, dump_terms, filter_out_duplicates
-from .process import normalize
-from .resources import resource_dir, popular_organisms
+from gilda.term import Term, dump_terms, filter_out_duplicates
+from gilda.process import normalize
+from gilda.resources import resource_dir, popular_organisms
 
 
 indra_module_path = indra.__path__[0]
@@ -666,7 +666,7 @@ def _generate_obo_terms(prefix, ignore_mappings=False, map_to_ns=None):
 
 def _make_mesh_mappings():
     # Load MeSH ID/label mappings
-    from .resources import MESH_MAPPINGS_PATH
+    from gilda.resources import MESH_MAPPINGS_PATH
     mesh_mappings = {}
     mesh_mappings_reverse = {}
     for row in read_csv(MESH_MAPPINGS_PATH, delimiter='\t'):
@@ -715,7 +715,7 @@ def get_all_terms():
 
 
 def main():
-    from .resources import GROUNDING_TERMS_PATH as fname
+    from gilda.resources import GROUNDING_TERMS_PATH as fname
     terms = get_all_terms()
     dump_terms(terms, fname)
 
