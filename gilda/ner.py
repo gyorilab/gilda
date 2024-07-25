@@ -79,12 +79,13 @@ def annotate(
         The text to be annotated.
     grounder : gilda.grounder.Grounder, optional
         The Gilda grounder to use for grounding.
-    sent_split_fun : Callable, optional
+    sent_split_fun : Callable[str, Iterable[Tuple[int, int]]], optional
         A function that splits the text into sentences. The default is
-        :func:`nltk.tokenize.sent_tokenize`. The function should take a string
-        as input and return an iterable of strings corresponding to the sentences
-        in the input text.
-    organisms : List[str], optional
+        :func:`nltk.tokenize.PunktSentenceTokenizer.span_tokenize`. The function
+        should take a string as input and return an iterable of coordinate pairs
+        corresponding to the start and end coordinates for each sentence in the
+        input text.
+    organisms : list[str], optional
         A list of organism names to pass to the grounder. If not provided,
         human is used.
     namespaces : List[str], optional
@@ -103,18 +104,18 @@ def annotate(
     """
     if grounder is None:
         grounder = get_grounder()
-    sent_tokenizer = PunktSentenceTokenizer()
     if sent_split_fun is None:
-        sent_split_fun = sent_tokenizer.tokenize
+        sent_tokenizer = PunktSentenceTokenizer()
+        sent_split_fun = sent_tokenizer.span_tokenize
     # Get sentences
-    sentences = sent_split_fun(text)
-    sentence_coords = list(sent_tokenizer.span_tokenize(text))
+    sentence_coords = sent_split_fun(text)
     text_coord = 0
     annotations = []
     word_tokenizer = TreebankWordTokenizer()
     # FIXME: a custom sentence split function can be inconsistent
     # with the coordinates being used here which come from NLTK
-    for sentence, sentence_coord in zip(sentences, sentence_coords):
+    for sent_start, sent_end in sentence_coords:
+        sentence = text[sent_start:sent_end]
         # FIXME: one rare corner case is named entities with single quotes
         # in them which get tokenized in a weird way
         raw_word_coords = \
@@ -154,9 +155,8 @@ def annotate(
                                           organisms=organisms,
                                           namespaces=namespaces)
                 if matches:
-                    start_coord = sentence_coord[0] + raw_word_coords[idx][0]
-                    end_coord = sentence_coord[0] + \
-                        raw_word_coords[idx+span-1][1]
+                    start_coord = sent_start + raw_word_coords[idx][0]
+                    end_coord = sent_start + raw_word_coords[idx+span-1][1]
                     annotations.append(Annotation(
                         raw_span, matches, start_coord, end_coord
                     ))
