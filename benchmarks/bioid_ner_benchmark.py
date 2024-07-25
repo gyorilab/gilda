@@ -14,9 +14,8 @@ from typing import List, Tuple, Set, Dict, Optional, Iterable, Collection
 import click
 import pystow
 import gilda
-from gilda import ground
 from gilda.ner import annotate
-from gilda.grounder import logger
+import logging
 
 import famplex
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
@@ -24,7 +23,8 @@ from indra.databases.hgnc_client import get_hgnc_from_entrez
 from indra.databases.uniprot_client import get_hgnc_id
 from indra.ontology.bio import bio_ontology
 
-logger.setLevel('WARNING')
+logging.getLogger('gilda.grounder').setLevel('WARNING')
+logger = logging.getLogger('bioid_ner_benchmark')
 
 # Constants
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,8 +38,6 @@ MODULE = pystow.module('gilda', 'biocreative')
 URL = ('https://biocreative.bioinformatics.udel.edu/media/store/files/2017'
        '/BioIDtraining_2.tar.gz')
 
-STOPLIST_PATH = os.path.join(HERE, 'data', 'ner_stoplist.txt')
-
 tqdm.pandas()
 
 BO_MISSING_XREFS = set()
@@ -52,7 +50,6 @@ class BioIDNERBenchmarker:
         self.paper_level_grounding = defaultdict(set)
         self.processed_data = self.process_xml_files()  # xml files processes
         self.annotations_df = self._process_annotations_table() # csvannotations
-        self.stoplist = self._load_stoplist()  # Load stoplist
         self.gilda_annotations_map = defaultdict(list)
         self.annotations_count = 0
         # New field to store Gilda annotations
@@ -106,19 +103,6 @@ class BioIDNERBenchmarker:
         self.annotations_count = total_annotations
         print("Finished extracting information from XML files.")
         return pd.DataFrame(data)
-
-    def _load_stoplist(self) -> Set[str]:
-        """Load NER stoplist from file."""
-        stoplist_path = STOPLIST_PATH
-        try:
-            with open(stoplist_path, 'r') as file:
-                stoplist = {line.strip().lower() for line in file}
-            print(f"Loaded stoplist with {len(stoplist)} entries.")
-            return stoplist
-        except FileNotFoundError:
-            print(
-                f"No stoplist found at {stoplist_path}. Proceeding without it.")
-            return set()
 
     def _load_equivalences(self) -> Dict[str, List[str]]:
         try:
@@ -308,9 +292,6 @@ class BioIDNERBenchmarker:
 
             for annotation in gilda_annotations:
                 total_gilda_annotations += 1
-
-                if annotation.text in self.stoplist:
-                    continue
 
                 self.gilda_annotations_map[(doc_id, figure)].append(annotation)
 
