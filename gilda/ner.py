@@ -150,8 +150,9 @@ def annotate(
                     spaces = ' ' * (c[0] - len(raw_span) -
                                     raw_word_coords[idx][0])
                     raw_span += spaces + rw
-                # if len(txt_span) <= 1:
-                #     continue
+
+                if len(raw_span) <= 1:
+                    continue
                 context = text if context_text is None else context_text
                 matches = grounder.ground(raw_span,
                                           context=context,
