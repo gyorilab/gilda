@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from collections import defaultdict, Counter
 import xml.etree.ElementTree as ET
+from textwrap import dedent
 from typing import List, Dict
 
 import pystow
@@ -49,6 +50,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         self.annotations_count = 0
         self.counts_table = None
         self.precision_recall = None
+        self.false_positives_counter = Counter()
 
     def process_xml_files(self):
         """Extract relevant information from XML files."""
@@ -166,7 +168,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             'top_match': {'tp': 0, 'fp': 0, 'fn': 0}
         }
 
-        false_positives_counter = Counter()
+
 
         ref_dict = defaultdict(list)
         for _, row in self.annotations_df.iterrows():
@@ -199,7 +201,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
 
                 if not match_found:
                     metrics['all_matches']['fp'] += 1
-                    false_positives_counter[annotation.text] += 1
+                    self.false_positives_counter[annotation.text] += 1
                     if annotation.matches:  # Check if there are any matches
                         metrics['top_match']['fp'] += 1
 
@@ -275,7 +277,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         self.precision_recall = precision_recall
 
         os.makedirs(RESULTS_DIR, exist_ok=True)
-        false_positives_df = pd.DataFrame(false_positives_counter.items(),
+        false_positives_df = pd.DataFrame(self.false_positives_counter.items(),
                                           columns=['False Positive Text',
                                                    'Count'])
         false_positives_df = false_positives_df.sort_values(by='Count',
@@ -285,8 +287,10 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
 
         print("Finished evaluating performance...")
 
-    def get_results_tables(self):
-        return self.counts_table, self.precision_recall
+    def get_tables(self):
+        return (self.counts_table,
+                self.precision_recall,
+                self.false_positives_counter)
 
 
 def main(results: str = RESULTS_DIR):
@@ -296,7 +300,7 @@ def main(results: str = RESULTS_DIR):
     benchmarker = BioIDNERBenchmarker()
     benchmarker.annotate_entities_with_gilda()
     benchmarker.evaluate_gilda_performance()
-    counts, precision_recall = benchmarker.get_results_tables()
+    counts, precision_recall, false_positives_counter = benchmarker.get_tables()
 
     print(f"Counts Table:")
     print(counts.to_markdown(index=False))
@@ -304,7 +308,56 @@ def main(results: str = RESULTS_DIR):
     print(precision_recall.to_markdown(index=False))
 
     time = datetime.now().strftime('%y%m%d-%H%M%S')
-    result_stub = pathlib.Path(results_path).joinpath(f'benchmark_{time}')
+
+    outname = f'benchmark_{time}'
+    result_stub = pathlib.Path(results_path).joinpath(outname)
+
+    caption0 = dedent(f"""\
+        # Gilda NER Benchmarking
+
+        Gilda: v{gilda.__version__}
+        Date: {time}
+        """)
+
+    caption1 = dedent("""\
+            ## Table 1
+
+            The counts of true positives, false positives, and false negatives 
+            for Gilda annotations in the corpus where only Gilda's "Top Match"
+            grounding (top score grounding) returns the correct match and where
+            any Gilda grounding returns a correct match.
+        """)
+    table1 = counts.to_markdown(index=False)
+
+    caption2 = dedent("""\
+            ## Table 2
+
+            Precision, recall, and F1 Score values for Gilda performance where 
+            Gilda's "Top Match" grounding (top score grounding) returns the 
+            correct match and where any Gilda grounding returns a correct match.
+        """)
+    table2 = precision_recall.to_markdown(index=False)
+
+    caption3 = dedent("""\
+           ## 50 Most Common False Positive Words
+
+           A list of 50 most common false positive annotations created by Gilda.
+       """)
+    top_50_false_positives = false_positives_counter.most_common(50)
+    false_positives_list = '\n'.join(
+        [f'- {word}: {count}' for word, count in top_50_false_positives])
+
+    output = '\n\n'.join([
+        caption0,
+        caption1, table1,
+        caption2, table2,
+        caption3, false_positives_list
+    ])
+
+    md_path = result_stub.with_suffix(".md")
+    with open(md_path, 'w') as f:
+        f.write(output)
+
     counts.to_csv(result_stub.with_suffix(".counts.csv"), index=False)
     precision_recall.to_csv(result_stub.with_suffix(".precision_recall.csv"),
                             index=False)
