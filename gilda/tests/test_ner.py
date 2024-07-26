@@ -40,20 +40,14 @@ def test_get_brat():
 
     assert isinstance(brat_str, str)
     match_str = dedent("""
-        T1\tEntity 4 11\tprotein
-        #1\tAnnotatorNotes T1\tCHEBI:36080
-        T2\tEntity 12 16\tBRAF
-        #2\tAnnotatorNotes T2\thgnc:1097
-        T3\tEntity 22 28\tkinase
-        #3\tAnnotatorNotes T3\tmesh:D010770
-        T4\tEntity 30 34\tBRAF
+        T1\tEntity 12 16\tBRAF
+        #1\tAnnotatorNotes T1\thgnc:1097
+        T2\tEntity 22 28\tkinase
+        #2\tAnnotatorNotes T2\tmesh:D010770
+        T3\tEntity 30 34\tBRAF
+        #3\tAnnotatorNotes T3\thgnc:1097
+        T4\tEntity 46 50\tBRAF
         #4\tAnnotatorNotes T4\thgnc:1097
-        T5\tEntity 40 44\tgene
-        #5\tAnnotatorNotes T5\tmesh:D005796
-        T6\tEntity 46 50\tBRAF
-        #6\tAnnotatorNotes T6\thgnc:1097
-        T7\tEntity 56 63\tprotein
-        #7\tAnnotatorNotes T7\tCHEBI:36080
         """).lstrip()
     assert brat_str == match_str
 
