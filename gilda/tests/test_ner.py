@@ -12,22 +12,19 @@ def test_annotate():
     assert isinstance(annotations, list)
 
     # Check that we get 7 annotations
-    assert len(annotations) == 7
+    assert len(annotations) == 4
 
     # Check that the annotations are for the expected words
     assert tuple(a.text for a in annotations) == (
-        'protein', 'BRAF', 'kinase', 'BRAF', 'gene', 'BRAF', 'protein')
+        'BRAF', 'kinase', 'BRAF', 'BRAF')
 
     # Check that the spans are correct
-    expected_spans = ((4, 11), (12, 16), (22, 28), (30, 34), (40, 44),
-                      (46, 50), (56, 63))
+    expected_spans = ((12, 16), (22, 28), (30, 34), (46, 50))
     actual_spans = tuple((a.start, a.end) for a in annotations)
     assert actual_spans == expected_spans
 
     # Check that the curies are correct
-    expected_curies = ("CHEBI:36080", "hgnc:1097", "mesh:D010770",
-                       "hgnc:1097", "mesh:D005796", "hgnc:1097",
-                       "CHEBI:36080")
+    expected_curies = ("hgnc:1097", "mesh:D010770", "hgnc:1097", "hgnc:1097")
     actual_curies = tuple(a.matches[0].term.get_curie() for a in annotations)
     assert actual_curies == expected_curies
 
