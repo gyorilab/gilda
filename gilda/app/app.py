@@ -8,6 +8,7 @@ from flask_restx import Api, Resource, fields
 from gilda import __version__ as version
 from gilda.grounder import GrounderInput, Grounder
 from gilda.app.proxies import grounder
+from gilda.ner import annotate
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.
@@ -46,15 +47,15 @@ grounding_input_model = api.model(
 
 term_model = api.model(
     "Term",
-    {'norm_text' : fields.String(
+    {'norm_text': fields.String(
         description='The normalized text corresponding to the text entry, '
                     'used for lookups.',
         example='egf receptor'),
-     'text' : fields.String(
+     'text': fields.String(
          description='The text entry that was matched.',
          example='EGF receptor'
      ),
-     'db' : fields.String(
+     'db': fields.String(
          description='The database / namespace corresponding to the '
                      'grounded term.',
          example='HGNC'
@@ -97,8 +98,7 @@ term_model = api.model(
 
 scored_match_model = api.model(
     "ScoredMatch",
-    {'term': fields.Nested(term_model,
-                           description='The term that was matched'),
+    {'term': fields.Nested(term_model, description='The term that was matched'),
      'url': fields.String(
          description='Identifiers.org URL for the matched term.',
          example='https://identifiers.org/hgnc:3236'
@@ -120,14 +120,13 @@ scored_match_model = api.model(
      }
 )
 
-
 get_names_input_model = api.model(
     "GetNamesInput",
     {'db': fields.String(
-        description="Capitalized name of the database for the grounding, "
-                    "e.g. HGNC.",
-        required=True,
-        example='HGNC'),
+         description="Capitalized name of the database for the grounding, "
+                     "e.g. HGNC.",
+         required=True,
+         example='HGNC'),
      'id': fields.String(
          description="Identifier within the given database",
          required=True,
@@ -147,7 +146,7 @@ get_names_input_model = api.model(
                      "different sources.",
          required=False,
          example='uniprot'
-     )
+    )
     }
 )
 
@@ -161,8 +160,8 @@ ner_result_model = api.model('NERResult', {
 ner_input_model = api.model('NERInput', {
     'text': fields.String(required=True, description='Text on which to perform'
                                                      ' NER',
-                          example='The EGF receptor binds EGF which is an interaction'
-                                  'important in cancer.'),
+                          example='The EGF receptor binds EGF which is an '
+                                  'interaction important in cancer.'),
     'organisms': fields.List(fields.String, example=['9606'],
                              description='An optional list of taxonomy '
                                          'species IDs defining a priority list'
@@ -185,8 +184,8 @@ ner_input_model = api.model('NERInput', {
 })
 
 names_model = fields.List(
-        fields.String,
-        example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
+    fields.String,
+    example=['EGF receptor', 'EGFR', 'ERBB1', 'Proto-oncogene c-ErbB-1'])
 
 models_model = fields.List(
     fields.String,
@@ -212,7 +211,8 @@ class Ground(Resource):
         text = request.json.get('text')
         context = request.json.get('context')
         organisms = request.json.get('organisms')
-        scored_matches = grounder.ground(text, context=context, organisms=organisms)
+        scored_matches = grounder.ground(text, context=context,
+                                         organisms=organisms)
         res = [sm.to_json() for sm in scored_matches]
         return jsonify(res)
 
@@ -238,7 +238,8 @@ class GroundMulti(Resource):
             text = input.get('text')
             context = input.get('context')
             organisms = input.get('organisms')
-            scored_matches = grounder.ground(text, context=context, organisms=organisms)
+            scored_matches = grounder.ground(text, context=context,
+                                             organisms=organisms)
             all_matches.append([sm.to_json() for sm in scored_matches])
         return jsonify(all_matches)
 
@@ -309,7 +310,6 @@ class Annotate(Resource):
                            namespaces=namespaces if namespaces else None,
                            context_text=context_text)
         return jsonify([annotation.to_json() for annotation in results])
-
 
 
 def get_app(terms: Optional[GrounderInput] = None, *, ui: bool = True) -> Flask:

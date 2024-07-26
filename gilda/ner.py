@@ -14,6 +14,7 @@ The results are a list of Annotation objects each of which contains:
 - the `start` position in the text string where the entity starts
 - the `end` position in the text string where the entity ends
 
+
 In this example, the two concepts are grounded to FamPlex entries.
 
 >>> results[0].text, results[0].matches[0].term.get_curie(), results[0].start, results[0].end
@@ -45,7 +46,8 @@ the extension ``.txt`` and the annotations in a file with the
 same name but extension ``.ann``.
 """
 
-from typing import List
+from typing import List, Set
+import os
 
 from nltk.corpus import stopwords
 from nltk.tokenize import PunktSentenceTokenizer, TreebankWordTokenizer
@@ -60,7 +62,20 @@ __all__ = [
     "stop_words"
 ]
 
+STOPLIST_PATH = os.path.join(os.path.dirname(__file__),'resources',
+                             'ner_stoplist.txt')
+
+
+def _load_stoplist() -> Set[str]:
+    """Load NER stoplist from file."""
+    stoplist_path = STOPLIST_PATH
+    with open(stoplist_path, 'r') as file:
+        stoplist = {line.strip() for line in file}
+    return stoplist
+
+
 stop_words = set(stopwords.words('english'))
+stop_words.update(_load_stoplist())
 
 
 def annotate(
@@ -149,6 +164,9 @@ def annotate(
                     spaces = ' ' * (c[0] - len(raw_span) -
                                     raw_word_coords[idx][0])
                     raw_span += spaces + rw
+                # If span is a single character, we don't want to consider it
+                if len(raw_span) <= 1:
+                    continue
                 context = text if context_text is None else context_text
                 matches = grounder.ground(raw_span,
                                           context=context,
