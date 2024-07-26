@@ -52,47 +52,47 @@ term_model = api.model(
                     'used for lookups.',
         example='egf receptor'),
      'text': fields.String(
-        description='The text entry that was matched.',
-        example='EGF receptor'
+         description='The text entry that was matched.',
+         example='EGF receptor'
      ),
      'db': fields.String(
-        description='The database / namespace corresponding to the '
-                    'grounded term.',
-        example='HGNC'
+         description='The database / namespace corresponding to the '
+                     'grounded term.',
+         example='HGNC'
      ),
      'id': fields.String(
-        description='The identifier of the grounded term within the '
-                    'database / namespace.',
-        example='3236'
+         description='The identifier of the grounded term within the '
+                     'database / namespace.',
+         example='3236'
      ),
      'entry_name': fields.String(
-        description='The standardized name corresponding to the grounded '
-                    'term.',
-        example='EGFR'
+         description='The standardized name corresponding to the grounded '
+                     'term.',
+         example='EGFR'
      ),
      'status': fields.String(
-        description='The relationship of the text entry to the grounded '
-                    'term, e.g., synonym.',
-        example='curated'
+         description='The relationship of the text entry to the grounded '
+                     'term, e.g., synonym.',
+         example='curated'
      ),
      'source': fields.String(
-        description='The source from which the term was obtained.',
-        example='famplex'
+         description='The source from which the term was obtained.',
+         example='famplex'
      ),
      'organism': fields.String(
-        description='If the term is a gene/protein, this field provides '
-                    'the taxonomy identifier of the species to which '
-                    'it belongs.',
-        example='9606'
+         description='If the term is a gene/protein, this field provides '
+                     'the taxonomy identifier of the species to which '
+                     'it belongs.',
+         example='9606'
      ),
      'source_db': fields.String(
-        description='In some cases the term\'s db/id was mapped from another '
-                    'db/id pair given in the original source. If this is the '
-                    'case, this field provides the original source db.'),
+         description='In some cases the term\'s db/id was mapped from another '
+                     'db/id pair given in the original source. If this is the '
+                     'case, this field provides the original source db.'),
      'source_id': fields.String(
-        description='In some cases the term\'s db/id was mapped from another '
-                    'db/id pair given in the original source. If this is the '
-                    'case, this field provides the original source ID.')
+         description='In some cases the term\'s db/id was mapped from another '
+                     'db/id pair given in the original source. If this is the '
+                     'case, this field provides the original source ID.')
     }
 )
 
