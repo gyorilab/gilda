@@ -1,23 +1,21 @@
 import os
 import json
 import pathlib
-from collections import defaultdict, Counter
-
-from functools import lru_cache
-import pandas as pd
-import xml.etree.ElementTree as ET
-
-from lxml import etree
-from tqdm import tqdm
-from datetime import datetime
-from typing import List, Tuple, Set, Dict, Optional, Iterable, Collection
-import click
-import pystow
-import gilda
-from benchmarks.bioid_evaluation import BioIDBenchmarker
-from benchmarks.bioid_evaluation import fplx_members
-from gilda.ner import annotate
 import logging
+from datetime import datetime
+from collections import defaultdict, Counter
+import xml.etree.ElementTree as ET
+from typing import List, Tuple, Set, Dict, Optional, Iterable, Collection
+
+import pystow
+import pandas as pd
+from tqdm import tqdm
+
+import gilda
+from gilda.ner import annotate
+
+#from benchmarks.bioid_evaluation import fplx_members
+from benchmarks.bioid_evaluation import BioIDBenchmarker
 
 import famplex
 from indra.databases.chebi_client import get_chebi_id_from_pubchem
