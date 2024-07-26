@@ -14,6 +14,8 @@ from typing import List, Tuple, Set, Dict, Optional, Iterable, Collection
 import click
 import pystow
 import gilda
+from benchmarks.bioid_evaluation import BioIDBenchmarker
+from benchmarks.bioid_evaluation import fplx_members
 from gilda.ner import annotate
 import logging
 
@@ -43,8 +45,9 @@ tqdm.pandas()
 BO_MISSING_XREFS = set()
 
 
-class BioIDNERBenchmarker:
+class BioIDNERBenchmarker(BioIDBenchmarker):
     def __init__(self):
+        super().__init__()
         print("Instantiating benchmarker...")
         self.equivalences = self._load_equivalences()
         self.paper_level_grounding = defaultdict(set)
@@ -105,125 +108,13 @@ class BioIDNERBenchmarker:
         return pd.DataFrame(data)
 
     def _load_equivalences(self) -> Dict[str, List[str]]:
-        try:
-            with open(os.path.join(HERE, 'data', 'equivalences.json')) as f:
+        with open(os.path.join(HERE, 'data', 'equivalences.json')) as f:
                 equivalences = json.load(f)
-        except FileNotFoundError:
-            print(
-                f"No Equivalences found at "
-                f"{os.path.join(HERE, 'data', 'equivalences.json')}. "
-                f"Proceeding without it.")
-            equivalences = {}
         return equivalences
 
-    @classmethod
-    def _normalize_ids(cls, curies: str) -> List[Tuple[str, str]]:
-        return [cls._normalize_id(y) for y in curies.split('|')]
-
-    @staticmethod
-    def _normalize_id(curie):
-        """Convert ID into standardized format, f'{namespace}:{id}'."""
-        if curie.startswith('CVCL'):
-            return curie.replace('_', ':')
-        split_id = curie.split(':', maxsplit=1)
-        if split_id[0] == 'Uberon':
-            return split_id[1]
-        if split_id[0] == 'Uniprot':
-            return f'UP:{split_id[1]}'
-        if split_id[0] in ['GO', 'CHEBI']:
-            return f'{split_id[0]}:{split_id[0]}:{split_id[1]}'
-        return curie
-
-    def get_synonym_set(self, curies: Iterable[str]) -> Set[str]:
-        """Return set containing all elements in input list along with synonyms
-        """
-        output = set()
-        for curie in curies:
-            output.update(self._get_equivalent_entities(curie))
-        # We accept all FamPlex terms that cover some or all of the specific
-        # entries in the annotations
-        covered_fplx = {fplx_entry for fplx_entry, members
-                        in fplx_members.items() if (members <= output)}
-        output |= {'FPLX:%s' % fplx_entry for fplx_entry in covered_fplx}
-        return output
-
-    def _get_equivalent_entities(self, curie: str) -> Set[str]:
-        """Return set of equivalent entity groundings
-
-        Uses set of equivalences in self.equiv_map as well as those
-        available in indra's hgnc, uniprot, and chebi clients.
-        """
-        output = {curie}
-        prefix, identifier = curie.split(':', maxsplit=1)
-        for xref_prefix, xref_id in bio_ontology.get_mappings(prefix,
-                                                              identifier):
-            output.add(f'{xref_prefix}:{xref_id}')
-
-        # TODO these should all be in bioontology, eventually
-        for xref_curie in self.equivalences.get(curie, []):
-            if xref_curie in output:
-                continue
-            xref_prefix, xref_id = xref_curie.split(':', maxsplit=1)
-            if (prefix, xref_prefix) not in BO_MISSING_XREFS:
-                BO_MISSING_XREFS.add((prefix, xref_prefix))
-                tqdm.write(
-                    f'Bioontology v{bio_ontology.version} is missing mappings'
-                    f' from {prefix} to {xref_prefix}')
-            output.add(xref_curie)
-
-        if prefix == 'NCBI gene':
-            hgnc_id = get_hgnc_from_entrez(identifier)
-            if hgnc_id is not None:
-                output.add(f'HGNC:{hgnc_id}')
-        if prefix == 'UP':
-            hgnc_id = get_hgnc_id(identifier)
-            if hgnc_id is not None:
-                output.add(f'HGNC:{hgnc_id}')
-        if prefix == 'PubChem':
-            chebi_id = get_chebi_id_from_pubchem(identifier)
-            if chebi_id is not None:
-                output.add(f'CHEBI:{chebi_id}')
-        return output
-
-    def _get_entity_type_helper(self, row) -> str:
-        if self._get_entity_type(row.obj) != 'Gene':
-            return self._get_entity_type(row.obj)
-        elif any(y.startswith('HGNC') for y in row.obj_synonyms):
-            return 'Human Gene'
-        else:
-            return 'Nonhuman Gene'
-
-    @staticmethod
-    def _get_entity_type(groundings: Collection[str]) -> str:
-        """Get entity type based on entity groundings of text in corpus."""
-        if any(
-                grounding.startswith('NCBI gene') or grounding.startswith('UP')
-                for grounding in groundings
-        ):
-            return 'Gene'
-        elif any(grounding.startswith('Rfam') for grounding in groundings):
-            return 'miRNA'
-        elif any(
-                grounding.startswith('CHEBI') or grounding.startswith('PubChem')
-                for grounding in groundings):
-            return 'Small Molecule'
-        elif any(grounding.startswith('GO') for grounding in groundings):
-            return 'Cellular Component'
-        elif any(
-                grounding.startswith('CVCL') or grounding.startswith('CL')
-                for grounding in groundings
-        ):
-            return 'Cell types/Cell lines'
-        elif any(grounding.startswith('UBERON') for grounding in groundings):
-            return 'Tissue/Organ'
-        elif any(
-                grounding.startswith('NCBI taxon') for grounding in groundings):
-            return 'Taxon'
-        else:
-            return 'unknown'
-
     def _process_annotations_table(self):
-        """Extract relevant information from annotations table."""
+        """Extract relevant information from annotations table. Modified for
+        NER. Overrides the super method."""
         print("Extracting information from annotations table...")
         df = MODULE.ensure_tar_df(
             url=URL,
@@ -249,28 +140,6 @@ class BioIDNERBenchmarker:
                                                'obj_synonyms']].values:
             self.paper_level_grounding[don_article, text].update(synonyms)
         return processed_data
-
-    @lru_cache(maxsize=None)
-    def _get_plaintext(self, don_article: str) -> str:
-        """Get plaintext content from XML file in BioID corpus
-
-        Parameters
-        ----------
-        don_article :
-            Identifier for paper used within corpus.
-
-        Returns
-        -------
-        :
-            Plaintext of specified article
-        """
-        directory = MODULE.ensure_untar(url=URL, directory='BioIDtraining_2')
-        path = directory.joinpath('BioIDtraining_2', 'fulltext_bioc',
-                                  f'{don_article}.xml')
-        tree = etree.parse(path.as_posix())
-        paragraphs = tree.xpath('//text')
-        paragraphs = [' '.join(text.itertext()) for text in paragraphs]
-        return '/n'.join(paragraphs) + '/n'
 
     def annotate_entities_with_gilda(self):
         """Performs NER on the XML files using gilda.annotate()"""
@@ -456,23 +325,6 @@ class BioIDNERBenchmarker:
 
     def get_results_tables(self):
         return self.counts_table, self.precision_recall
-
-
-def get_famplex_members():
-    from indra.databases import hgnc_client
-    fplx_entities = famplex.load_entities()
-    fplx_children = defaultdict(set)
-    for fplx_entity in fplx_entities:
-        members = famplex.individual_members('FPLX', fplx_entity)
-        for db_ns, db_id in members:
-            if db_ns == 'HGNC':
-                db_id = hgnc_client.get_current_hgnc_id(db_id)
-                if db_id:
-                    fplx_children[fplx_entity].add('%s:%s' % (db_ns, db_id))
-    return dict(fplx_children)
-
-
-fplx_members = get_famplex_members()
 
 
 def main(results: str = RESULTS_DIR):
