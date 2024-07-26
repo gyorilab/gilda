@@ -110,7 +110,7 @@ scored_match_model = api.model(
      'match': fields.Nested(api.model('Match', {}),
          description='Additional metadata about the nature of the match.'
      ),
-    'subsumed_terms': fields.List(fields.Nested(term_model),
+     'subsumed_terms': fields.List(fields.Nested(term_model),
          description='In some cases multiple terms with the same db/id '
                      'matched the input string, potentially with different '
                      'scores, and only the first one is exposed in the '
@@ -123,29 +123,29 @@ scored_match_model = api.model(
 get_names_input_model = api.model(
     "GetNamesInput",
     {'db': fields.String(
-        description="Capitalized name of the database for the grounding, "
-                    "e.g. HGNC.",
-        required=True,
-        example='HGNC'),
-    'id': fields.String(
-        description="Identifier within the given database",
-        required=True,
-        example='3236'
-    ),
-    'status': fields.String(
-        description="If provided, only entity texts of the given status are "
-                    "returned (e.g., curated, name, synonym, former_name).",
-        required=False,
-        enum=['curated', 'name', 'synonym', 'former_name'],
-        example='synonym'
-    ),
-    'source': fields.String(
-        description="If provided, only entity texts collected from the given "
-                    "source are returned.This is useful if terms grounded to "
-                    "IDs in a given database are collected from multiple "
-                    "different sources.",
-        required=False,
-        example='uniprot'
+         description="Capitalized name of the database for the grounding, "
+                     "e.g. HGNC.",
+         required=True,
+         example='HGNC'),
+     'id': fields.String(
+         description="Identifier within the given database",
+         required=True,
+         example='3236'
+     ),
+     'status': fields.String(
+         description="If provided, only entity texts of the given status are "
+                     "returned (e.g., curated, name, synonym, former_name).",
+         required=False,
+         enum=['curated', 'name', 'synonym', 'former_name'],
+         example='synonym'
+     ),
+     'source': fields.String(
+         description="If provided, only entity texts collected from the given "
+                     "source are returned.This is useful if terms grounded to "
+                     "IDs in a given database are collected from multiple "
+                     "different sources.",
+         required=False,
+         example='uniprot'
     )
     }
 )
