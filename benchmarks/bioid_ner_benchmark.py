@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from collections import defaultdict, Counter
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, Set, Dict, Optional, Iterable, Collection
+from typing import List, Dict
 
 import pystow
 import pandas as pd
@@ -16,12 +16,6 @@ from gilda.ner import annotate
 
 #from benchmarks.bioid_evaluation import fplx_members
 from benchmarks.bioid_evaluation import BioIDBenchmarker
-
-import famplex
-from indra.databases.chebi_client import get_chebi_id_from_pubchem
-from indra.databases.hgnc_client import get_hgnc_from_entrez
-from indra.databases.uniprot_client import get_hgnc_id
-from indra.ontology.bio import bio_ontology
 
 logging.getLogger('gilda.grounder').setLevel('WARNING')
 logger = logging.getLogger('bioid_ner_benchmark')
@@ -53,7 +47,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         self.annotations_df = self._process_annotations_table() # csvannotations
         self.gilda_annotations_map = defaultdict(list)
         self.annotations_count = 0
-        # New field to store Gilda annotations
         self.counts_table = None
         self.precision_recall = None
 
@@ -155,30 +148,14 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             full_text = self._get_plaintext(doc_id)
 
             gilda_annotations = annotate(text, context_text=full_text)
-            # for testing all matches for each entity, return_first = False.
 
             for annotation in gilda_annotations:
                 total_gilda_annotations += 1
 
                 self.gilda_annotations_map[(doc_id, figure)].append(annotation)
 
-                # if doc_id == '3868508' and figure == 'Figure_1-A':
-                #     tqdm.write(f"Scored NER Match: {annotation}")
-                #     tqdm.write(f"Annotated Text Segment: "
-                #           f"{text[annotation.start:annotation.end]} at "
-                #           f"indices {annotation.start} to {annotation.end}")
-                #     for i, scored_match in enumerate(annotation.matches):
-                #         tqdm.write(f"Scored Match {i + 1}: {scored_match}")
-                #         tqdm.write(
-                #             f"DB: {scored_match.term.db}, "
-                #             f"ID: {scored_match.term.id}")
-                #         tqdm.write(
-                #             f"Score: {scored_match.score}, "
-                #             f"Match: {scored_match.match}")
-                #     tqdm.write("\n")
-
         tqdm.write("Finished annotating corpus with Gilda...")
-        # tqdm.write(f"Total Gilda annotations: {total_gilda_annotations}")
+        tqdm.write(f"Total Gilda annotations: {total_gilda_annotations}")
 
     def evaluate_gilda_performance(self):
         """Calculates precision, recall, and F1"""
@@ -196,8 +173,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             key = (str(row['don_article']), row['figure'], row['text'],
                    row['first left'], row['last right'])
             ref_dict[key].append((set(row['obj']), row['obj_synonyms']))
-
-        # print(f"Total reference annotations: {len(ref_dict)}")
 
         for (doc_id, figure), annotations in (
                 tqdm(self.gilda_annotations_map.items(),
@@ -219,14 +194,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                             match_found = True
                             break
 
-                    # if match_found:
-                    #     if doc_id == '3868508' and figure == "Figure_1-A":
-                    #         print(f"Gilda Annotation: {annotation}")
-                    #         print(f"Match Found: {match_found}")
-                    #         print(f"Matching Reference: {matching_refs}")
-
-                        # break
-
                     if match_found:
                         break
 
@@ -235,9 +202,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                     false_positives_counter[annotation.text] += 1
                     if annotation.matches:  # Check if there are any matches
                         metrics['top_match']['fp'] += 1
-
-        # print(f"20 Most Common False Positives: "
-        #            f"{false_positives_counter.most_common(20)}")
 
         # False negative calculation using ref dict
         for key, refs in tqdm(ref_dict.items(),
