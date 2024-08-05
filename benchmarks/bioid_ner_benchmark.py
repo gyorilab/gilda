@@ -201,7 +201,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                     if match_found:
                         break
 
-                if not match_found:
+                if not match_found and matching_refs != []:
                     metrics['all_matches']['fp'] += 1
                     self.false_positives_counter[annotation.text] += 1
                     if annotation.matches:  # Check if there are any matches
@@ -366,6 +366,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         }
         self.result = pd.DataFrame(data)
         self.result['match'] = self.result.apply(self.check_match, axis=1)
+        self.result = self.result.sort_values(by='don_article')
 
 
 def main(results: str = RESULTS_DIR):
