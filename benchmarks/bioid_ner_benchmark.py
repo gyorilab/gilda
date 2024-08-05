@@ -2,6 +2,7 @@ import os
 import json
 import pathlib
 import logging
+import pickle
 from datetime import datetime
 from collections import defaultdict, Counter
 import xml.etree.ElementTree as ET
@@ -51,6 +52,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         self.counts_table = None
         self.precision_recall = None
         self.false_positives_counter = Counter()
+        self.result = None
 
     def process_xml_files(self):
         """Extract relevant information from XML files."""
@@ -206,6 +208,7 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                         metrics['top_match']['fp'] += 1
 
         # False negative calculation using ref dict
+        # The number entries of annotion in reference with no annotion in grounding
         for key, refs in tqdm(ref_dict.items(),
                               desc="Calculating False Negatives"):
             doc_id, figure = key[0], key[1]
@@ -292,6 +295,78 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                 self.precision_recall,
                 self.false_positives_counter)
 
+    def check_match(self, row):
+        obj_synonyms = row['obj_synonyms']
+        groundings = row['groundings']
+        if obj_synonyms is None or groundings is None:
+            return False
+        for elem in obj_synonyms:
+            for tup in groundings:
+                if elem == tup[0]:
+                    return True
+        return False
+
+    def generate_result_table(self):
+
+        ref_dict = defaultdict()
+
+        for _, row in self.annotations_df.iterrows():
+            key = (str(row['don_article']), row['figure'], row['text'],
+                   row['first left'], row['last right'])
+            ref_dict[key] = (row['obj'], row['obj_synonyms'])
+
+        text_list, obj_synonyms_list, don_articles_list = [], [], []
+        groundings_list, entity_type_list, obj_list = [], [], []
+
+        for (doc_id, figure), annotations in (
+                tqdm(self.gilda_annotations_map.items(),
+                     desc="Getting result")):
+            for annotation in annotations:
+                key = (doc_id, figure, annotation.text, annotation.start,
+                       annotation.end)
+                matching_refs = ref_dict.get(key, None)
+
+                groundings = []
+                if matching_refs:
+                    obj = matching_refs[0]
+                    obj_synonyms = matching_refs[1]
+                else:
+                    obj, obj_synonyms = None, None
+
+                text = annotation.text
+                for scored_match in annotation.matches:
+                    curies = []
+                    curie = f"{scored_match.term.db}:{scored_match.term.id}"
+                    score = scored_match.score
+                    groundings.append((curie, score))
+                    curies.append(curie)
+
+                obj_list.append(obj)
+                text_list.append(text)
+                obj_synonyms_list.append(obj_synonyms)
+                don_articles_list.append(doc_id)
+                groundings_list.append(groundings)
+
+        for key, refs in ref_dict.items():
+            doc_id, figure = key[0], key[1]
+
+            if not self.gilda_annotations_map.get((doc_id, figure), []):
+                obj_list.append(refs[0])
+                text_list.append(key[2])
+                obj_synonyms_list.append(refs[1])
+                don_articles_list.append(key[0])
+                groundings_list.append(None)
+
+        data = {
+            'text': text_list,
+            'obj': obj_list,
+            'obj_synonyms': obj_synonyms_list,
+            'don_article': don_articles_list,
+            'groundings': groundings_list,
+        }
+        self.result = pd.DataFrame(data)
+        self.result['match'] = self.result.apply(self.check_match, axis=1)
+
 
 def main(results: str = RESULTS_DIR):
     results_path = os.path.expandvars(os.path.expanduser(results))
@@ -299,6 +374,7 @@ def main(results: str = RESULTS_DIR):
 
     benchmarker = BioIDNERBenchmarker()
     benchmarker.annotate_entities_with_gilda()
+    benchmarker.generate_result_table()
     benchmarker.evaluate_gilda_performance()
     counts, precision_recall, false_positives_counter = benchmarker.get_tables()
 
@@ -361,6 +437,10 @@ def main(results: str = RESULTS_DIR):
     counts.to_csv(result_stub.with_suffix(".counts.csv"), index=False)
     precision_recall.to_csv(result_stub.with_suffix(".precision_recall.csv"),
                             index=False)
+    benchmarker.result.to_csv(
+        result_stub.with_suffix(".ner_result.tsv"),
+        sep='\t', index=False)
+
     print(f'Results saved to {results_path}')
 
 
