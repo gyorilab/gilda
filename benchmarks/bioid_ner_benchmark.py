@@ -214,20 +214,16 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             doc_id, figure = key[0], key[1]
             gilda_annotations = self.gilda_annotations_map.get((doc_id, figure),
                                                                [])
-            for original_curies, synonyms in refs:
-                match_found = any(
-                    ann.text == key[2] and
-                    ann.start == key[3] and
-                    ann.end == key[4] and
-                    any(f"{match.term.db}:{match.term.id}" in original_curies or
-                        f"{match.term.db}:{match.term.id}" in synonyms
-                        for match in ann.matches)
-                    for ann in gilda_annotations
+            match_found = any(
+                ann.text == key[2] and
+                ann.start == key[3] and
+                ann.end == key[4]
+                for ann in gilda_annotations
                 )
 
-                if not match_found:
-                    metrics['all_matches']['fn'] += 1
-                    metrics['top_match']['fn'] += 1
+            if not match_found:
+                metrics['all_matches']['fn'] += 1
+                metrics['top_match']['fn'] += 1
 
         results = {}
         for match_type, counts in metrics.items():
@@ -296,11 +292,16 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                 self.false_positives_counter)
 
     def check_match(self, row):
+        obj=row['obj']
         obj_synonyms = row['obj_synonyms']
         groundings = row['groundings']
         if obj_synonyms is None or groundings is None:
             return False
         for elem in obj_synonyms:
+            for tup in groundings:
+                if elem == tup[0]:
+                    return True
+        for elem in obj:
             for tup in groundings:
                 if elem == tup[0]:
                     return True
@@ -317,6 +318,8 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
 
         text_list, obj_synonyms_list, don_articles_list = [], [], []
         groundings_list, entity_type_list, obj_list = [], [], []
+        figure_list = []
+        all_annotation = {}
 
         for (doc_id, figure), annotations in (
                 tqdm(self.gilda_annotations_map.items(),
@@ -324,6 +327,8 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             for annotation in annotations:
                 key = (doc_id, figure, annotation.text, annotation.start,
                        annotation.end)
+                all_annotation[key] = annotation
+
                 matching_refs = ref_dict.get(key, None)
 
                 groundings = []
@@ -345,23 +350,29 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                 text_list.append(text)
                 obj_synonyms_list.append(obj_synonyms)
                 don_articles_list.append(doc_id)
+                figure_list.append(figure)
                 groundings_list.append(groundings)
 
-        for key, refs in ref_dict.items():
+        for key, refs in tqdm(ref_dict.items(),
+                              desc="Things in reference but not in grounding"):
             doc_id, figure = key[0], key[1]
+            text, start, end = key[2], key[3], key[4]
 
-            if not self.gilda_annotations_map.get((doc_id, figure), []):
-                obj_list.append(refs[0])
+            if not all_annotation.get((doc_id, figure, text, start, end)):
+                obj_list.append(refs[0])  # ([i[0] for i in refs])
                 text_list.append(key[2])
-                obj_synonyms_list.append(refs[1])
+                figure_list.append(key[1])
+                obj_synonyms_list.append(refs[1])  # ([i[1] for i in refs])
                 don_articles_list.append(key[0])
                 groundings_list.append(None)
+
 
         data = {
             'text': text_list,
             'obj': obj_list,
             'obj_synonyms': obj_synonyms_list,
             'don_article': don_articles_list,
+            'figure': figure_list,
             'groundings': groundings_list,
         }
         self.result = pd.DataFrame(data)
