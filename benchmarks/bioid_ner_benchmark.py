@@ -151,7 +151,8 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             # Get the full text for the paper-level disambiguation
             full_text = self._get_plaintext(doc_id)
 
-            gilda_annotations = annotate(text, context_text=full_text)
+            gilda_annotations = annotate(text, context_text=full_text,
+                                         organisms=self._get_organism_priority(doc_id))
 
             for annotation in gilda_annotations:
                 total_gilda_annotations += 1
