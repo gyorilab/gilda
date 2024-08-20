@@ -8,7 +8,6 @@ from collections import defaultdict, Counter
 import xml.etree.ElementTree as ET
 from textwrap import dedent
 from typing import List, Dict
-
 import pystow
 import pandas as pd
 from tqdm import tqdm
@@ -17,7 +16,7 @@ import gilda
 from gilda.ner import annotate
 
 #from benchmarks.bioid_evaluation import fplx_members
-from benchmarks.bioid_evaluation import BioIDBenchmarker
+from bioid_evaluation import BioIDBenchmarker
 
 logging.getLogger('gilda.grounder').setLevel('WARNING')
 logger = logging.getLogger('bioid_ner_benchmark')
@@ -62,7 +61,9 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         for filename in os.listdir(DATA_DIR):
             if filename.endswith('.xml'):
                 filepath = os.path.join(DATA_DIR, filename)
-                tree = ET.parse(filepath)
+                #subprocess.run(['iconv', '-f', 'ASCII', '-t', 'UTF-8', filepath, '-o', filepath], check=True)
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    tree = ET.parse(file)
                 root = tree.getroot()
                 for document in root.findall('.//document'):
                     doc_id_full = document.find('.//id').text.strip()
@@ -147,7 +148,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             doc_id = item['doc_id']
             figure = item['figure']
             text = item['text']
-
             # Get the full text for the paper-level disambiguation
             full_text = self._get_plaintext(doc_id)
 
@@ -347,11 +347,17 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                     groundings.append((curie, score))
                     curies.append(curie)
 
+                if obj:
+                    entity_type = self._get_entity_type(obj)
+                else:
+                    entity_type = None
+
                 obj_list.append(obj)
                 text_list.append(text)
                 obj_synonyms_list.append(obj_synonyms)
                 don_articles_list.append(doc_id)
                 figure_list.append(figure)
+                entity_type_list.append(entity_type)
                 groundings_list.append(groundings)
 
         for key, refs in tqdm(ref_dict.items(),
@@ -361,6 +367,8 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
 
             if not all_annotation.get((doc_id, figure, text, start, end)):
                 obj_list.append(refs[0])  # ([i[0] for i in refs])
+                entity_type = self._get_entity_type(refs[0])
+                entity_type_list.append(entity_type)
                 text_list.append(key[2])
                 figure_list.append(key[1])
                 obj_synonyms_list.append(refs[1])  # ([i[1] for i in refs])
@@ -374,11 +382,52 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
             'obj_synonyms': obj_synonyms_list,
             'don_article': don_articles_list,
             'figure': figure_list,
+            'entity_type': entity_type_list,
             'groundings': groundings_list,
         }
         self.result = pd.DataFrame(data)
         self.result['match'] = self.result.apply(self.check_match, axis=1)
-        self.result = self.result.sort_values(by='don_article')
+        self.result = self.result.sort_values(by=['don_article', 'figure'])
+    def get_entity_result(self):
+        df = self.result
+        #True Positives
+        df_tp = df[(df['obj'].notna()) & (df['groundings'].notna()) & (df['match'] == True)]
+        true_positive_counts = df_tp.groupby('entity_type').size().reset_index(name='true_positive_count')
+        #False Negatives
+        df_fn = df[(df['obj'].notna()) & (df['groundings'].isna())]
+        false_negative_counts = df_fn.groupby('entity_type').size().reset_index(name='false_negative_count')
+        #False Positives
+        df_fp = df[(df['obj'].notna()) & (df['groundings'].notna()) & (df['match'] == False)]
+        false_positive_counts = df_fp.groupby('entity_type').size().reset_index(name='false_positive_count')
+        #Merge
+        merged_df = pd.merge(true_positive_counts, false_negative_counts, on='entity_type', how='outer').fillna(0)
+        merged_df = pd.merge(merged_df, false_positive_counts, on='entity_type', how='outer').fillna(0)
+        #Recall
+        merged_df['recall'] = merged_df['true_positive_count'] / (
+                    merged_df['true_positive_count'] + merged_df['false_negative_count'])
+        #Precision
+        merged_df['precision'] = merged_df['true_positive_count'] / (
+                    merged_df['true_positive_count'] + merged_df['false_positive_count'])
+
+        total_tp = merged_df['true_positive_count'].sum()
+        total_fn = merged_df['false_negative_count'].sum()
+        total_fp = merged_df['false_positive_count'].sum()
+        total_recall = total_tp / (total_tp + total_fn)
+        total_precision = total_tp / (total_tp + total_fp)
+
+        total_row = pd.DataFrame({
+            'entity_type': ['Total'],
+            'true_positive_count': [total_tp],
+            'false_negative_count': [total_fn],
+            'false_positive_count': [total_fp],
+            'recall': [total_recall],
+            'precision': [total_precision]
+        })
+        final_df = pd.concat([merged_df, total_row], ignore_index=True)
+        final_df = final_df[
+            ['entity_type', 'true_positive_count', 'false_positive_count', 'false_negative_count', 'precision',
+             'recall']]
+        return final_df
 
 
 def main(results: str = RESULTS_DIR):
@@ -386,7 +435,10 @@ def main(results: str = RESULTS_DIR):
     os.makedirs(results_path, exist_ok=True)
 
     benchmarker = BioIDNERBenchmarker()
+    benchmarker.processed_data.to_csv("/Users/haohangyan/Desktop/repo/gilda/benchmarks/processed_data.tsv", sep='\t', index=False)
     benchmarker.annotate_entities_with_gilda()
+    df = pd.DataFrame(list(benchmarker.gilda_annotations_map.items()), columns=['Key', 'Value'])
+    df.to_csv("/Users/haohangyan/Desktop/repo/gilda/benchmarks/gilda_annotations_map.tsv", sep='\t', index=False)
     benchmarker.generate_result_table()
     benchmarker.evaluate_gilda_performance()
     counts, precision_recall, false_positives_counter = benchmarker.get_tables()
@@ -400,6 +452,7 @@ def main(results: str = RESULTS_DIR):
 
     outname = f'benchmark_{time}'
     result_stub = pathlib.Path(results_path).joinpath(outname)
+    entity_result = benchmarker.get_entity_result()
 
     caption0 = dedent(f"""\
         # Gilda NER Benchmarking
@@ -428,6 +481,16 @@ def main(results: str = RESULTS_DIR):
     table2 = precision_recall.to_markdown(index=False)
 
     caption3 = dedent("""\
+            ## Table 3
+
+            Precision and recall values for Gilda performance by entity type. Values
+            are given both for the case where Gilda is considered correct only if the
+            top grounding matches and the case where Gilda is considered correct if
+            any of its groundings match.
+        """)
+    table_by_entity = entity_result.to_markdown(index=False)
+
+    caption4 = dedent("""\
            ## 50 Most Common False Positive Words
 
            A list of 50 most common false positive annotations created by Gilda.
@@ -440,7 +503,8 @@ def main(results: str = RESULTS_DIR):
         caption0,
         caption1, table1,
         caption2, table2,
-        caption3, false_positives_list
+        caption3, table_by_entity,
+        caption4, false_positives_list
     ])
 
     md_path = result_stub.with_suffix(".md")
