@@ -18,7 +18,7 @@ from adeft import available_shortforms as available_adeft_models
 from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
-    replace_roman_arabic
+    replace_roman_arabic, strip_greek_letters
 from .scorer import Match, generate_match, score
 from .resources import get_gilda_models, get_grounding_terms
 
@@ -160,6 +160,9 @@ class Grounder(object):
         # Then we add a version with dashes replaced by spaces
         norm_spacedash = normalize(replace_dashes(raw_str, ' '))
         lookups.add(norm_spacedash)
+        # A lookup that strips off the greek letters
+        greek_stripped = normalize(strip_greek_letters(raw_str))
+        lookups.add(greek_stripped)
         # We then try to replace spelled out greek letters with
         # their unicode equivalents or their latin equivalents
         greek_replaced = normalize(replace_greek_uni(raw_str))

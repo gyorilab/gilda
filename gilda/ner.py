@@ -45,7 +45,7 @@ For brat to work, you need to store the text in a file with
 the extension ``.txt`` and the annotations in a file with the
 same name but extension ``.ann``.
 """
-
+import re
 from typing import List, Set
 import os
 
@@ -77,6 +77,10 @@ def _load_stoplist() -> Set[str]:
 stop_words = set(stopwords.words('english'))
 stop_words.update(_load_stoplist())
 
+def preprocess_text(text):
+    # Replace various types of hyphens with a space
+    text = re.sub(r'[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u00AD\u2018\u2019]', ' ', text)
+    return text
 
 def annotate(
     text, *,
@@ -117,6 +121,7 @@ def annotate(
         the text span that was matched, the list of ScoredMatches, and the
         start and end character offsets of the text span.
     """
+    text = preprocess_text(text)
     if grounder is None:
         grounder = get_grounder()
     if sent_split_fun is None:
@@ -145,6 +150,8 @@ def annotate(
             if word in stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
+            if len(word) > 1:
+                spans.add(1)
             if not spans:
                 continue
 
