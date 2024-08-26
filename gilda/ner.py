@@ -54,7 +54,7 @@ from nltk.tokenize import PunktSentenceTokenizer, TreebankWordTokenizer
 
 from gilda import get_grounder
 from gilda.grounder import Annotation
-from gilda.process import normalize
+from gilda.process import normalize, strip_greek_letters
 
 __all__ = [
     "annotate",
@@ -175,6 +175,20 @@ def annotate(
                 if len(raw_span) <= 1:
                     continue
                 context = text if context_text is None else context_text
+
+                if raw_span != strip_greek_letters(raw_span):
+                    matches = grounder.ground(strip_greek_letters(raw_span),
+                                              context=context,
+                                              organisms=organisms,
+                                              namespaces=namespaces)
+                    # print("matches",matches)
+                    if matches:
+                        start_coord = sent_start + raw_word_coords[idx][0]
+                        end_coord = sent_start + raw_word_coords[idx + span - 1][1]
+                        annotations.append(Annotation(
+                            strip_greek_letters(raw_span), matches, start_coord, end_coord - 1
+                        ))
+
                 matches = grounder.ground(raw_span,
                                           context=context,
                                           organisms=organisms,
