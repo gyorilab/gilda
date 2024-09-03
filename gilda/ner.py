@@ -181,7 +181,6 @@ def annotate(
                                               context=context,
                                               organisms=organisms,
                                               namespaces=namespaces)
-                    # print("matches",matches)
                     if matches:
                         start_coord = sent_start + raw_word_coords[idx][0]
                         end_coord = sent_start + raw_word_coords[idx + span - 1][1]

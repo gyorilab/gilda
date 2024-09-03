@@ -160,9 +160,6 @@ class Grounder(object):
         # Then we add a version with dashes replaced by spaces
         norm_spacedash = normalize(replace_dashes(raw_str, ' '))
         lookups.add(norm_spacedash)
-        # A lookup that strips off the greek letters
-        greek_stripped = normalize(strip_greek_letters(raw_str))
-        lookups.add(greek_stripped)
         # We then try to replace spelled out greek letters with
         # their unicode equivalents or their latin equivalents
         greek_replaced = normalize(replace_greek_uni(raw_str))
