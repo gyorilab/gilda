@@ -70,7 +70,7 @@ def _load_stoplist() -> Set[str]:
     """Load NER stoplist from file."""
     stoplist_path = STOPLIST_PATH
     with open(stoplist_path, 'r') as file:
-        stoplist = {normalize(line.strip()) for line in file}
+        stoplist = {line.strip() for line in file}
     return stoplist
 
 
@@ -143,6 +143,8 @@ def annotate(
             if idx < skip_until:
                 continue
             if word in stop_words:
+                continue
+            if raw_words[idx] in stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
             if not spans:
