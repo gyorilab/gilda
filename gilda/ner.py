@@ -70,7 +70,7 @@ def _load_stoplist() -> Set[str]:
     """Load NER stoplist from file."""
     stoplist_path = STOPLIST_PATH
     with open(stoplist_path, 'r') as file:
-        stoplist = {line.strip() for line in file}
+        stoplist = {normalize(line.strip()) for line in file}
     return stoplist
 
 
