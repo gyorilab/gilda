@@ -61,7 +61,6 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         for filename in os.listdir(DATA_DIR):
             if filename.endswith('.xml'):
                 filepath = os.path.join(DATA_DIR, filename)
-                #subprocess.run(['iconv', '-f', 'ASCII', '-t', 'UTF-8', filepath, '-o', filepath], check=True)
                 with open(filepath, 'r', encoding='utf-8') as file:
                     tree = ET.parse(file)
                 root = tree.getroot()
