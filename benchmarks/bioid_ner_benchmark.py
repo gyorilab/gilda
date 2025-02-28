@@ -456,10 +456,8 @@ def main(results: str = RESULTS_DIR):
     os.makedirs(results_path, exist_ok=True)
 
     benchmarker = BioIDNERBenchmarker()
-    benchmarker.processed_data.to_csv("/Users/haohangyan/Desktop/repo/gilda/benchmarks/processed_data.tsv", sep='\t', index=False)
     benchmarker.annotate_entities_with_gilda()
     df = pd.DataFrame(list(benchmarker.gilda_annotations_map.items()), columns=['Key', 'Value'])
-    df.to_csv("/Users/haohangyan/Desktop/repo/gilda/benchmarks/gilda_annotations_map.tsv", sep='\t', index=False)
     benchmarker.generate_result_table()
     benchmarker.evaluate_gilda_performance()
     counts, precision_recall, false_positives_counter = benchmarker.get_tables()
