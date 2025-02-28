@@ -292,6 +292,15 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
                 self.false_positives_counter)
 
     def check_match(self, row):
+        """
+        Check if 'obj' or 'obj_synonyms' match any grounding identifiers.
+
+        Parameters:
+        - row (pd.Series): A DataFrame row with 'obj', 'obj_synonyms', and 'groundings'.
+
+        Returns:
+        - bool: True if a match is found, else False.
+        """
         obj=row['obj']
         obj_synonyms = row['obj_synonyms']
         groundings = row['groundings']
