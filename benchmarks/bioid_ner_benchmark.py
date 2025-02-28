@@ -317,7 +317,10 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         return False
 
     def generate_result_table(self):
-
+        """
+            Generates a results DataFrame by aligning Gilda annotation matches with
+            reference annotations.
+        """
         ref_dict = defaultdict()
 
         for _, row in self.annotations_df.iterrows():
@@ -397,6 +400,16 @@ class BioIDNERBenchmarker(BioIDBenchmarker):
         self.result['match'] = self.result.apply(self.check_match, axis=1)
         self.result = self.result.sort_values(by=['don_article', 'figure'])
     def get_entity_result(self):
+        """
+            Compute precision and recall for entity recognition.
+
+            - True Positives (TP): Matched objects with groundings.
+            - False Negatives (FN): Objects without groundings.
+            - False Positives (FP): Objects with groundings but no match.
+
+            Returns:
+            - pd.DataFrame: TP, FP, FN counts, precision, and recall per entity type.
+        """
         df = self.result
         #True Positives
         df_tp = df[(df['obj'].notna()) & (df['groundings'].notna()) & (df['match'] == True)]
