@@ -126,12 +126,14 @@ def generate_match(query, ref, beginning_of_sentence=False):
     # with a single ASCII space, and all kinds of dashes with a single
     # ASCII dash.
     query = replace_dashes(replace_whitespace(query))
-    ref = replace_dashes(replace_whitespace(ref))
+    # Corner case: some synonyms may have a trailing space which we can
+    # safely remove to avoid issues in the comparison
+    ref = replace_whitespace(ref).rstrip(' ')
+    ref = replace_dashes(ref)
 
     # If we have an exact match at this point then we can return immediately
     if not beginning_of_sentence and query == ref:
         return Match(query, ref, exact=True)
-
     query_suffix = query
     ref_suffix = ref
     query_pieces = ['']
