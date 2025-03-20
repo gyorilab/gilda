@@ -102,3 +102,10 @@ def test_punctuation_outside_entities():
     assert len(res) == 3
 
     assert [ann.text for ann in res] == ['EGF', 'EGFR', 'receptor']
+
+
+def test_synonym_corner_case():
+    # Context: EFO contains the synonyms "transthyretin " with a trailing
+    # space, this triggers an indexing error corner case when followed by -
+    res = gilda.annotate('transthyretin -')
+    assert res
