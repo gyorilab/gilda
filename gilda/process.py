@@ -126,6 +126,10 @@ def replace_greek_spelled_out(s):
         s = s.replace(greek_uni, greek_spelled_out)
     return s
 
+def strip_greek_letters(s):
+    """Strip Greek unicode character.
+    """
+    return ''.join(c for c in s if c not in greek_alphabet)
 
 def replace_unicode(s):
     """Replace unicode with ASCII equivalent, except Greek letters.
