@@ -7,7 +7,7 @@ from typing import Iterable, Optional, Set, Tuple
 __all__ = [
     "Term",
     "get_curie",
-    "get_url",
+    "get_bioregistry_url",
     "filter_out_duplicates",
     "dump_terms",
 ]
@@ -107,8 +107,8 @@ class Term(object):
         """Get the full identifiers.org URL for this term."""
         return get_identifiers_url(self.db, self.id)
 
-    def get_url(self):
-        return get_url(self.db, self.id)
+    def get_bioregistry_url(self):
+        return get_bioregistry_url(self.db, self.id)
 
     # Backwards compatibility for the misspelled method name
     def get_idenfiers_url(self):  # pragma: no cover - deprecated spelling
@@ -145,7 +145,7 @@ class Term(object):
         return namespaces
 
 
-def get_curie(db, id) -> Optional[str]:
+def get_curie(db, id, style='bioregistry') -> Optional[str]:
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -153,11 +153,22 @@ def get_curie(db, id) -> Optional[str]:
     if len(id_parts) == 1:
         return curie_pattern.format(db=db.lower(), id=id)
     elif len(id_parts) == 2:
+        # This is for the namespace-embedded-in-LUI case which
+        # for OBO ontologies in identifiers.org is uppercased,
+        # otherwise we default to lowercase consistent with Bioregistry
+        db_norm = id_parts[0].upper() if style == 'identifiers' \
+            else id_parts[0].lower()
         return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
 
 
-def get_url(db, id):
-    curie = get_curie(db, id)
+def get_identifiers_url(db, id) -> Optional[str]:
+    curie = get_curie(db, id, style='identifiers')
+    if curie is not None:
+        return f'https://identifiers.org/{curie}'
+
+
+def get_bioregistry_url(db, id) -> Optional[str]:
+    curie = get_curie(db, id, style='bioregistry')
     if curie is not None:
         return f'https://bioregistry.io/{curie}'
 
