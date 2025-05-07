@@ -158,7 +158,7 @@ def get_curie(db, id, style='bioregistry') -> Optional[str]:
         # otherwise we default to lowercase consistent with Bioregistry
         db_norm = id_parts[0].upper() if style == 'identifiers' \
             else id_parts[0].lower()
-        return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+        return curie_pattern.format(db=db_norm, id=id_parts[-1])
 
 
 def get_identifiers_url(db, id) -> Optional[str]:
