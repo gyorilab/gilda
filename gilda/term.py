@@ -6,8 +6,8 @@ from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
     "Term",
-    "get_identifiers_curie",
-    "get_identifiers_url",
+    "get_curie",
+    "get_url",
     "filter_out_duplicates",
     "dump_terms",
 ]
@@ -101,10 +101,10 @@ class Term(object):
 
     def get_curie(self) -> str:
         """Get the compact URI for this term."""
-        return get_identifiers_curie(self.db, self.id)
+        return get_curie(self.db, self.id)
 
-    def get_idenfiers_url(self):
-        return get_identifiers_url(self.db, self.id)
+    def get_url(self):
+        return get_url(self.db, self.id)
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
         """Return all groundings for this term, including from a mapped source.
@@ -137,7 +137,7 @@ class Term(object):
         return namespaces
 
 
-def get_identifiers_curie(db, id) -> Optional[str]:
+def get_curie(db, id) -> Optional[str]:
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -148,10 +148,10 @@ def get_identifiers_curie(db, id) -> Optional[str]:
         return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
 
 
-def get_identifiers_url(db, id):
-    curie = get_identifiers_curie(db, id)
+def get_url(db, id):
+    curie = get_curie(db, id)
     if curie is not None:
-        return f'https://identifiers.org/{curie}'
+        return f'https://bioregistry.io/{curie}'
 
 
 def _term_key(term: Term) -> Tuple[str, str, str, str, str]:
