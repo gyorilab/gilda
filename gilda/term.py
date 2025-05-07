@@ -8,6 +8,7 @@ __all__ = [
     "Term",
     "get_curie",
     "get_bioregistry_url",
+    "get_identifiers_url",
     "filter_out_duplicates",
     "dump_terms",
 ]
@@ -99,9 +100,9 @@ class Term(object):
                 self.entry_name, self.status, self.source,
                 self.organism, self.source_db, self.source_id]
 
-    def get_curie(self) -> str:
+    def get_curie(self, style='bioregistry') -> str:
         """Get the compact URI for this term."""
-        return get_curie(self.db, self.id)
+        return get_curie(self.db, self.id, style=style)
 
     def get_identifiers_url(self):
         """Get the full identifiers.org URL for this term."""
