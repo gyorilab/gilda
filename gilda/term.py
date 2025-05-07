@@ -145,7 +145,7 @@ def get_curie(db, id) -> Optional[str]:
     if len(id_parts) == 1:
         return curie_pattern.format(db=db.lower(), id=id)
     elif len(id_parts) == 2:
-        return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+        return curie_pattern.format(db=id_parts[0].lower(), id=id_parts[-1])
 
 
 def get_url(db, id):
