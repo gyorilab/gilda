@@ -1,4 +1,6 @@
 from textwrap import dedent
+import csv
+from io import StringIO
 
 from flask import Blueprint, render_template, request
 from flask_wtf import FlaskForm
@@ -110,11 +112,42 @@ def view_ner():
     form = NERForm()
     if form.validate_on_submit():
         annotations = form.get_annotations()
+
+        # Generate CSV data
+        si = StringIO()
+        writer = csv.writer(si)
+        writer.writerow([
+            "Start", "End", "Text", "Grounding", "Standard Name", "Score",
+            "Additional Groundings"
+        ])
+
+        # Write data
+        for annotation in annotations:
+            match = annotation.matches[0]
+            match_curie = match.term.get_curie()
+            additional_groundings = ", ".join(
+                curie for curie in match.get_grounding_dict().keys()
+                if curie != match_curie
+            )
+
+            writer.writerow([
+                f"{annotation.start}",
+                f"{annotation.end}",
+                annotation.text,
+                match_curie,
+                match.term.entry_name,
+                f"{match.score:.4f}",
+                additional_groundings
+            ])
+
+        csv_data = si.getvalue()
+
         return render_template(
             "ner_matches.html",
             annotations=annotations,
             version=version,
             text=form.text.data,
+            csv_data=csv_data,
             # Add a new form that doesn't auto-populate
             form=NERForm(formdata=None),
         )

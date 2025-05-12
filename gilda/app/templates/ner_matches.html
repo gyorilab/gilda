@@ -7,7 +7,16 @@
 
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Named Entity Recognition Results</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h3 class="panel-title">Named Entity Recognition Results</h3>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button onclick="download_csv()" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download CSV
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="panel-body">
             <blockquote>
@@ -53,4 +62,19 @@
             </tbody>
         </table>
     </div>
+
+    <script>
+    function download_csv() {
+        const csvData = `{{ csv_data | safe }}`;
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'ner_results.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+    </script>
 {% endblock %}
