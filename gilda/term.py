@@ -2,6 +2,7 @@ import csv
 import gzip
 import itertools
 import logging
+import warnings
 from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+warnings.filterwarnings('always', category=DeprecationWarning)
 
 
 class Term(object):
@@ -105,7 +107,7 @@ class Term(object):
         return get_curie(self.db, self.id, style=style)
 
     def get_identifiers_url(self):
-        """Get the full identifiers.org URL for this term."""
+        """Get the identifiers URL for this term."""
         return get_identifiers_url(self.db, self.id)
 
     def get_bioregistry_url(self):
@@ -147,6 +149,7 @@ class Term(object):
 
 
 def get_curie(db, id, style='bioregistry') -> Optional[str]:
+    """Get the curie for a term."""
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -171,7 +174,26 @@ def get_identifiers_url(db, id) -> Optional[str]:
 def get_bioregistry_url(db, id) -> Optional[str]:
     curie = get_curie(db, id, style='bioregistry')
     if curie is not None:
-        return f'https://bioregistry.io/{curie}'
+        return f'https://bioregistry.io/{curie}' if curie else None
+
+
+def get_identifiers_curie(db, id) -> Optional[str]:
+    """Get the identifiers curie for a term.
+
+    Deprecated: Use get_curie() instead which uses the same logic but
+    standardizes all database names to lower case instead.
+    """
+    warnings.warn(
+        "get_identifiers_curie is deprecated, use get_curie instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return get_curie(db, id, style='identifiers')
+
+
+def get_url(db, id):
+    """Get the URL for a term based on its curie parts."""
+    curie = get_curie(db, id)
 
 
 def _term_key(term: Term) -> Tuple[str, str, str, str, str]:
