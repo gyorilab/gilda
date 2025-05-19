@@ -23,10 +23,11 @@ class GrounderInstance(object):
         return self.grounder
 
     def ground(self, text, context=None, organisms=None,
-               namespaces=None):
+               namespaces=None, fuzzy=None):
         return self.get_grounder().ground(text, context=context,
                                           organisms=organisms,
-                                          namespaces=namespaces)
+                                          namespaces=namespaces,
+                                          fuzzy=fuzzy)
 
     def get_models(self):
         return self.get_grounder().get_models()
@@ -44,7 +45,7 @@ class GrounderInstance(object):
 grounder = GrounderInstance()
 
 
-def ground(text, context=None, organisms=None, namespaces=None):
+def ground(text, context=None, organisms=None, namespaces=None, fuzzy=None):
     """Return a list of scored matches for a text to ground.
 
     Parameters
@@ -61,6 +62,10 @@ def ground(text, context=None, organisms=None, namespaces=None):
     namespaces : Optional[List[str]]
         A list of namespaces to restrict the matches to. By default, no
         restriction is applied.
+    fuzzy: Optional[bool]
+        Wether to use fuzzy matching. If True, the grounder will try to 
+        approximately match the text to the terms. This is useful for cases 
+        where the text may have misspellings or variation.
 
     Returns
     -------
@@ -104,7 +109,7 @@ def ground(text, context=None, organisms=None, namespaces=None):
 
     >>> scored_matches = gilda.ground('ESR', namespaces=["hgnc"])
     """
-    return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces)
+    return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces, fuzzy=fuzzy)
 
 
 def annotate(
