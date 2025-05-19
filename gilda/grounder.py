@@ -81,8 +81,7 @@ class Grounder(object):
         self,
         terms: Optional[GrounderInput] = None,
         *,
-        namespace_priority: Optional[List[str]] = None,
-        fuzzy: bool = False,
+        namespace_priority: Optional[List[str]] = None
     ):
         if terms is None:
             terms = get_grounding_terms()
@@ -122,10 +121,9 @@ class Grounder(object):
             namespace_priority
         )
 
-        self.fuzzy = fuzzy
-
-        if self.fuzzy:
-            self._all_keys = sorted(self.entries.keys())
+        # for fuzzy lookups
+        self._fuzzy = False
+        self._all_keys = False
 
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
@@ -157,7 +155,7 @@ class Grounder(object):
         for lookup in lookups:
             entries += self.entries.get(lookup, [])
 
-        if self.fuzzy and not entries:
+        if self._fuzzy and not entries:
             fuzzy_lookups = self._generate_fuzzy_lookups(raw_str)
             for fuzzy_lookup, ratio in fuzzy_lookups:
                 fuzzy_entries = self.entries.get(fuzzy_lookup, [])
@@ -224,6 +222,7 @@ class Grounder(object):
         context: Optional[str] = None,
         organisms: Optional[List[str]] = None,
         namespaces: Optional[List[str]] = None,
+        fuzzy: bool = False,
     ) -> Optional["ScoredMatch"]:
         """Return the best scored grounding for a given raw string.
 
@@ -259,6 +258,7 @@ class Grounder(object):
             context=context,
             organisms=organisms,
             namespaces=namespaces,
+            fuzzy=fuzzy
         )
         if scored_matches:
             # Because of the way the ground() function is implemented,
@@ -267,8 +267,14 @@ class Grounder(object):
             return scored_matches[0]
         return None
 
-    def ground(self, raw_str, context=None, organisms=None,
-               namespaces=None):
+    def ground(
+            self, 
+            raw_str, 
+            context: Optional[str] = None, 
+            organisms: Optional[List[str]] = None,
+            namespaces: Optional[List[str]] = None,
+            fuzzy: Optional[bool]=None
+    ) -> List["ScoredMatch"]:
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -298,6 +304,13 @@ class Grounder(object):
             A list of ScoredMatch objects representing the groundings sorted
             by decreasing score.
         """
+        if fuzzy:
+            self._fuzzy = True
+
+            # lazy load keys for fuzzy lookups
+            if not self._all_keys:
+                self._all_keys = sorted(self.entries.keys())
+            
         if not organisms:
             organisms = ['9606']
         # Stripping whitespaces is done up front directly on the raw string
@@ -345,6 +358,9 @@ class Grounder(object):
                 scored_match for scored_match in unique_scores
                 if scored_match.get_namespaces() & set(namespaces)
             ]
+
+        # reset fuzzy behavior
+        self._fuzzy = False
 
         return unique_scores
 
