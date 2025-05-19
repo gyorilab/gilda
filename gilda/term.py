@@ -136,6 +136,33 @@ class Term(object):
             namespaces.add(self.source_db)
         return namespaces
 
+class ScoredTerm(Term):
+    """A class that extends Term to include a score for fuzzy matching.
+    This class is used to represent a term with an associated score, which can be
+    useful for ranking or filtering terms based on their similarity to a given input.
+
+    """
+
+    def __init__(self, term: Term, score: float):
+        """Initialize a ScoredTerm instance.
+
+        Args:
+            term (Term): The Term object to be wrapped.
+            score (float): The score associated with the term.
+        """
+        super().__init__(
+            term.norm_text,
+            term.text,
+            term.db,
+            term.id,
+            term.entry_name,
+            term.status,
+            term.source,
+            organism=term.organism,
+            source_db=term.source_db,
+            source_id=term.source_id,
+        )
+        self.score = score
 
 def get_identifiers_curie(db, id) -> Optional[str]:
     curie_pattern = '{db}:{id}'
