@@ -7,7 +7,7 @@ TEST_ROWS = [
     (1, "kras"),
     (2, "apoptosis"),
 ]
-TEST_SOLUTIONS = ['hgnc:6407', 'GO:0006915']
+TEST_SOLUTIONS = ['hgnc:6407', 'go:0006915']
 
 
 def test_pandas_grounding():
