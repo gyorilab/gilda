@@ -12,10 +12,12 @@ from textwrap import dedent
 from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union, Iterable
 from urllib.request import urlretrieve
 
+from rapidfuzz import fuzz, process
+
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term, get_identifiers_curie, get_identifiers_url
+from .term import Term, FuzzyTerm, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -80,6 +82,7 @@ class Grounder(object):
         terms: Optional[GrounderInput] = None,
         *,
         namespace_priority: Optional[List[str]] = None,
+        fuzzy: bool = False,
     ):
         if terms is None:
             terms = get_grounding_terms()
@@ -119,6 +122,11 @@ class Grounder(object):
             namespace_priority
         )
 
+        self.fuzzy = fuzzy
+
+        if self.fuzzy:
+            self._all_keys = sorted(self.entries.keys())
+
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
         for norm_term in self.entries:
@@ -148,6 +156,12 @@ class Grounder(object):
         entries = []
         for lookup in lookups:
             entries += self.entries.get(lookup, [])
+
+        if self.fuzzy and not entries:
+            fuzzy_lookups = self._generate_fuzzy_lookups(raw_str)
+            for fuzzy_lookup, ratio in fuzzy_lookups:
+                fuzzy_entries = self.entries.get(fuzzy_lookup, [])
+                entries += [FuzzyTerm(entry, ratio) for entry in fuzzy_entries]
         return entries
 
     def _generate_lookups(self, raw_str: str) -> Set[str]:
@@ -179,6 +193,18 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
+    def _generate_fuzzy_lookups(self, raw_str: str) -> Set[Tuple[str, float]]:
+        norm = normalize(raw_str)
+        fuzzy_hits = process.extract(
+            norm,
+            self._all_keys,
+            scorer=fuzz.QRatio,
+            score_cutoff=90,
+            limit=10
+        )
+
+        return sorted({(k, ratio/100) for k, ratio, _ in fuzzy_hits})
+    
     def _score_namespace(self, term) -> int:
         """Apply a priority to the term based on its namespace.
 
