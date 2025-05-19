@@ -2,17 +2,21 @@ import csv
 import gzip
 import itertools
 import logging
+import warnings
 from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
     "Term",
+    "get_curie",
     "get_identifiers_curie",
+    "get_url",
     "get_identifiers_url",
     "filter_out_duplicates",
     "dump_terms",
 ]
 
 logger = logging.getLogger(__name__)
+warnings.filterwarnings('always', category=DeprecationWarning)
 
 
 class Term(object):
@@ -101,10 +105,15 @@ class Term(object):
 
     def get_curie(self) -> str:
         """Get the compact URI for this term."""
-        return get_identifiers_curie(self.db, self.id)
+        return get_curie(self.db, self.id)
 
-    def get_idenfiers_url(self):
+    def get_identifiers_url(self):
+        """Get the identifiers URL for this term."""
         return get_identifiers_url(self.db, self.id)
+
+    def get_url(self):
+        """Get the URL for this term."""
+        return get_url(self.db, self.id)
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
         """Return all groundings for this term, including from a mapped source.
@@ -137,7 +146,30 @@ class Term(object):
         return namespaces
 
 
+def get_curie(db, id) -> Optional[str]:
+    """Get the curie for a term."""
+    curie_pattern = '{db}:{id}'
+    if db == 'UP':
+        db = 'uniprot'
+    id_parts = id.split(':')
+    if len(id_parts) == 1:
+        return curie_pattern.format(db=db.lower(), id=id)
+    elif len(id_parts) == 2:
+        return curie_pattern.format(db=id_parts[0].lower(), id=id_parts[-1])
+    return None
+
+
 def get_identifiers_curie(db, id) -> Optional[str]:
+    """Get the identifiers curie for a term.
+
+    Deprecated: Use get_curie() instead which uses the same logic but
+    standardizes all database names to lower case instead.
+    """
+    warnings.warn(
+        "get_identifiers_curie is deprecated, use get_curie instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -148,7 +180,24 @@ def get_identifiers_curie(db, id) -> Optional[str]:
         return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
 
 
+def get_url(db, id):
+    """Get the URL for a term based on its curie parts."""
+    curie = get_curie(db, id)
+    return f'https://bioregistry.io/{curie}' if curie else None
+
+
+
 def get_identifiers_url(db, id):
+    """Get the identifiers URL for a term based on its curie parts.
+
+    Deprecated: Use get_url() instead which uses bioregistry.io as the
+    default registry, but otherwise uses the same logic.
+    """
+    warnings.warn(
+        "get_identifiers_url is deprecated, use get_url instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
     curie = get_identifiers_curie(db, id)
     if curie is not None:
         return f'https://identifiers.org/{curie}'

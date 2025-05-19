@@ -92,13 +92,13 @@ def test_filter_priority_by_source():
 
 def test_get_terms_simple():
     row = {'Entry': 'P15056',
-           'Gene names  (primary )': 'BRAF',
-           'Gene names  (synonym )': 'BRAF1 RAFB1',
+           'Gene Names (primary)': 'BRAF',
+           'Gene Names (synonym)': 'BRAF1 RAFB1',
            'Protein names':
                ('Serine/threonine-protein kinase B-raf '
                 '(EC 2.7.11.1) (Proto-oncogene B-Raf) (p94) '
                 '(v-Raf murine sarcoma viral oncogene homolog B1)'),
-           'Organism ID': '9606'}
+           'Organism (ID)': '9606'}
     terms = get_terms_from_uniprot_row(row)
     assert len(terms) == 7, terms
     assert all(term.db == 'HGNC' for term in terms), terms
@@ -106,10 +106,10 @@ def test_get_terms_simple():
 
 def test_get_terms_multi_gene_human():
     row = {'Entry': 'P62805',
-           'Gene names  (primary )':
+           'Gene Names (primary)':
                ('H4C1; H4C2; H4C3; H4C4; H4C5; H4C6; H4C8;'
                 ' H4C9; H4C11; H4C12; H4C13; H4C14; H4C15; H4-16'),
-           'Gene names  (synonym )': ('H4/A H4FA HIST1H4A; H4/I H4FI HIST1H4B; '
+           'Gene Names (synonym)': ('H4/A H4FA HIST1H4A; H4/I H4FI HIST1H4B; '
                                       'H4/G H4FG HIST1H4C; H4/B H4FB HIST1H4D; '
                                       'H4/J H4FJ HIST1H4E; H4/C H4FC HIST1H4F; '
                                       'H4/H H4FH HIST1H4H; H4/M H4FM HIST1H4I; '
@@ -118,7 +118,7 @@ def test_get_terms_multi_gene_human():
                                       'HIST2H4 HIST2H4A; H4/O H4FO HIST2H4B; '
                                       'HIST4H4'),
            'Protein names': 'Histone H4',
-           'Organism ID': '9606'}
+           'Organism (ID)': '9606'}
     terms = get_terms_from_uniprot_row(row)
     assert len(terms) == 1, terms
     assert terms[0].db == 'UP'
@@ -127,12 +127,12 @@ def test_get_terms_multi_gene_human():
 
 def test_get_terms_multi_gene_nonhuman():
     row = {'Entry': 'P62784',
-           'Gene names  (primary )': ('his-1; his-5; his-10; his-14; his-18; '
+           'Gene Names (primary)': ('his-1; his-5; his-10; his-14; his-18; '
                                       'his-26; his-28; his-31; his-37; his-38; '
                                       'his-46; his-50; his-56; his-60; '
                                       'his-64; his-67'),
-           'Gene names  (synonym )': '; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ',
+           'Gene Names (synonym)': '; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ',
            'Protein names': 'Histone H4',
-           'Organism ID': '6239'}
+           'Organism (ID)': '6239'}
     terms = get_terms_from_uniprot_row(row)
     assert len(terms) == 17
