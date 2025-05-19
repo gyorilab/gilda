@@ -59,7 +59,7 @@ def test_get_all():
             curies.add(scored_match.term.get_curie())
     assert "hgnc:3467" in curies  # ESR1
     assert "fplx:ESR" in curies
-    assert "GO:0005783" in curies  # endoplasmic reticulum
+    assert "go:0005783" in curies  # endoplasmic reticulum
 
 
 def test_context_test():
@@ -74,7 +74,7 @@ def test_context_test():
     context_text = "Calcium is released from the ER."
     results = gilda.annotate(text, context_text=context_text)
     assert len(results) == 1
-    assert results[0].matches[0].term.get_curie() == "GO:0005783"
+    assert results[0].matches[0].term.get_curie() == "go:0005783"
     assert results[0].text == "ER"
     assert (results[0].start, results[0].end) == (14, 16)
 
