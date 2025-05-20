@@ -246,6 +246,10 @@ class Grounder(object):
             matches, and to the source namespaces of terms if they were
             created using cross-reference mappings. By default, no
             restriction is applied.
+        fuzzy: bool
+            Wether to use fuzzy matching. If True, the grounder will try to 
+            approximately match the text to the terms. This is useful for cases 
+            where the text may have misspellings or variation.
 
         Returns
         -------
@@ -297,6 +301,10 @@ class Grounder(object):
             matches, and to the source namespaces of terms if they were
             created using cross-reference mappings. By default, no
             restriction is applied.
+        fuzzy: bool
+            Wether to use fuzzy matching. If True, the grounder will try to 
+            approximately match the text to the terms. This is useful for cases 
+            where the text may have misspellings or variation.
 
         Returns
         -------
