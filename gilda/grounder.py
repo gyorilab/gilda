@@ -196,7 +196,7 @@ class Grounder(object):
         fuzzy_hits = process.extract(
             norm,
             self._all_keys,
-            scorer=fuzz.QRatio,
+            scorer=fuzz.ratio,
             score_cutoff=90,
             limit=10
         )
