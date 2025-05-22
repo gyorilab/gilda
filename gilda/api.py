@@ -45,7 +45,7 @@ class GrounderInstance(object):
 grounder = GrounderInstance()
 
 
-def ground(text, context=None, organisms=None, namespaces=None, fuzzy=None):
+def ground(text, context=None, organisms=None, namespaces=None, fuzzy=False):
     """Return a list of scored matches for a text to ground.
 
     Parameters
@@ -62,7 +62,7 @@ def ground(text, context=None, organisms=None, namespaces=None, fuzzy=None):
     namespaces : Optional[List[str]]
         A list of namespaces to restrict the matches to. By default, no
         restriction is applied.
-    fuzzy: Optional[bool]
+    fuzzy: bool
         Wether to use fuzzy matching. If True, the grounder will try to 
         approximately match the text to the terms. This is useful for cases 
         where the text may have misspellings or variation.

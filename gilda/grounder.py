@@ -156,10 +156,11 @@ class Grounder(object):
             entries += self.entries.get(lookup, [])
 
         if self._fuzzy and not entries:
-            fuzzy_lookups = self._generate_fuzzy_lookups(raw_str)
-            for fuzzy_lookup, ratio in fuzzy_lookups:
-                fuzzy_entries = self.entries.get(fuzzy_lookup, [])
-                entries += [FuzzyTerm(entry, ratio) for entry in fuzzy_entries]
+            for lookup in lookups:
+                fuzzy_lookups = self._generate_fuzzy_lookups(lookup)
+                for fuzzy_lookup, ratio in fuzzy_lookups:
+                    fuzzy_entries = self.entries.get(fuzzy_lookup, [])
+                    entries += [FuzzyTerm(entry, ratio) for entry in fuzzy_entries]
         return entries
 
     def _generate_lookups(self, raw_str: str) -> Set[str]:
