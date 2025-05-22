@@ -1,6 +1,7 @@
 from copy import deepcopy
 from .process import replace_dashes, replace_whitespace, normalize, \
     get_capitalization_pattern
+from .term import FuzzyTerm
 
 __all__ = [
     "Match",
@@ -251,5 +252,9 @@ def score_status(term):
 def score(match, term):
     string_match_score = score_string_match(match)
     status_score = score_status(term)
-    score = ((0 * 5 + status_score) * 2 + string_match_score) / 9
+    score = (status_score * 2 + string_match_score) / 9
+
+    if isinstance(term, FuzzyTerm):
+        score = score * term.ratio
+    
     return score

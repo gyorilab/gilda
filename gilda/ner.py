@@ -144,6 +144,8 @@ def annotate(
                 continue
             if word in stop_words:
                 continue
+            if raw_words[idx] in stop_words:
+                continue
             spans = grounder.prefix_index.get(word, set())
             if not spans:
                 continue
