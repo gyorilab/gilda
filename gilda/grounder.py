@@ -12,12 +12,10 @@ from textwrap import dedent
 from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union, Iterable
 from urllib.request import urlretrieve
 
-from rapidfuzz import fuzz, process
-
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term, FuzzyTerm, get_identifiers_curie, get_identifiers_url
+from .term import Term, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -81,7 +79,7 @@ class Grounder(object):
         self,
         terms: Optional[GrounderInput] = None,
         *,
-        namespace_priority: Optional[List[str]] = None
+        namespace_priority: Optional[List[str]] = None,
     ):
         if terms is None:
             terms = get_grounding_terms()
@@ -121,10 +119,6 @@ class Grounder(object):
             namespace_priority
         )
 
-        # for fuzzy lookups
-        self._fuzzy = False
-        self._all_keys = False
-
     def _build_prefix_index(self):
         prefix_index = defaultdict(set)
         for norm_term in self.entries:
@@ -154,13 +148,6 @@ class Grounder(object):
         entries = []
         for lookup in lookups:
             entries += self.entries.get(lookup, [])
-
-        if self._fuzzy and not entries:
-            for lookup in lookups:
-                fuzzy_lookups = self._generate_fuzzy_lookups(lookup)
-                for fuzzy_lookup, ratio in fuzzy_lookups:
-                    fuzzy_entries = self.entries.get(fuzzy_lookup, [])
-                    entries += [FuzzyTerm(entry, ratio) for entry in fuzzy_entries]
         return entries
 
     def _generate_lookups(self, raw_str: str) -> Set[str]:
@@ -192,18 +179,6 @@ class Grounder(object):
                      ', '.join(lookups))
         return lookups
 
-    def _generate_fuzzy_lookups(self, raw_str: str) -> Set[Tuple[str, float]]:
-        norm = normalize(raw_str)
-        fuzzy_hits = process.extract(
-            norm,
-            self._all_keys,
-            scorer=fuzz.ratio,
-            score_cutoff=90,
-            limit=10
-        )
-
-        return sorted({(k, ratio/100) for k, ratio, _ in fuzzy_hits})
-    
     def _score_namespace(self, term) -> int:
         """Apply a priority to the term based on its namespace.
 
@@ -223,7 +198,6 @@ class Grounder(object):
         context: Optional[str] = None,
         organisms: Optional[List[str]] = None,
         namespaces: Optional[List[str]] = None,
-        fuzzy: bool = False,
     ) -> Optional["ScoredMatch"]:
         """Return the best scored grounding for a given raw string.
 
@@ -247,10 +221,6 @@ class Grounder(object):
             matches, and to the source namespaces of terms if they were
             created using cross-reference mappings. By default, no
             restriction is applied.
-        fuzzy: bool
-            Wether to use fuzzy matching. If True, the grounder will try to 
-            approximately match the text to the terms. This is useful for cases 
-            where the text may have misspellings or variation.
 
         Returns
         -------
@@ -263,7 +233,6 @@ class Grounder(object):
             context=context,
             organisms=organisms,
             namespaces=namespaces,
-            fuzzy=fuzzy
         )
         if scored_matches:
             # Because of the way the ground() function is implemented,
@@ -272,14 +241,8 @@ class Grounder(object):
             return scored_matches[0]
         return None
 
-    def ground(
-            self, 
-            raw_str, 
-            context: Optional[str] = None, 
-            organisms: Optional[List[str]] = None,
-            namespaces: Optional[List[str]] = None,
-            fuzzy: Optional[bool]=None
-    ) -> List["ScoredMatch"]:
+    def ground(self, raw_str, context=None, organisms=None,
+               namespaces=None):
         """Return scored groundings for a given raw string.
 
         Parameters
@@ -302,10 +265,6 @@ class Grounder(object):
             matches, and to the source namespaces of terms if they were
             created using cross-reference mappings. By default, no
             restriction is applied.
-        fuzzy: bool
-            Wether to use fuzzy matching. If True, the grounder will try to 
-            approximately match the text to the terms. This is useful for cases 
-            where the text may have misspellings or variation.
 
         Returns
         -------
@@ -313,13 +272,6 @@ class Grounder(object):
             A list of ScoredMatch objects representing the groundings sorted
             by decreasing score.
         """
-        if fuzzy:
-            self._fuzzy = True
-
-            # lazy load keys for fuzzy lookups
-            if not self._all_keys:
-                self._all_keys = sorted(self.entries.keys())
-            
         if not organisms:
             organisms = ['9606']
         # Stripping whitespaces is done up front directly on the raw string
@@ -367,9 +319,6 @@ class Grounder(object):
                 scored_match for scored_match in unique_scores
                 if scored_match.get_namespaces() & set(namespaces)
             ]
-
-        # reset fuzzy behavior
-        self._fuzzy = False
 
         return unique_scores
 
