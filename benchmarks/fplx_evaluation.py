@@ -72,7 +72,8 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'CDK7/9 inhibitor': {'CHEBI': 'CHEBI:82665'},
                         'PTPMeg2': {'HGNC': '9656'},
                         'CK2alpha': {'HGNC': '2459'},
-                        'DNA binding domain': {'MESH': 'D000071376'}}
+                        'DNA binding domain': {'MESH': 'D000071376'},
+                        'TLE proteins' : {'HGNC': '20822'}}
 
 
 def process_fplx_groundings(df):
