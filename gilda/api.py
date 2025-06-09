@@ -9,25 +9,32 @@ __all__ = [
 
 from typing import List, Mapping, Union, Optional
 
-from gilda.grounder import Grounder, Annotation
+from gilda.grounder import Grounder, FuzzyGrounder, Annotation
 from gilda.term import Term
 
 
 class GrounderInstance(object):
     def __init__(self):
         self.grounder = None
+        self.fuzzy_grounder = None
 
-    def get_grounder(self):
+    def get_grounder(self, fuzzy=False):
         if self.grounder is None:
             self.grounder = Grounder()
-        return self.grounder
+        if fuzzy and self.fuzzy_grounder is None:
+            self.fuzzy_grounder = FuzzyGrounder()
+        
+        if fuzzy:
+            return self.fuzzy_grounder
+        else:
+            return self.grounder
 
     def ground(self, text, context=None, organisms=None,
-               namespaces=None, fuzzy=None):
-        return self.get_grounder().ground(text, context=context,
+               namespaces=None, fuzzy=False):
+        return self.get_grounder(fuzzy).ground(text, context=context,
                                           organisms=organisms,
                                           namespaces=namespaces,
-                                          fuzzy=fuzzy)
+                                          )
 
     def get_models(self):
         return self.get_grounder().get_models()
