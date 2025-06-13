@@ -213,6 +213,7 @@ def get_grounder() -> Grounder:
 
 def make_grounder(
     terms: Union[str, List[Term], Mapping[str, List[Term]]],
+    fuzzy: bool = False,
 ) -> Grounder:
     """Create a custom grounder from a list of Terms.
 
@@ -294,4 +295,4 @@ def make_grounder(
     <https://github.com/indralab/gilda/tree/master/notebooks>`_
     in the Gilda repository on GitHub.
     """
-    return Grounder(terms=terms)
+    return Grounder(terms=terms) if not fuzzy else FuzzyGrounder(terms=terms)
