@@ -1,4 +1,50 @@
+import pytest
+
 from gilda.term import Term, get_identifiers_url
+
+
+def test_invalid():
+    with pytest.raises(ValueError):
+        Term(
+            None,
+            "Mitochondria",
+            "GO",
+            "GO:0005739",
+            "mitochondrion",
+            "synonym",
+            "mesh",
+            None,
+            "MESH",
+            "D008928",
+        )
+
+    with pytest.raises(ValueError):
+        Term(
+            "",
+            "Mitochondria",
+            "GO",
+            "GO:0005739",
+            "mitochondrion",
+            "synonym",
+            "mesh",
+            None,
+            "MESH",
+            "D008928",
+        )
+
+    with pytest.raises(ValueError):
+        Term(
+            "   ",
+            "Mitochondria",
+            "GO",
+            "GO:0005739",
+            "mitochondrion",
+            "synonym",
+            "mesh",
+            None,
+            "MESH",
+            "D008928",
+        )
 
 
 def test_standalone_get_url():
