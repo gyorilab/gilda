@@ -9,24 +9,32 @@ __all__ = [
 
 from typing import List, Mapping, Union, Optional
 
-from gilda.grounder import Grounder, Annotation
+from gilda.grounder import Grounder, FuzzyGrounder, Annotation
 from gilda.term import Term
 
 
 class GrounderInstance(object):
     def __init__(self):
         self.grounder = None
+        self.fuzzy_grounder = None
 
-    def get_grounder(self):
+    def get_grounder(self, fuzzy=False):
         if self.grounder is None:
             self.grounder = Grounder()
-        return self.grounder
+        if fuzzy and self.fuzzy_grounder is None:
+            self.fuzzy_grounder = FuzzyGrounder()
+        
+        if fuzzy:
+            return self.fuzzy_grounder
+        else:
+            return self.grounder
 
     def ground(self, text, context=None, organisms=None,
-               namespaces=None):
-        return self.get_grounder().ground(text, context=context,
+               namespaces=None, fuzzy=False):
+        return self.get_grounder(fuzzy).ground(text, context=context,
                                           organisms=organisms,
-                                          namespaces=namespaces)
+                                          namespaces=namespaces,
+                                          )
 
     def get_models(self):
         return self.get_grounder().get_models()
@@ -44,7 +52,7 @@ class GrounderInstance(object):
 grounder = GrounderInstance()
 
 
-def ground(text, context=None, organisms=None, namespaces=None):
+def ground(text, context=None, organisms=None, namespaces=None, fuzzy=False):
     """Return a list of scored matches for a text to ground.
 
     Parameters
@@ -61,6 +69,10 @@ def ground(text, context=None, organisms=None, namespaces=None):
     namespaces : Optional[List[str]]
         A list of namespaces to restrict the matches to. By default, no
         restriction is applied.
+    fuzzy: bool
+        Wether to use fuzzy matching. If True, the grounder will try to 
+        approximately match the text to the terms. This is useful for cases 
+        where the text may have misspellings or variation.
 
     Returns
     -------
@@ -104,7 +116,7 @@ def ground(text, context=None, organisms=None, namespaces=None):
 
     >>> scored_matches = gilda.ground('ESR', namespaces=["hgnc"])
     """
-    return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces)
+    return grounder.ground(text=text, context=context, organisms=organisms, namespaces=namespaces, fuzzy=fuzzy)
 
 
 def annotate(
@@ -201,6 +213,7 @@ def get_grounder() -> Grounder:
 
 def make_grounder(
     terms: Union[str, List[Term], Mapping[str, List[Term]]],
+    fuzzy: bool = False,
 ) -> Grounder:
     """Create a custom grounder from a list of Terms.
 
@@ -282,4 +295,4 @@ def make_grounder(
     <https://github.com/indralab/gilda/tree/master/notebooks>`_
     in the Gilda repository on GitHub.
     """
-    return Grounder(terms=terms)
+    return Grounder(terms=terms) if not fuzzy else FuzzyGrounder(terms=terms)

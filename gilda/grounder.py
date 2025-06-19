@@ -12,10 +12,11 @@ from textwrap import dedent
 from typing import Iterator, List, Mapping, Optional, Set, Tuple, Union, Iterable
 from urllib.request import urlretrieve
 
+from rapidfuzz import fuzz, process
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term, get_identifiers_curie, get_identifiers_url
+from .term import Term, FuzzyTerm, get_identifiers_curie, get_identifiers_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -553,6 +554,38 @@ class Grounder(object):
     def print_summary(self, **kwargs) -> None:
         """Print the summary of this grounder."""
         print(self.summary_str(), **kwargs)
+
+
+class FuzzyGrounder(Grounder):
+    """Class to look up and ground query texts in a terms file using fuzzy matching."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # we create a sorted list of all keys in the entries dictionary to avoid non-deterministic behavior
+        self._all_keys = sorted(self.entries.keys())
+    
+    def lookup(self, raw_str: str) -> List[Union[Term, FuzzyTerm]]:
+        entries = super().lookup(raw_str)
+
+        # we want to only do fuzzy lookups if we didn't find any exact matches
+        if not entries: 
+            for lookup in self._generate_lookups(raw_str):
+                for fuzzy_hit, ratio in self._generate_fuzzy_lookups(lookup):
+                    entries += [FuzzyTerm(entry, ratio) for entry in self.entries[fuzzy_hit]]
+        
+        return entries
+
+    def _generate_fuzzy_lookups(self, lookup: str) -> Set[Tuple[str, float]]:
+        fuzzy_hits = process.extract(
+            lookup,
+            self._all_keys,
+            scorer=fuzz.ratio,
+            score_cutoff=90,
+            limit=10
+        )
+
+        return sorted({(k, ratio/100) for k, ratio, _ in fuzzy_hits})
 
 
 class ScoredMatch(object):

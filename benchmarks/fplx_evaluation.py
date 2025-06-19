@@ -48,7 +48,9 @@ correct_assertions = {'Stat': {'FPLX': 'STAT'},
                       'integrin alpha': {'FPLX': 'ITGA'},
                       'DC': {'MESH': 'D003713'},
                       'BMD': {'MESH': 'D015519'},
-                      'angina': {'MESH': 'D000787', 'EFO': '0003913'}}
+                      'angina': {'MESH': 'D000787', 'EFO': '0003913'},
+                      'glucorticoid receptor': {'HGNC': '7978'},
+                      'dasatinb': {'CHEBI': 'CHEBI:49375'}}
 
 
 incorrect_assertions = {'IGF': {'HGNC': '5464'},
@@ -66,7 +68,12 @@ incorrect_assertions = {'IGF': {'HGNC': '5464'},
                         'thioredoxin-1': {'UP': 'P47938'},
                         'alpha4': {'HGNC': '10809'},
                         'NT': {'HGNC': '17941'},
-                        'IMP1': {'HGNC': '16435'}}
+                        'IMP1': {'HGNC': '16435'},
+                        'CDK7/9 inhibitor': {'CHEBI': 'CHEBI:82665'},
+                        'PTPMeg2': {'HGNC': '9656'},
+                        'CK2alpha': {'HGNC': '2459'},
+                        'DNA binding domain': {'MESH': 'D000071376'},
+                        'TLE proteins' : {'HGNC': '20822'}}
 
 
 def process_fplx_groundings(df):
@@ -139,7 +146,7 @@ def evaluate_new_grounding(grounding, term):
     return 'unknown'
 
 
-def make_comparison(groundings, use_disamb=True):
+def make_comparison(groundings, use_disamb=True, use_fuzzy_matching=False):
     # Generate an initial comparison matrix
     # This dict contains counts of all the possible relationships between
     # the reference grounding and the one produced by Gilda
@@ -155,7 +162,8 @@ def make_comparison(groundings, use_disamb=True):
         # Send grounding requests
         context = grounding['context'] if use_disamb else None
         matches = ground(text=grounding['text'],
-                         context=context)
+                         context=context,
+                         fuzzy=use_fuzzy_matching)
         if not matches:
             comparison['%s_ungrounded' % old_eval].append((idx, grounding,
                                                            None))
@@ -258,13 +266,13 @@ def print_statistics(comparison):
                        label="tab:famplex-confusion"))
 
 
-def run_comparison(use_disamb=True):
+def run_comparison(use_disamb=True, use_fuzzy_matching=False):
     df = pandas.read_csv(url)
     groundings = process_fplx_groundings(df)
-    comparison = make_comparison(groundings, use_disamb)
+    comparison = make_comparison(groundings, use_disamb, use_fuzzy_matching)
     print_statistics(comparison)
     return comparison
 
 
 if __name__ == '__main__':
-    comparison = run_comparison(use_disamb=True)
+    comparison = run_comparison(use_disamb=True, use_fuzzy_matching=True)
