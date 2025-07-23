@@ -578,7 +578,7 @@ class ScoredMatch(object):
     def __init__(self, term: Term, score, match: Match, disambiguation=None,
                  subsumed_terms=None):
         self.term = term
-        self.url = term.get_idenfiers_url()
+        self.url = term.get_identifiers_url()
         self.score = score
         self.match = match
         self.disambiguation = disambiguation

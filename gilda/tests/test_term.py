@@ -15,7 +15,7 @@ def test_term_get_url():
                 norm_text='x', text='X', source='test', status='name')
     assert term.get_curie() == \
            'CHEBI:12345'
-    assert term.get_idenfiers_url() == \
+    assert term.get_identifiers_url() == \
         'https://identifiers.org/CHEBI:12345'
     assert term.get_groundings() == {(term.db, term.id)}
     assert term.get_namespaces() == {term.db}
