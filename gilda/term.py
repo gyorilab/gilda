@@ -2,12 +2,12 @@ import csv
 import gzip
 import itertools
 import logging
-import warnings
 from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
     "Term",
     "get_curie",
+    "get_identifiers_curie",
     "get_bioregistry_url",
     "get_identifiers_url",
     "filter_out_duplicates",
@@ -102,7 +102,22 @@ class Term(object):
                 self.organism, self.source_db, self.source_id]
 
     def get_curie(self, style='bioregistry') -> str:
-        """Get the compact URI for this term."""
+        """Return the compact URI for this term.
+
+        Parameters
+        ----------
+        style : str, optional
+            The style of CURIE to return. One of 'bioregistry' (default) or
+            'identifiers'. The 'bioregistry' style corresponds to
+            bioregistry.io CURIEs, aqnd the 'identifiers' style corresponds to
+            identifiers.org CURIEs.
+
+        Returns
+        -------
+        :
+            A normalized CURIE string for this term, or None if it cannot
+            be normalized.
+        """
         return get_curie(self.db, self.id, style=style)
 
     def get_identifiers_url(self):
@@ -110,10 +125,26 @@ class Term(object):
         return get_identifiers_url(self.db, self.id)
 
     def get_bioregistry_url(self):
+        """Return a URL for this term that the Bioregistry can resolve.
+
+        Returns
+        -------
+        :
+            A Bioregistry URL string for this term, or None if it cannot
+            be created.
+        """
         return get_bioregistry_url(self.db, self.id)
 
     # Backwards compatibility for the misspelled method name
     def get_idenfiers_url(self):  # pragma: no cover - deprecated spelling
+        """Return a URL for this term that Identifiers.org can resolve.
+
+        Returns
+        -------
+        :
+            An Identifiers.org URL string for this term, or None if it cannot
+            be created.
+        """
         return self.get_identifiers_url()
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
@@ -148,7 +179,31 @@ class Term(object):
 
 
 def get_curie(db, id, style='bioregistry') -> Optional[str]:
-    """Get the curie for a term."""
+    """Return a normalized CURIE for the given database and identifier.
+
+    The default Gilda configuration uses INDRA's style of databases and
+    identifiers. This function is a simple way to normalize these into
+    CURIEs that follow the native style of bioregistry.io or
+    identifiers.org.
+
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+    style : str, optional
+        The style of CURIE to return. One of 'bioregistry' (default)
+        or 'identifiers'. The 'bioregistry' style corresponds to
+        bioregistry.io CURIEs, aqnd the 'identifiers' style corresponds to
+        identifiers.org CURIEs.
+
+    Returns
+    -------
+    :
+        A normalized CURIE string, or None if it cannot be normalized.
+    """
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -165,12 +220,41 @@ def get_curie(db, id, style='bioregistry') -> Optional[str]:
 
 
 def get_identifiers_url(db, id) -> Optional[str]:
+    """Return a URL for this term that Identifiers.org can resolve.
+
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+
+    Returns
+    -------
+    :
+        An Identifiers.org URL string for this term, or None if it cannot
+        be created.
+    """
     curie = get_curie(db, id, style='identifiers')
     if curie is not None:
         return f'https://identifiers.org/{curie}'
 
 
 def get_bioregistry_url(db, id) -> Optional[str]:
+    """Return a URL that the Bioregistry can resolve.
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+    Returns
+    -------
+    :
+        A Bioregistry URL string, or None if it cannot be created.
+    """
     curie = get_curie(db, id, style='bioregistry')
     if curie is not None:
         return f'https://bioregistry.io/{curie}' if curie else None
