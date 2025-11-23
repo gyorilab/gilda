@@ -12,7 +12,7 @@ environment variable to the path to the terms file.
 """
 
 import os
-from .app import get_app
+from .app import get_app, main
 
 
 terms = os.environ.get('GILDA_TERMS')

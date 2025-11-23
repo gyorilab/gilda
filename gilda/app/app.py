@@ -1,3 +1,4 @@
+import argparse
 import logging
 from textwrap import dedent
 from typing import Optional
@@ -19,9 +20,9 @@ api = Api(title="Gilda",
           description="A service for grounding entity strings",
           version=version,
           license="Code available under the BSD 2-Clause License",
-          contact="INDRA labs",
-          contact_email="indra.sysbio@gmail.com",
-          contact_url="https://indralab.github.io",
+          contact="Gyori Lab",
+          contact_email="b.gyori@northeastern.edu",
+          contact_url="https://gyorilab.github.io",
           doc='/apidocs',
           )
 
@@ -363,3 +364,19 @@ def _mount_home_redirect(app):
     def home_redirect():
         """Redirect the home url to the API documentation."""
         return redirect("/apidocs")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Run the grounding app.')
+    parser.add_argument('--host', default='0.0.0.0')
+    parser.add_argument('--port', default=8001, type=int)
+    parser.add_argument('--terms')
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    app = get_app(args.terms)
+    app.run(args.host, args.port, threaded=False)

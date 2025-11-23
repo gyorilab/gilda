@@ -279,7 +279,7 @@ def make_grounder(
 
     Additional examples for loading custom content from OBO Graph JSON,
     :mod:`pyobo`, and more can be found in the `Jupyter notebooks
-    <https://github.com/indralab/gilda/tree/master/notebooks>`_
+    <https://github.com/gyorilab/gilda/tree/master/notebooks>`_
     in the Gilda repository on GitHub.
     """
     return Grounder(terms=terms)

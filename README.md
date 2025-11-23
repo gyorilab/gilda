@@ -1,6 +1,6 @@
 # Gilda: Grounding Integrating Learned Disambiguation
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
-[![Build](https://github.com/indralab/gilda/actions/workflows/tests.yml/badge.svg)](https://github.com/indralab/gilda/actions)
+[![Build](https://github.com/gyorilab/gilda/actions/workflows/tests.yml/badge.svg)](https://github.com/gyorilab/gilda/actions)
 [![Documentation](https://readthedocs.org/projects/gilda/badge/?version=latest)](https://gilda.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/gilda.svg)](https://badge.fury.io/py/gilda)
 [![DOI](https://img.shields.io/badge/DOI-10.1093/bioadv/vbac034-green.svg)](https://doi.org/10.1093/bioadv/vbac034)
@@ -30,17 +30,17 @@ also be regenerated locally by running `python -m gilda.generate_terms`.
 ## Documentation and notebooks
 Documentation for Gilda is available [here](https://gilda.readthedocs.io).
 We also provide several interactive Jupyter notebooks to help use and customize Gilda:
-- [Gilda Introduction](https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb) provides an interactive tutorial for using Gilda.
-- [Custom Grounders](https://github.com/indralab/gilda/blob/master/notebooks/custom_grounders.ipynb) shows several examples of how Gilda can be instantiated with custom
+- [Gilda Introduction](https://github.com/gyorilab/gilda/blob/master/notebooks/gilda_introduction.ipynb) provides an interactive tutorial for using Gilda.
+- [Custom Grounders](https://github.com/gyorilab/gilda/blob/master/notebooks/custom_grounders.ipynb) shows several examples of how Gilda can be instantiated with custom
 grounding resources.
-- [Model Training](https://github.com/indralab/gilda/blob/master/models/model_training.ipynb) provides interactive sample code for training
+- [Model Training](https://github.com/gyorilab/gilda/blob/master/models/model_training.ipynb) provides interactive sample code for training
 new disambiguation models.
 
 ## Usage
 Gilda can either be used as a REST web service or used programmatically
 via its Python API. An introduction Jupyter notebook for using Gilda
 is available at
-https://github.com/indralab/gilda/blob/master/notebooks/gilda_introduction.ipynb
+https://github.com/gyorilab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
 ### Use as a Python package
 For using Gilda as a Python package, the documentation at
