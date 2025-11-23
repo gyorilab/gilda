@@ -101,8 +101,8 @@ scored_match_model = api.model(
     "ScoredMatch",
     {'term': fields.Nested(term_model, description='The term that was matched'),
      'url': fields.String(
-         description='Identifiers.org URL for the matched term.',
-         example='https://identifiers.org/hgnc:3236'
+         description='bioregistry.io URL for the matched term.',
+         example='https://bioregistry.io/hgnc:3236'
      ),
      'score': fields.Float(
          description='The score assigned to the matched term.',

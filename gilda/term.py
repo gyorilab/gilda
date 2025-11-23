@@ -6,7 +6,9 @@ from typing import Iterable, Optional, Set, Tuple
 
 __all__ = [
     "Term",
+    "get_curie",
     "get_identifiers_curie",
+    "get_bioregistry_url",
     "get_identifiers_url",
     "filter_out_duplicates",
     "dump_terms",
@@ -99,16 +101,50 @@ class Term(object):
                 self.entry_name, self.status, self.source,
                 self.organism, self.source_db, self.source_id]
 
-    def get_curie(self) -> str:
-        """Get the compact URI for this term."""
-        return get_identifiers_curie(self.db, self.id)
+    def get_curie(self, style='bioregistry') -> str:
+        """Return the compact URI for this term.
+
+        Parameters
+        ----------
+        style : str, optional
+            The style of CURIE to return. One of 'bioregistry' (default) or
+            'identifiers'. The 'bioregistry' style corresponds to
+            bioregistry.io CURIEs, aqnd the 'identifiers' style corresponds to
+            identifiers.org CURIEs.
+
+        Returns
+        -------
+        :
+            A normalized CURIE string for this term, or None if it cannot
+            be normalized.
+        """
+        return get_curie(self.db, self.id, style=style)
 
     def get_identifiers_url(self):
         """Get the full identifiers.org URL for this term."""
         return get_identifiers_url(self.db, self.id)
 
+    def get_bioregistry_url(self):
+        """Return a URL for this term that the Bioregistry can resolve.
+
+        Returns
+        -------
+        :
+            A Bioregistry URL string for this term, or None if it cannot
+            be created.
+        """
+        return get_bioregistry_url(self.db, self.id)
+
     # Backwards compatibility for the misspelled method name
     def get_idenfiers_url(self):  # pragma: no cover - deprecated spelling
+        """Return a URL for this term that Identifiers.org can resolve.
+
+        Returns
+        -------
+        :
+            An Identifiers.org URL string for this term, or None if it cannot
+            be created.
+        """
         return self.get_identifiers_url()
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
@@ -142,7 +178,32 @@ class Term(object):
         return namespaces
 
 
-def get_identifiers_curie(db, id) -> Optional[str]:
+def get_curie(db, id, style='bioregistry') -> Optional[str]:
+    """Return a normalized CURIE for the given database and identifier.
+
+    The default Gilda configuration uses INDRA's style of databases and
+    identifiers. This function is a simple way to normalize these into
+    CURIEs that follow the native style of bioregistry.io or
+    identifiers.org.
+
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+    style : str, optional
+        The style of CURIE to return. One of 'bioregistry' (default)
+        or 'identifiers'. The 'bioregistry' style corresponds to
+        bioregistry.io CURIEs, aqnd the 'identifiers' style corresponds to
+        identifiers.org CURIEs.
+
+    Returns
+    -------
+    :
+        A normalized CURIE string, or None if it cannot be normalized.
+    """
     curie_pattern = '{db}:{id}'
     if db == 'UP':
         db = 'uniprot'
@@ -150,13 +211,65 @@ def get_identifiers_curie(db, id) -> Optional[str]:
     if len(id_parts) == 1:
         return curie_pattern.format(db=db.lower(), id=id)
     elif len(id_parts) == 2:
-        return curie_pattern.format(db=id_parts[0].upper(), id=id_parts[-1])
+        # This is for the namespace-embedded-in-LUI case which
+        # for OBO ontologies in identifiers.org is uppercased,
+        # otherwise we default to lowercase consistent with Bioregistry
+        db_norm = id_parts[0].upper() if style == 'identifiers' \
+            else id_parts[0].lower()
+        return curie_pattern.format(db=db_norm, id=id_parts[-1])
 
 
-def get_identifiers_url(db, id):
-    curie = get_identifiers_curie(db, id)
+def get_identifiers_url(db, id) -> Optional[str]:
+    """Return a URL for this term that Identifiers.org can resolve.
+
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+
+    Returns
+    -------
+    :
+        An Identifiers.org URL string for this term, or None if it cannot
+        be created.
+    """
+    curie = get_curie(db, id, style='identifiers')
     if curie is not None:
         return f'https://identifiers.org/{curie}'
+
+
+def get_bioregistry_url(db, id) -> Optional[str]:
+    """Return a URL that the Bioregistry can resolve.
+
+    Parameters
+    ----------
+    db : str
+        The database / namespace of the identifier assuming the default
+        Gilda configuration.
+    id : str
+        The identifier, assuming the default Gilda configuration.
+
+    Returns
+    -------
+    :
+        A Bioregistry URL string, or None if it cannot be created.
+    """
+    curie = get_curie(db, id, style='bioregistry')
+    if curie is not None:
+        return f'https://bioregistry.io/{curie}' if curie else None
+
+
+def get_identifiers_curie(db, id) -> Optional[str]:
+    """Get the full identifiers.org curie for a term."""
+    return get_curie(db, id, style='identifiers')
+
+
+def get_url(db, id):
+    """Get the URL for a term based on its curie parts."""
+    curie = get_curie(db, id)
 
 
 def _term_key(term: Term) -> Tuple[str, str, str, str, str]:

@@ -15,7 +15,7 @@ from urllib.request import urlretrieve
 from adeft.disambiguate import load_disambiguator
 from adeft.modeling.classify import load_model_info
 from adeft import available_shortforms as available_adeft_models
-from .term import Term, get_identifiers_curie, get_identifiers_url
+from .term import Term, get_curie, get_bioregistry_url
 from .process import normalize, replace_dashes, replace_greek_uni, \
     replace_greek_latin, replace_greek_spelled_out, depluralize, \
     replace_roman_arabic
@@ -578,7 +578,7 @@ class ScoredMatch(object):
     def __init__(self, term: Term, score, match: Match, disambiguation=None,
                  subsumed_terms=None):
         self.term = term
-        self.url = term.get_identifiers_url()
+        self.url = term.get_bioregistry_url()
         self.score = score
         self.match = match
         self.disambiguation = disambiguation
@@ -648,7 +648,8 @@ class ScoredMatch(object):
     def get_grounding_dict(self) -> Mapping[str, str]:
         """Get the groundings as CURIEs and URLs."""
         return {
-            get_identifiers_curie(db, db_id): get_identifiers_url(db, db_id)
+            get_curie(db, db_id, style='bioregistry'):
+                get_bioregistry_url(db, db_id)
             for db, db_id in self.get_groundings()
         }
 
