@@ -243,6 +243,7 @@ def get_identifiers_url(db, id) -> Optional[str]:
 
 def get_bioregistry_url(db, id) -> Optional[str]:
     """Return a URL that the Bioregistry can resolve.
+
     Parameters
     ----------
     db : str
@@ -250,6 +251,7 @@ def get_bioregistry_url(db, id) -> Optional[str]:
         Gilda configuration.
     id : str
         The identifier, assuming the default Gilda configuration.
+
     Returns
     -------
     :
