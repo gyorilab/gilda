@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gilda"
+dynamic = ["version"]
+description = "Grounding for biomedical entities with contextual disambiguation"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.8"
+license = {text = "BSD-2-Clause"}
+authors = [
+    {name = "Benjamin M. Gyori, Northeastern University", email = "b.gyori@northeastern.edu"}
+]
+keywords = ["nlp", "biology"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "regex",
+    "boto3",
+    "adeft",
+    "flask>=3.0,<4.0",
+    "flask-restx>=1.3.0",
+    "pystow>=0.1.10",
+    "unidecode",
+    "importlib_metadata; python_version < '3.8'",
+    "werkzeug",
+    "scikit-learn<1.5",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pandas"
+]
+terms = [
+    "indra",
+    "obonet"
+]
+benchmarks = [
+    "pandas>=1.0",
+    "requests",
+    "tabulate",
+    "tqdm",
+    "click"
+]
+ui = [
+    "flask-wtf",
+    "flask-bootstrap"
+]
+docs = [
+    "sphinx",
+    "sphinx_autodoc_typehints",
+    "sphinx_rtd_theme"
+]
+
+[project.urls]
+Homepage = "https://github.com/gyorilab/gilda"
+Documentation = "https://gilda.readthedocs.io"
+
+[project.scripts]
+gilda = "gilda.app:main"
+
+[tool.setuptools]
+packages = {find = {}}
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "gilda.__version__"}
