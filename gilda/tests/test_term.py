@@ -8,6 +8,8 @@ def test_standalone_get_url():
         'https://bioregistry.io/hgnc:12345'
     assert get_identifiers_url('CHEBI', 'CHEBI:12345') == \
         'https://identifiers.org/CHEBI:12345'
+    assert get_bioregistry_url('CHEBI', 'CHEBI:12345') == \
+           'https://bioregistry.io/chebi:12345'
 
 
 def test_term_get_url():
@@ -17,8 +19,6 @@ def test_term_get_url():
     assert term.get_curie(style='identifiers') == 'CHEBI:12345'
     assert term.get_identifiers_url() == \
         'https://identifiers.org/CHEBI:12345'
-    assert get_bioregistry_url() == \
-        'https://bioregistry.io/chebi:12345'
     assert term.get_bioregistry_url() == \
         'https://bioregistry.io/chebi:12345'
     assert term.get_groundings() == {(term.db, term.id)}
