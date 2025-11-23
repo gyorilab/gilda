@@ -103,8 +103,13 @@ class Term(object):
         """Get the compact URI for this term."""
         return get_identifiers_curie(self.db, self.id)
 
-    def get_idenfiers_url(self):
+    def get_identifiers_url(self):
+        """Get the full identifiers.org URL for this term."""
         return get_identifiers_url(self.db, self.id)
+
+    # Backwards compatibility for the misspelled method name
+    def get_idenfiers_url(self):  # pragma: no cover - deprecated spelling
+        return self.get_identifiers_url()
 
     def get_groundings(self) -> Set[Tuple[str, str]]:
         """Return all groundings for this term, including from a mapped source.
