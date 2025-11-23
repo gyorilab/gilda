@@ -142,7 +142,7 @@ def annotate(
         for idx, word in enumerate(words):
             if idx < skip_until:
                 continue
-            if word in stop_words:
+            if raw_words[idx] in stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
             if not spans:
