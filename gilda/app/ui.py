@@ -176,10 +176,13 @@ def get_annotated_text(text, annotations):
             curie for curie in match.get_grounding_dict().keys()
             if curie != match_curie
         )
-        title_attr = f"Grounding: {match_curie} ({match.term.entry_name}), Score: {match.score:.4f}"
+        title_attr = (f"Grounding: {match_curie} ({match.term.entry_name}), "
+                      f"Score: {match.score:.4f}")
         if additional_groundings:
             title_attr += f", Additional groundings: {additional_groundings}"
-        span = f'<span class="annotated-entity" title="{markupsafe.escape(title_attr)}">{markupsafe.escape(ann.text)}</span>'
+        span = (f'<span class="annotated-entity" '
+                f'title="{markupsafe.escape(title_attr)}">'
+                f'{markupsafe.escape(ann.text)}</span>')
         annotated_parts.append(span)
         last_index = ann.end
 
