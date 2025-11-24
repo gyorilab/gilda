@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block gcontent %}
+    <style>
+        span.annotated-entity {
+            background-color: #d9edf7;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+    </style>
     {% if form is defined %}
         {{ render_ner_form(form) }}
     {% endif %}
@@ -20,7 +27,7 @@
         </div>
         <div class="panel-body">
             <blockquote>
-                {{ text }}
+                {{ text | safe }}
             </blockquote>
         </div>
         <table class="table table-striped table-hover">

@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, request
 from flask_wtf import FlaskForm
 from wtforms import SelectMultipleField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired
+import markupsafe
 
 from gilda.app.proxies import grounder
 from gilda import __version__ as version
@@ -112,6 +113,7 @@ def view_ner():
     form = NERForm()
     if form.validate_on_submit():
         annotations = form.get_annotations()
+        annotated_text = get_annotated_text(form.text.data, annotations)
 
         # Generate CSV data
         si = StringIO()
@@ -146,9 +148,44 @@ def view_ner():
             "ner_matches.html",
             annotations=annotations,
             version=version,
-            text=form.text.data,
+            text=annotated_text,
             csv_data=csv_data,
             # Add a new form that doesn't auto-populate
             form=NERForm(formdata=None),
         )
     return render_template("ner_home.html", form=form, version=version)
+
+
+def get_annotated_text(text, annotations):
+    """Return HTML-annotated text with entity annotations as tooltips."""
+    if not annotations:
+        return markupsafe.escape(text)
+
+    # Sort annotations by start index
+    annotations = sorted(annotations, key=lambda ann: ann.start)
+    annotated_parts = []
+    last_index = 0
+    for ann in annotations:
+        # Add text before the annotation
+        annotated_parts.append(markupsafe.escape(text[last_index:ann.start]))
+
+        # Create the annotated span
+        match = ann.matches[0]
+        match_curie = match.term.get_curie()
+        additional_groundings = ", ".join(
+            curie for curie in match.get_grounding_dict().keys()
+            if curie != match_curie
+        )
+        title_attr = (f"Grounding: {match_curie} ({match.term.entry_name}), "
+                      f"Score: {match.score:.4f}")
+        if additional_groundings:
+            title_attr += f", Additional groundings: {additional_groundings}"
+        span = (f'<span class="annotated-entity" '
+                f'title="{markupsafe.escape(title_attr)}">'
+                f'{markupsafe.escape(ann.text)}</span>')
+        annotated_parts.append(span)
+        last_index = ann.end
+
+    # Add remaining text after the last annotation
+    annotated_parts.append(markupsafe.escape(text[last_index:]))
+    return markupsafe.Markup("".join(annotated_parts))
