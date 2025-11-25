@@ -36,7 +36,7 @@ class GroundForm(FlaskForm):
     text = StringField(
         "Entity text",
         validators=[DataRequired()],
-        description="Input the entity text (e.g., <code>k-ras</code>) to ground.",
+        description="Input the entity text (e.g., 'k-ras') to ground.",
     )
     context = TextAreaField(
         "Context (optional)",
