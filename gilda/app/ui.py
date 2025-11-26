@@ -127,7 +127,7 @@ def view_ner():
         writer = csv.writer(si)
         writer.writerow([
             "Start", "End", "Text", "Grounding", "Standard Name", "Score",
-            "Additional Groundings"
+            "Additional Groundings", "URL"
         ])
 
         # Write data
@@ -146,7 +146,8 @@ def view_ner():
                 match_curie,
                 match.term.entry_name,
                 f"{match.score:.4f}",
-                additional_groundings
+                additional_groundings,
+                match.url
             ])
 
         csv_data = si.getvalue()
