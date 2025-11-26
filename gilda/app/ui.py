@@ -62,10 +62,17 @@ class NERForm(FlaskForm):
     text = TextAreaField(
         "Text",
         validators=[DataRequired()],
-        description="Enter text to annotate with named entity recognition (NER) "
-                    "and grounding. The results will highlight recognized entities "
-                    "and provide text position, grounding information and "
-                    "normalized name for each entity.",
+        description=dedent(
+            """\
+            Enter text to annotate with named entity recognition (NER) and 
+            grounding. The results will highlight recognized entities and provide 
+            text position, grounding information and normalized name for each 
+            entity. Click 
+            <button class="btn btn-default btn-xs" type="button" onclick="fillExample()">here</button> 
+            to get an example from an abstract in an 
+            <a href="https://pubmed.ncbi.nlm.nih.gov/21040840/">article</a> 
+            about small G-proteins."""
+        ),
         render_kw={"rows": 12},
     )
     organisms = ORGANISMS_FIELD
