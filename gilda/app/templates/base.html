@@ -20,30 +20,41 @@
 
 {% block content %}
 <div class="container" style="margin-top: 30px;">
-  <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h2 style="margin-top: 10px; margin-bottom: 10px;">Gilda Grounding Service</h2>
-      </div>
-      <div class="panel-body">
-        <p>
-            The Gilda service (v{{ version }}) can be used to
-            identify identifiers for entity names.
-        </p>
-          <p>There are two usage modes: <b>Grounding</b> and <b>Annotation</b>. <i>
-              Grounding</i> is also called named entity normalization or linking and it
-              assumes that the input is a span of text corresponding to a named entity.
-              <i>Annotation</i> is also called named entity recognition and works with a
-              longer span of text as input that may contain any number of named entities
-              in it.</p>
-          <p>
-        For programmatic access, see the <a href="apidocs">API documentation</a>
-        and the <a href="https://github.com/gyorilab/gilda/blob/master/README.md">user guide</a>
-        for more information.
-      </p>
-      </div>
-    </div>
-    <ul class="nav nav-tabs">
+    <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h2 style="margin-top: 10px; margin-bottom: 10px;">Gilda Grounding
+                    Service</h2>
+            </div>
+            <div class="panel-body">
+                <p>
+                    The Gilda service (v{{ version }}) can be used to
+                    identify identifiers for entity names.
+                </p>
+                <p>
+                    There are two usage modes: <b>grounding</b> (also called <i>named
+                    entity normalization</i> or <i>linking</i>) and <b>annotation</b>
+                    (also called <i>named entity recognition</i>).
+                </p>
+                <ul>
+                    <li>In the <i>grounding</i> mode, the input text is assumed to
+                        correspond to a single to a single named entity.
+                    </li>
+                    <li>In the <i>annotation</i> mode, a longer span of text is used as
+                        input which may contain any number of named entities in it.
+                    </li>
+                </ul>
+                <p>
+                    For programmatic access, see the <a href="apidocs">API
+                    documentation</a>
+                    and the <a
+                    href="https://github.com/gyorilab/gilda/blob/master/README.md">user
+                    guide</a>
+                    for more information.
+                </p>
+            </div>
+        </div>
+        <ul class="nav nav-tabs">
         {% set navigation_bar = [
         ('/', 'home', 'Grounding'),
         ('/ner', 'view_ner', 'Annotation')
@@ -55,17 +66,17 @@
         {% endfor %}
     </ul>
     {% block gcontent %}{% endblock %}
-    <div class="well">
-      <p>
-          Gilda is developed by the <a href="https://gyorilab.github.io"
-          target="_blank">Gyori Lab for Computational Biomedicine</a>
-          at <a href="https://www.northeastern.edu" target="_blank">Northeastern University</a>.
-          Its development is funded by DARPA grants W911NF-15-1-0544,
-          W911NF-20-1-0255, and HR00112220036.
-          Point of contact: <a href="mailto:b.gyori@northeastern.edu">Benjamin M. Gyori</a>.
-      </p>
+        <div class="well">
+            <p>
+                Gilda is developed by the
+                <a href="https://gyorilab.github.io" target="_blank">Gyori Lab for Computational Biomedicine</a>
+                at <a href="https://www.northeastern.edu" target="_blank">Northeastern University</a>.
+                Its development is funded by DARPA grants W911NF-15-1-0544,
+                W911NF-20-1-0255, and HR00112220036. Point of contact:
+                <a href="mailto:b.gyori@northeastern.edu">Benjamin M. Gyori</a>.
+            </p>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
