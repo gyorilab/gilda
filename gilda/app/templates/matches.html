@@ -46,18 +46,18 @@
                 <tr>
                     {% set match_curie = match.term.get_curie() %}
                     <td>
-                        <a class="label label-primary" href="{{ match['url'] }}">
+                        <a class="label label-primary" href="{{ match['url'] }}" target="_blank">
                             {{ match_curie }}
-                        </a>
+                        </a>&nbsp;<i class="fa fa-external-link-alt"></i>
                     </td>
                     <td>{{ match['term']['entry_name'] }}</td>
                     <td class="text-right">{{ match['score'] | round(4) }}</td>
                     <td>
                         {% for xref_curie, xref_url in match.get_grounding_dict().items() %}
                             {% if xref_curie != match_curie %}
-                                <a class="label label-info" href="{{ xref_url }}">
+                                <a class="label label-info" href="{{ xref_url }}" target="_blank">
                                     {{ xref_curie }}
-                                </a>
+                                </a>&nbsp;<i class="fa fa-external-link-alt"></i>
                             {% endif %}
                         {% endfor %}
                     </td>
