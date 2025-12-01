@@ -125,3 +125,53 @@ def test_a_gene():
     # a core stop word like a, the, etc.
     anns = gilda.annotate("a gene")
     assert not anns
+
+
+def test_ui_example_annotation():
+    text = (
+        "Small G proteins are an extensive family of proteins that bind and "
+        "hydrolyze GTP. They are ubiquitous inside cells, regulating a wide range "
+        "of cellular processes. Recently, many studies have examined the role of "
+        "small G proteins, particularly the Ras family of G proteins, in memory "
+        "formation. Once thought to be primarily involved in the transduction of a "
+        "variety of extracellular signals during development, it is now clear that "
+        "Ras family proteins also play critical roles in molecular processing "
+        "underlying neuronal and behavioral plasticity. We here review a number of "
+        "recent studies that explore how the signaling of Ras family proteins "
+        "contributes to memory formation. Understanding these signaling processes "
+        "is of fundamental importance both from a basic scientific perspective, "
+        "with the goal of providing mechanistic insights into a critical aspect of "
+        "cognitive behavior, and from a clinical perspective, with the goal of "
+        "providing effective therapies for a range of disorders involving cognitive "
+        "impairments."
+    )
+    annotations = gilda.annotate(text)
+    expected_annotations = [
+        # Start, End, Text, Grounding
+        (0, 16, "Small G proteins", "hgnc:9802"),
+        (77, 80, "GTP", "chebi:15996"),
+        (143, 161, "cellular processes", "go:0009987"),
+        (212, 228, "small G proteins", "hgnc:9802"),
+        (247, 250, "Ras", "fplx:RAS"),
+        (261, 271, "G proteins", "fplx:G_protein"),
+        (276, 282, "memory", "go:0007613"),
+        (339, 351, "transduction", "go:0009293"),
+        (368, 381, "extracellular", "go:0005576"),
+        (431, 434, "Ras", "fplx:RAS"),
+        (610, 619, "signaling", "go:0023052"),
+        (623, 626, "Ras", "fplx:RAS"),
+        (658, 664, "memory", "go:0007613"),
+        (676, 689, "Understanding", "mesh:D032882"),
+        (696, 715, "signaling processes", "go:0023052"),
+        (871, 879, "behavior", "go:0007610"),
+        (951, 960, "therapies", "mesh:D013812"),
+        (976, 985, "disorders", "mesh:D004194"),
+        (996, 1017, "cognitive impairments", "mesh:D060825"),
+    ]
+    assert len(annotations) == len(expected_annotations)
+    for ann, expected in zip(annotations, expected_annotations):
+        exp_start, exp_end, exp_text, exp_grounding = expected
+        assert ann.start == exp_start
+        assert ann.end == exp_end
+        assert ann.text == exp_text
+        assert ann.matches[0].term.get_curie() == exp_grounding
