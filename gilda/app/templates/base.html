@@ -37,10 +37,10 @@
                     (also called <i>named entity recognition</i>).
                 </p>
                 <ul>
-                    <li>In the <i>grounding</i> mode, the input text is assumed to
+                    <li>In the <i>Grounding</i> mode, the input text is assumed to
                         correspond to a single named entity.
                     </li>
-                    <li>In the <i>annotation</i> mode, a longer span of text is used as
+                    <li>In the <i>Annotation</i> mode, a longer span of text is used as
                         input which may contain any number of named entities in it.
                     </li>
                 </ul>
@@ -71,8 +71,7 @@
                 Gilda is developed by the
                 <a href="https://gyorilab.github.io" target="_blank">Gyori Lab for Computational Biomedicine</a>
                 at <a href="https://www.northeastern.edu" target="_blank">Northeastern University</a>.
-                Its development is funded by DARPA grants W911NF-15-1-0544,
-                W911NF-20-1-0255, and HR00112220036. Point of contact:
+                Its development is funded by DARPA grants HR00112220036. Point of contact:
                 <a href="mailto:b.gyori@northeastern.edu">Benjamin M. Gyori</a>.
             </p>
         </div>
@@ -166,7 +165,7 @@
 {% macro render_ner_form(form) %}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Gilda Annotation Input</h3>
+            <h3 class="panel-title">Gilda annotation input</h3>
         </div>
         <div class="panel-body">
             <form class="form" method="POST" role="form">
