@@ -118,3 +118,10 @@ def test_cell_death():
     # Make sure that we match the entire span, including
     # the "cell" part that is in itself a stopword
     assert ann.text == "cell death", ann.text
+
+
+def test_a_gene():
+    # This tests that we don't ground spans that start with
+    # a core stop word like a, the, etc.
+    anns = gilda.annotate("a gene")
+    assert not anns
