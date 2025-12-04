@@ -20,30 +20,41 @@
 
 {% block content %}
 <div class="container" style="margin-top: 30px;">
-  <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h2 style="margin-top: 10px; margin-bottom: 10px;">Gilda Grounding Service</h2>
-      </div>
-      <div class="panel-body">
-        <p>
-            The Gilda service (v{{ version }}) can be used to
-            identify identifiers for entity names.
-        </p>
-          <p> There are two usage modes: <b>Grounding</b> and <b>Annotation</b>. Grounding is also called
-              named entity normalization or linking and it assumes that the input is a span
-              of text corresponding to a named entity. Annotation is also called named
-              entity recognition and works with a longer span of text as input that may contain
-              any number of named entities in it.
-          </p>
-        <p>
-        For programmatic access, see the <a href="apidocs">API documentation</a>
-        and the <a href="https://github.com/gyorilab/gilda/blob/master/README.md">user guide</a>
-        for more information.
-      </p>
-      </div>
-    </div>
-    <ul class="nav nav-tabs">
+    <div class="col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h2 style="margin-top: 10px; margin-bottom: 10px;">Gilda grounding
+                    service</h2>
+            </div>
+            <div class="panel-body">
+                <p>
+                    The Gilda service (v{{ version }}) can be used to
+                    identify identifiers for entity names.
+                </p>
+                <p>
+                    There are two usage modes: <b>grounding</b> (also called <i>named
+                    entity normalization</i> or <i>linking</i>) and <b>annotation</b>
+                    (also called <i>named entity recognition</i>).
+                </p>
+                <ul>
+                    <li>In the <i>Grounding</i> mode, the input text is assumed to
+                        correspond to a single named entity.
+                    </li>
+                    <li>In the <i>Annotation</i> mode, a longer span of text is used as
+                        input which may contain any number of named entities in it.
+                    </li>
+                </ul>
+                <p>
+                    For programmatic access, see the <a href="apidocs">API
+                    documentation</a>
+                    and the <a
+                    href="https://github.com/gyorilab/gilda/blob/master/README.md">user
+                    guide</a>
+                    for more information.
+                </p>
+            </div>
+        </div>
+        <ul class="nav nav-tabs">
         {% set navigation_bar = [
         ('/', 'home', 'Grounding'),
         ('/ner', 'view_ner', 'Annotation')
@@ -55,17 +66,16 @@
         {% endfor %}
     </ul>
     {% block gcontent %}{% endblock %}
-    <div class="well">
-      <p>
-          Gilda is developed by the <a href="https://gyorilab.github.io"
-          target="_blank">Gyori Lab for Computational Biomedicine</a>
-          at <a href="https://www.northeastern.edu" target="_blank">Northeastern University</a>.
-          Its development is funded by DARPA grants W911NF-15-1-0544,
-          W911NF-20-1-0255, and HR00112220036.
-          Point of contact: <a href="mailto:b.gyori@northeastern.edu">Benjamin M. Gyori</a>.
-      </p>
+        <div class="well">
+            <p>
+                Gilda is developed by the
+                <a href="https://gyorilab.github.io" target="_blank">Gyori Lab for Computational Biomedicine</a>
+                at <a href="https://www.northeastern.edu" target="_blank">Northeastern University</a>.
+                Its development is funded by DARPA grants HR00112220036. Point of contact:
+                <a href="mailto:b.gyori@northeastern.edu">Benjamin M. Gyori</a>.
+            </p>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
@@ -110,7 +120,7 @@
 {% macro render_form(form) %}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Gilda Grounding Input</h3>
+            <h3 class="panel-title">Gilda grounding input</h3>
         </div>
         <div class="panel-body">
             <form class="form" method="POST" role="form">
@@ -155,7 +165,7 @@
 {% macro render_ner_form(form) %}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Gilda Annotation Input</h3>
+            <h3 class="panel-title">Gilda annotation input</h3>
         </div>
         <div class="panel-body">
             <form class="form" method="POST" role="form">
@@ -165,6 +175,12 @@
             </form>
         </div>
     </div>
+
+    <script>
+        function fillExample() {
+            document.getElementById('text').value = 'Small G proteins are an extensive family of proteins that bind and hydrolyze GTP. They are ubiquitous inside cells, regulating a wide range of cellular processes. Recently, many studies have examined the role of small G proteins, particularly the Ras family of G proteins, in memory formation. Once thought to be primarily involved in the transduction of a variety of extracellular signals during development, it is now clear that Ras family proteins also play critical roles in molecular processing underlying neuronal and behavioral plasticity. We here review a number of recent studies that explore how the signaling of Ras family proteins contributes to memory formation. Understanding these signaling processes is of fundamental importance both from a basic scientific perspective, with the goal of providing mechanistic insights into a critical aspect of cognitive behavior, and from a clinical perspective, with the goal of providing effective therapies for a range of disorders involving cognitive impairments.';
+        }
+    </script>
 
     {{ render_species_modal() }}
 {% endmacro %}

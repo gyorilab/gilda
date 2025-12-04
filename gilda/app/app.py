@@ -9,7 +9,6 @@ from flask_restx import Api, Resource, fields
 from gilda import __version__ as version
 from gilda.grounder import GrounderInput, Grounder
 from gilda.app.proxies import grounder
-from gilda.ner import annotate
 
 # NOTE: the Flask REST-X API has to be declared here, below the home endpoint
 # otherwise it reserves the / base path.

@@ -12,33 +12,54 @@
         {{ render_ner_form(form) }}
     {% endif %}
 
-    <div class="panel panel-default">
+    <div class="panel{% if annotations %} panel-info{% else %} panel-warning{% endif %}">
         <div class="panel-heading">
             <div class="row">
                 <div class="col-md-6">
-                    <h3 class="panel-title">Named Entity Recognition Results</h3>
+                    <h3 class="panel-title">
+                        {% if annotations %} Named Entity Recognition Results {% else %} No Results Found {% endif %}
+                    </h3>
                 </div>
+                {% if annotations %}
                 <div class="col-md-6 text-right">
                     <button onclick="download_csv()" class="btn btn-primary">
                         <i class="fas fa-download"></i> Download CSV
                     </button>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div class="panel-body">
             <blockquote>
                 {{ text | safe }}
             </blockquote>
+            {% if not annotations %}
+            <p>No entities were recognized in the provided text. Please try a different
+                text or adjust the species priority list if used.</p>
+            {% endif %}
         </div>
+        {% if annotations %}
         <table class="table table-striped table-hover">
             <thead>
             <tr>
-                <th>Span</th>
-                <th>Text</th>
-                <th>Grounding</th>
-                <th>Standard name</th>
-                <th>Score</th>
-                <th>Additional groundings</th>
+                <th class="text-nowrap">Span <i class="far fa-question-circle"
+                                                title="The start and end positions of the recognized entity in the text."></i>
+                </th>
+                <th class="text-nowrap">Text <i class="far fa-question-circle"
+                                                title="The recognized entity text."></i>
+                </th>
+                <th class="text-nowrap">Grounding <i class="far fa-question-circle"
+                                                     title="The identifier of the grounded entity given as a compact URI (CURIE)."></i>
+                </th>
+                <th class="text-nowrap">Standard name <i class="far fa-question-circle"
+                                                         title="The standardized name of the grounded entity."></i>
+                </th>
+                <th class="text-nowrap">Score <i class="far fa-question-circle"
+                                                 title="The score of the grounding match used for ranking matches."></i>
+                </th>
+                <th class="text-nowrap">Additional groundings <i
+                    class="far fa-question-circle"
+                    title="Identifiers equivalent to the one appearing under Grounding, formatted as compact URIs (CURIEs)."></i></th>
             </tr>
             </thead>
             <tbody>
@@ -49,18 +70,18 @@
                     <td>{{ annotation['start'] }}-{{ annotation['end'] }}</td>
                     <td>{{ annotation['text'] }}</td>
                     <td>
-                        <a class="label label-primary" href="{{ match['url'] }}">
+                        <a class="label label-primary" href="{{ match['url'] }}" target="_blank">
                             {{ match_curie }}
-                        </a>
+                        </a>&nbsp; <a href="{{ match['url'] }}" target="_blank"><i class="fa fa-external-link-alt"></i></a>
                     </td>
                     <td>{{ match['term']['entry_name'] }}</td>
-                    <td class="text-right">{{ match['score'] | round(4) }}</td>
+                    <td class="text-right">{{ match['score'] | round(3) }}</td>
                     <td>
                         {% for xref_curie, xref_url in match.get_grounding_dict().items() %}
                             {% if xref_curie != match_curie %}
-                                <a class="label label-info" href="{{ xref_url }}">
+                                <a class="label label-info" href="{{ xref_url }}" target="_blank">
                                     {{ xref_curie }}
-                                </a>
+                                </a>&nbsp; <a href="{{ xref_url }}" target="_blank"><i class="fa fa-external-link-alt"></i></a>
                             {% endif %}
                         {% endfor %}
                     </td>
@@ -68,8 +89,10 @@
             {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 
+    {% if annotations %}
     <script>
     function download_csv() {
         const csvData = `{{ csv_data | safe }}`;
@@ -84,4 +107,5 @@
         document.body.removeChild(a);
     }
     </script>
+    {% endif %}
 {% endblock %}

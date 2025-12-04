@@ -36,7 +36,7 @@ class GroundForm(FlaskForm):
     text = StringField(
         "Entity text",
         validators=[DataRequired()],
-        description="Input the entity text (e.g., <code>k-ras</code>) to ground.",
+        description='Input the entity text (e.g., <span class="bg-info">k-ras</span>) to ground.',
     )
     context = TextAreaField(
         "Context (optional)",
@@ -64,9 +64,16 @@ class NERForm(FlaskForm):
         validators=[DataRequired()],
         description=dedent(
             """\
-            Text from which to identify and ground named entities.
-        """
+            <p>Enter text to annotate with named entities and corresponding identifiers.
+            The results will highlight recognized entities and provide 
+            text position, grounding information and normalized name for each 
+            entity.</p> <p>Click 
+            <a href="#" onclick="fillExample(); return false;">here</a>
+            for an example input text from an
+            <a href="https://pubmed.ncbi.nlm.nih.gov/21040840/">article</a> 
+            about small G-proteins."""
         ),
+        render_kw={"rows": 6},
     )
     organisms = ORGANISMS_FIELD
     submit = SubmitField("Submit")
@@ -120,7 +127,7 @@ def view_ner():
         writer = csv.writer(si)
         writer.writerow([
             "Start", "End", "Text", "Grounding", "Standard Name", "Score",
-            "Additional Groundings"
+            "Additional Groundings", "URL"
         ])
 
         # Write data
@@ -139,7 +146,8 @@ def view_ner():
                 match_curie,
                 match.term.entry_name,
                 f"{match.score:.4f}",
-                additional_groundings
+                additional_groundings,
+                match.url
             ])
 
         csv_data = si.getvalue()
