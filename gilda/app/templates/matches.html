@@ -48,7 +48,7 @@
                     <td>
                         <a class="label label-primary" href="{{ match['url'] }}" target="_blank">
                             {{ match_curie }}
-                        </a>&nbsp;<i class="fa fa-external-link-alt"></i>
+                        </a>&nbsp; <a href="{{ match['url'] }}" target="_blank"><i class="fa fa-external-link-alt"></i></a>
                     </td>
                     <td>{{ match['term']['entry_name'] }}</td>
                     <td class="text-right">{{ match['score'] | round(4) }}</td>
@@ -57,7 +57,7 @@
                             {% if xref_curie != match_curie %}
                                 <a class="label label-info" href="{{ xref_url }}" target="_blank">
                                     {{ xref_curie }}
-                                </a>&nbsp;<i class="fa fa-external-link-alt"></i>
+                                </a>&nbsp; <a href="{{ xref_url }}" target="_blank"><i class="fa fa-external-link-alt"></i></a>
                             {% endif %}
                         {% endfor %}
                     </td>
