@@ -11,7 +11,7 @@ def test_annotate():
     annotations = gilda.annotate(full_text)
     assert isinstance(annotations, list)
 
-    # Check that we get 7 annotations
+    # Check that we get 4 annotations
     assert len(annotations) == 4
 
     # Check that the annotations are for the expected words
@@ -109,3 +109,19 @@ def test_synonym_corner_case():
     # space, this triggers an indexing error corner case when followed by -
     res = gilda.annotate('transthyretin -')
     assert res
+
+
+def test_cell_death():
+    anns = gilda.annotate("cell death")
+    assert len(anns) == 1
+    ann = anns[0]
+    # Make sure that we match the entire span, including
+    # the "cell" part that is in itself a stopword
+    assert ann.text == "cell death", ann.text
+
+
+def test_a_gene():
+    # This tests that we don't ground spans that start with
+    # a core stop word like a, the, etc.
+    anns = gilda.annotate("a gene")
+    assert not anns

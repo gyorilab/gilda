@@ -74,8 +74,8 @@ def _load_stoplist() -> Set[str]:
     return stoplist
 
 
-stop_words = set(stopwords.words('english'))
-stop_words.update(_load_stoplist())
+core_stop_words = set(stopwords.words('english'))
+stop_words = core_stop_words | _load_stoplist()
 
 
 def annotate(
@@ -142,7 +142,7 @@ def annotate(
         for idx, word in enumerate(words):
             if idx < skip_until:
                 continue
-            if word in stop_words:
+            if word in core_stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
             if not spans:
@@ -154,11 +154,17 @@ def annotate(
 
             # Find the largest matching span
             for span in sorted(applicable_spans, reverse=True):
+                # If the span we are looking at is a single word
+                # and it is a stopword then we skip this. This ensures
+                # that we don't skip longer spans of which the stopword
+                # is only a part.
+                if span == 1 and word in stop_words:
+                    continue
                 # We have to reconstruct a text span while adding spaces
                 # where needed
                 raw_span = ''
                 for rw, c in zip(raw_words[idx:idx+span],
-                                    raw_word_coords[idx:idx+span]):
+                                 raw_word_coords[idx:idx+span]):
                     # Figure out if we need a space before this word, then
                     # append the word.
                     spaces = ' ' * (c[0] - len(raw_span) -
