@@ -74,8 +74,8 @@ def _load_stoplist() -> Set[str]:
     return stoplist
 
 
-stop_words = set(stopwords.words('english'))
-stop_words.update(_load_stoplist())
+core_stop_words = set(stopwords.words('english'))
+stop_words = core_stop_words | _load_stoplist()
 
 
 def annotate(
@@ -141,6 +141,8 @@ def annotate(
         skip_until = 0
         for idx, word in enumerate(words):
             if idx < skip_until:
+                continue
+            if word in core_stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
             if not spans:
