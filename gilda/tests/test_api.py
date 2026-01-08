@@ -5,7 +5,7 @@ from gilda.term import Term
 
 def test_api_ground():
     scores = ground('kras')
-    assert appreq(scores[0].score, 0.9845), scores
+    assert appreq(scores[0].score, 0.7623), scores
     scores = ground('ROS', 'reactive oxygen')
     assert scores[0].term.db == 'MESH', scores
     assert scores[0].url == 'https://bioregistry.io/mesh:D017382'

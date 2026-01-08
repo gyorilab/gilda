@@ -17,31 +17,31 @@ def test_grounder():
 
     scores = gr.ground('kras')
     assert len(scores) == 1, scores
-    assert appreq(scores[0].score, 0.9845), scores
+    assert appreq(scores[0].score, 0.7623), scores
     scores = gr.ground('k-ras')
     assert len(scores) == 1, scores
-    assert appreq(scores[0].score, 0.9936), scores
+    assert appreq(scores[0].score, 0.7621), scores
     scores = gr.ground('KRAS')
     assert len(scores) == 1, scores
     assert appreq(scores[0].score, 1.0), scores
     scores = gr.ground('bRaf')
     assert len(scores) == 1, scores
-    assert appreq(scores[0].score, 0.9936), scores
+    assert appreq(scores[0].score, 0.7431), scores
 
 
 def test_ground_best():
     score = gr.ground_best('kras')
     assert score is not None
-    assert appreq(score.score, 0.9845), score
+    assert appreq(score.score, 0.7623), score
     score = gr.ground_best('k-ras')
     assert score is not None
-    assert appreq(score.score, 0.9936), score
+    assert appreq(score.score, 0.7621), score
     score = gr.ground_best('KRAS')
     assert score is not None
     assert appreq(score.score, 1.0), score
     score = gr.ground_best('bRaf')
     assert score is not None
-    assert appreq(score.score, 0.9936), score
+    assert appreq(score.score, 0.7431), score
 
     # Check that when no grounding
     # is possible, none is returned
@@ -296,3 +296,18 @@ def test_instantiate():
 
     with pytest.raises(TypeError):
         Grounder(5)
+
+
+def test_case_sensitive_curated():
+    """Test that curated terms with case mismatches are downgraded.
+
+    This test ensures that when a curated term (e.g., from FamPlex) has a
+    case mismatch with the query, it gets downgraded and doesn't incorrectly
+    outrank exact matches from other sources. For example, 'GCA' (the gene)
+    should not be outranked by 'GCa' (a curated FamPlex term for stomach cancer).
+    """
+    matches = gr.ground('GCA')
+    # The top match should be the HGNC gene GCA, not the FamPlex GCa
+    assert matches[0].term.db == 'HGNC', matches
+    assert matches[0].term.id == '15990', matches
+    assert matches[0].term.entry_name == 'GCA', matches

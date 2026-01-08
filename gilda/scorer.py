@@ -251,5 +251,12 @@ def score_status(term):
 def score(match, term):
     string_match_score = score_string_match(match)
     status_score = score_status(term)
+
+    # Downgrade curated status when there's a case mismatch
+    # Curated terms should match exactly, so if there's any capitalization
+    # difference, treat them as synonym-level matches instead
+    if term.status == 'curated' and (not match.exact or match.cap_combos):
+        status_score = 2  # Downgrade from curated (4) to synonym (2)
+
     score = ((0 * 5 + status_score) * 2 + string_match_score) / 9
     return score
