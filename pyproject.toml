@@ -38,7 +38,8 @@ dependencies = [
 test = [
     "pytest",
     "pytest-cov",
-    "pandas"
+    "pandas",
+    "requests",
 ]
 terms = [
     "indra",
