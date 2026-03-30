@@ -28,12 +28,17 @@ class SqliteEntries:
     def __init__(self, db):
         self.db = db
         self._local = threading.local()
-        self._local.conn = None
+
+    @property
+    def conn(self):
+        return self.get_connection()
 
     def get_connection(self):
-        if self._local.conn:
-            return self._local.conn
-        self._local.conn = sqlite3.connect(self.db)
+        # Use hasattr rather than checking for None because each thread has its own
+        # local instance of threading.local, which may or may not have the conn
+        # attribute set
+        if not hasattr(self._local,'conn'):
+            self._local.conn = sqlite3.connect(self.db)
         return self._local.conn
 
     def get(self, key, default=None):
