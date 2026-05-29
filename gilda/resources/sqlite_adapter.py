@@ -36,16 +36,17 @@ class SqliteEntries:
         self.db = db
         self._local = threading.local()
         self._columns = None
+        self._cols_clause = None
 
     @property
     def conn(self):
         return self.get_connection()
 
     def get_connection(self):
-        # Use hasattr rather than checking for None because each thread has its own
-        # local instance of threading.local, which may or may not have the conn
-        # attribute set
-        if not hasattr(self._local,'conn'):
+        # Use hasattr rather than checking for None because each thread has its
+        # own local instance of threading.local, which may or may not have the
+        # conn attribute set
+        if not hasattr(self._local, 'conn'):
             self._local.conn = sqlite3.connect(self.db)
         return self._local.conn
 
@@ -57,26 +58,26 @@ class SqliteEntries:
             self._columns = [row[1] for row in res.fetchall()]
         return self._columns
 
-    def _make_terms(self, rows):
-        """Reconstruct Term objects from raw database rows."""
-        cols = self.columns
-        return [Term(**dict(zip(cols, row))) for row in rows]
+    @property
+    def _column_clause(self):
+        """The comma-separated column list for SELECTs, computed once."""
+        if self._cols_clause is None:
+            self._cols_clause = ', '.join(self.columns)
+        return self._cols_clause
 
     def get(self, key, default=None):
-        cols = self.columns
-        q = "SELECT %s FROM terms WHERE norm_text=?" % ', '.join(cols)
+        q = "SELECT %s FROM terms WHERE norm_text=?" % self._column_clause
         rows = self.get_connection().execute(q, (key,)).fetchall()
         if not rows:
             return default
-        return self._make_terms(rows)
+        return [Term(*row) for row in rows]
 
     def values(self):
-        cols = self.columns
-        nt_idx = cols.index('norm_text')
-        q = "SELECT %s FROM terms ORDER BY norm_text" % ', '.join(cols)
+        nt_idx = self.columns.index('norm_text')
+        q = "SELECT %s FROM terms ORDER BY norm_text" % self._column_clause
         res = self.get_connection().execute(q)
         for _, group in itertools.groupby(res, key=lambda row: row[nt_idx]):
-            yield self._make_terms(list(group))
+            yield [Term(*row) for row in group]
 
     def __getitem__(self, item):
         res = self.get(item)
