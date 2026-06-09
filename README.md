@@ -11,7 +11,7 @@ appropriate identifiers in various namespaces for) named entities in biomedical 
 Gyori BM, Hoyt CT, Steppi A (2022). Gilda: biomedical entity text normalization with machine-learned disambiguation as a service. Bioinformatics Advances, 2022; vbac034 [https://doi.org/10.1093/bioadv/vbac034](https://doi.org/10.1093/bioadv/vbac034).
 
 ## Installation
-Gilda is deployed as a web service at http://grounding.indra.bio/ (see
+Gilda is deployed as a web service at https://grounding.indra.bio/ (see
 Usage instructions below), however, it can also be used locally as a Python
 package.
 
@@ -44,7 +44,7 @@ https://github.com/gyorilab/gilda/blob/master/notebooks/gilda_introduction.ipynb
 
 ### Use as a Python package
 For using Gilda as a Python package, the documentation at
-http://gilda.readthedocs.org provides detailed descriptions of each module of
+https://gilda.readthedocs.org provides detailed descriptions of each module of
 Gilda and their usage. A basic usage example for named entity normalization (NEN),
 or _grounding_ is as follows:
 
@@ -64,7 +64,7 @@ results = gilda.annotate('Calcium is released from the ER.')
 ### Use as a web service
 
 The REST service accepts POST requests with a JSON header on the `/ground`
-endpoint. There is a public REST service running at http://grounding.indra.bio
+endpoint. There is a public REST service running at https://grounding.indra.bio
 but the service can also be run locally as
 
 ```bash
@@ -76,14 +76,14 @@ replace the URL in the examples below with this address).
 Below is an example request using `curl`:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' http://grounding.indra.bio/ground
+curl -X POST -H "Content-Type: application/json" -d '{"text": "kras"}' https://grounding.indra.bio/ground
 ```
 
 The same request using Python's request package would be as follows:
 
 ```python
 import requests
-requests.post('http://grounding.indra.bio/ground', json={'text': 'kras'})
+requests.post('https://grounding.indra.bio/ground', json={'text': 'kras'})
 ```
 
 The web service also supports multiple inputs in a single request on the
@@ -91,7 +91,7 @@ The web service also supports multiple inputs in a single request on the
 
 ```python
 import requests
-requests.post('http://grounding.indra.bio/ground_multi',
+requests.post('https://grounding.indra.bio/ground_multi',
               json=[
                   {'text': 'braf'},
                   {'text': 'ER', 'context': 'endoplasmic reticulum (ER) is a cellular component'}
