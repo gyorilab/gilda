@@ -55,13 +55,13 @@ def ground_app_local_context(text, context):
 
 def ground_app_remote(text, **_kwargs):
     return requests.post(
-        "http://grounding.indra.bio/ground", json={"text": text}
+        "https://grounding.indra.bio/ground", json={"text": text}
     ).json()
 
 
 def ground_app_remote_context(text, context):
     return requests.post(
-        "http://grounding.indra.bio/ground", json={"text": text, "context": context}
+        "https://grounding.indra.bio/ground", json={"text": text, "context": context}
     ).json()
 
 
