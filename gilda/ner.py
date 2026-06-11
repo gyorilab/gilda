@@ -49,7 +49,6 @@ same name but extension ``.ann``.
 from typing import List, Set
 import os
 
-from nltk.corpus import stopwords
 from nltk.tokenize import PunktSentenceTokenizer, TreebankWordTokenizer
 
 from gilda import get_grounder
@@ -62,20 +61,19 @@ __all__ = [
     "stop_words"
 ]
 
-STOPLIST_PATH = os.path.join(os.path.dirname(__file__),'resources',
-                             'ner_stoplist.txt')
+RESOURCES_DIR = os.path.join(os.path.dirname(__file__), 'resources')
+STOPLIST_PATH = os.path.join(RESOURCES_DIR, 'ner_stoplist.txt')
+CORE_STOPWORDS_PATH = os.path.join(RESOURCES_DIR, 'core_stopwords.txt')
 
 
-def _load_stoplist() -> Set[str]:
-    """Load NER stoplist from file."""
-    stoplist_path = STOPLIST_PATH
-    with open(stoplist_path, 'r') as file:
-        stoplist = {line.strip() for line in file}
-    return stoplist
+def _load_words(path: str) -> Set[str]:
+    """Load a set of words from a file with one word per line."""
+    with open(path) as file:
+        return {line.strip() for line in file if line.strip()}
 
 
-core_stop_words = set(stopwords.words('english'))
-stop_words = core_stop_words | _load_stoplist()
+core_stop_words = _load_words(CORE_STOPWORDS_PATH)
+stop_words = core_stop_words | _load_words(STOPLIST_PATH)
 
 
 def annotate(

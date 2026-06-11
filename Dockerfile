@@ -5,7 +5,6 @@ RUN python -m pip install --upgrade pip
 COPY . /app
 WORKDIR /app
 RUN python -m pip install .[ui]
-RUN python -m gilda.resources && \
-  python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
+RUN python -m gilda.resources
 
 ENTRYPOINT ["gilda", "--port", "8001", "--host", "0.0.0.0"]
