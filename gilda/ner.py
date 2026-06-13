@@ -45,7 +45,7 @@ For brat to work, you need to store the text in a file with
 the extension ``.txt`` and the annotations in a file with the
 same name but extension ``.ann``.
 """
-
+import re
 from typing import List, Set
 import os
 
@@ -53,7 +53,7 @@ from nltk.tokenize import PunktSentenceTokenizer, TreebankWordTokenizer
 
 from gilda import get_grounder
 from gilda.grounder import Annotation
-from gilda.process import normalize
+from gilda.process import normalize, strip_greek_letters
 
 __all__ = [
     "annotate",
@@ -75,6 +75,10 @@ def _load_words(path: str) -> Set[str]:
 core_stop_words = _load_words(CORE_STOPWORDS_PATH)
 stop_words = core_stop_words | _load_words(STOPLIST_PATH)
 
+def preprocess_text(text):
+    # Replace various types of hyphens with a space
+    text = re.sub(r'[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u00AD\u2018\u2019]', ' ', text)
+    return text
 
 def annotate(
     text, *,
@@ -115,6 +119,7 @@ def annotate(
         the text span that was matched, the list of ScoredMatches, and the
         start and end character offsets of the text span.
     """
+    text = preprocess_text(text)
     if grounder is None:
         grounder = get_grounder()
     if sent_split_fun is None:
@@ -143,6 +148,8 @@ def annotate(
             if word in core_stop_words:
                 continue
             spans = grounder.prefix_index.get(word, set())
+            if len(word) > 1:
+                spans.add(1)
             if not spans:
                 continue
 
@@ -172,6 +179,19 @@ def annotate(
                 if len(raw_span) <= 1:
                     continue
                 context = text if context_text is None else context_text
+
+                if raw_span != strip_greek_letters(raw_span):
+                    matches = grounder.ground(strip_greek_letters(raw_span),
+                                              context=context,
+                                              organisms=organisms,
+                                              namespaces=namespaces)
+                    if matches:
+                        start_coord = sent_start + raw_word_coords[idx][0]
+                        end_coord = sent_start + raw_word_coords[idx + span - 1][1]
+                        annotations.append(Annotation(
+                            strip_greek_letters(raw_span), matches, start_coord, end_coord - 1
+                        ))
+
                 matches = grounder.ground(raw_span,
                                           context=context,
                                           organisms=organisms,

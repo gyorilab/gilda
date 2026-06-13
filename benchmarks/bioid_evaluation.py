@@ -617,7 +617,7 @@ class BioIDBenchmarker:
         total.loc[:, 'entity_type'] = 'Total'
         stats = res_df.groupby('entity_type', as_index=False).sum()
         stats = stats[stats['entity_type'] != 'unknown']
-        stats = stats.append(total, ignore_index=True)
+        stats = pd.concat([stats, total], ignore_index=True)
         stats.loc[:, stats.columns[1:]] = stats[stats.columns[1:]].astype(int)
         if match == 'strict':
             score_cols = ['top_correct', 'exists_correct']
